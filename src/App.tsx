@@ -41,9 +41,7 @@ function App() {
         onToggleCollapse={handleToggleCollapse}
         investmentName={selectedInvestment}
       />
-      <div
-        className={`flex min-h-screen flex-col bg-[var(--color-domesta-bg)] transition-[margin-left] duration-300 ${menuCollapsed ? 'md:ml-[72px]' : 'md:ml-[320px]'}`}
-      >
+      <div className="flex min-h-screen flex-col bg-[var(--color-domesta-bg)]">
         <AppBar
           onNavigateTo={handleSelectSection}
           selectedInvestment={selectedInvestment}

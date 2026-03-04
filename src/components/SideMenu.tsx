@@ -15,13 +15,7 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
   const restWords = parts.slice(1).join(' ')
   return (
     <>
-      <aside
-        className={`
-          fixed left-0 top-0 z-50 flex h-full flex-col bg-[#061529] shadow-lg transition-all duration-300 ease-in-out
-          ${collapsed ? 'w-[72px]' : 'w-[min(320px,85vw)]'}
-          translate-x-0
-        `}
-      >
+      <aside className="hidden">
         {/* Header: nazwa inwestycji + collapse/expand control – wysokość jak górny pasek (h-14) */}
         <div className="flex h-14 items-center border-b border-gray-200 bg-white px-3">
           {collapsed ? (

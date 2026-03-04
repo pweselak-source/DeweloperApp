@@ -21,7 +21,17 @@ function getSectionIcon(sectionId: SectionId): { icon: React.ReactNode; colorCla
   if (sectionId === 'siteLog') {
     return {
       icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M19 5H9a2 2 0 0 0-2 2v11" />
           <path d="M13 9H7" />
           <path d="M15 13H7" />
@@ -36,7 +46,93 @@ function getSectionIcon(sectionId: SectionId): { icon: React.ReactNode; colorCla
   return { icon: null, colorClass: 'text-gray-500' }
 }
 
+function getSectionStatusIcon(sectionId: SectionId): React.ReactNode {
+  const menuItem = MENU_ITEMS.find((m) => m.id === sectionId)
+  const status = menuItem?.status ?? (sectionId === 'siteLog' ? 'current' : 'future')
+
+  if (status === 'done') {
+    // zielony ptaszek
+    return (
+      <span className="inline-block translate-x-[2px]">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          className="h-4 w-4 text-emerald-500"
+        >
+          <polyline
+            points="20 6 9 17 4 12"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+    )
+  }
+
+  if (status === 'current') {
+    // migająca żółta strzałka
+    return (
+      <span className="inline-flex items-center justify-center rounded-full animate-[coral-pulse_1.2s_ease-in-out_infinite]">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          className="h-4 w-4 text-amber-400"
+        >
+          <polyline
+            points="15 18 9 12 15 6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+    )
+  }
+
+  // przyszłe – szary zegarek
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      className="h-4 w-4 text-gray-400"
+    >
+      <path
+        d="M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12 7v5l3 2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 export function MainContent() {
+  const [expandedSections, setExpandedSections] = useState<Record<SectionId, boolean>>({
+    formalities: false,
+    schedule: false,
+    documents: false,
+    complaints: false,
+    handover: false,
+    meter: false,
+    siteLog: false,
+    notary: false,
+    news: false,
+  })
   const [meterOpen, setMeterOpen] = useState(false)
   const [meterSubmitted, setMeterSubmitted] = useState(false)
   const [handoverMonthView, setHandoverMonthView] = useState(() => {
@@ -58,6 +154,10 @@ export function MainContent() {
   const [complaintFormOpen, setComplaintFormOpen] = useState(false)
   const [complaintsConfirmed, setComplaintsConfirmed] = useState(false)
   const [complaintsConfirmOpen, setComplaintsConfirmOpen] = useState(false)
+
+  const toggleSection = (id: SectionId) => {
+    setExpandedSections((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
 
   useEffect(() => {
     if (!handoverToastVisible) return
@@ -132,20 +232,20 @@ export function MainContent() {
     },
   ]
 
-  const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: string }> = {
-    green: {
-      badge: 'bg-emerald-50 text-emerald-700',
-      dot: 'bg-emerald-500',
-    },
-    amber: {
-      badge: 'bg-amber-50 text-amber-700',
-      dot: 'bg-amber-500',
-    },
-    slate: {
-      badge: 'bg-slate-50 text-slate-600',
-      dot: 'bg-slate-400',
-    },
-  }
+const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: string }> = {
+  green: {
+    badge: 'bg-emerald-50 text-emerald-700',
+    dot: 'bg-emerald-500',
+  },
+  amber: {
+    badge: 'bg-amber-50 text-amber-700',
+    dot: 'bg-amber-500',
+  },
+  slate: {
+    badge: 'bg-slate-50 text-slate-600',
+    dot: 'bg-slate-400',
+  },
+}
 
   const monthsForSiteLog = [
     {
@@ -235,23 +335,41 @@ export function MainContent() {
     'rounded-2xl border border-gray-200 bg-white shadow-md overflow-hidden'
 
   return (
-    <main className="flex flex-1 flex-col gap-10 p-4 md:p-6">
+    <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
       {/* Formalności początkowe */}
       <section id="section-formalities" className={sectionBlockClass}>
-        <div className="flex items-center gap-4 border-b border-gray-100 bg-emerald-100/70 px-5 py-3">
-          <span className={`shrink-0 [&_svg]:h-12 [&_svg]:w-12 ${getSectionIcon('formalities').colorClass}`}>
-            {getSectionIcon('formalities').icon}
-          </span>
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--color-domesta-gray)]">
-              Formalności początkowe
-            </h1>
-            <p className="mt-1 text-[11px] text-emerald-600">
-              Status: <span className="font-medium">zakończone</span>
-            </p>
+        <button
+          type="button"
+          className="flex w-full items-stretch border-b border-gray-100 text-left"
+          onClick={() => toggleSection('formalities')}
+        >
+          <div className="flex items-center gap-3 bg-white px-5 py-3">
+            <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
+              <span className={`shrink-0 [&_svg]:h-10 [&_svg]:w-10 ${getSectionIcon('formalities').colorClass}`}>
+                {getSectionIcon('formalities').icon}
+              </span>
+              <span className="absolute -bottom-1 -right-1">
+                {getSectionStatusIcon('formalities')}
+              </span>
+            </span>
+            <span className="h-8 w-px rounded-full bg-gray-200" />
           </div>
-        </div>
-        <div className="p-5 md:p-6 bg-emerald-100/50">
+          <div className="flex flex-1 items-center gap-3 bg-emerald-50/70 px-5 py-3">
+            <div className="flex-1">
+              <h1 className="text-xl font-semibold text-[var(--color-domesta-gray)]">
+                Formalności początkowe
+              </h1>
+              <p className="mt-1 text-[11px] text-emerald-600">
+                Status: <span className="font-medium">zakończone</span>
+              </p>
+            </div>
+            <span className="ml-3 text-xs text-gray-500">
+              {expandedSections.formalities ? 'Zwiń' : 'Rozwiń'}
+            </span>
+          </div>
+        </button>
+        {expandedSections.formalities && (
+        <div className="p-5 md:p-6 bg-emerald-50/40 animate-[section-expand_0.25s_ease-out]">
         <div className="mb-4 rounded-xl bg-white p-4 shadow-sm">
           <div className="mb-2 flex items-center justify-between gap-3">
             <h2 className="text-sm font-medium text-[var(--color-domesta-gray)]">
@@ -282,6 +400,7 @@ export function MainContent() {
           </p>
         </div>
         </div>
+        )}
       </section>
 
       {handoverCalendarVisible && (
@@ -395,21 +514,59 @@ export function MainContent() {
       )}
 
       {/* Harmonogram spłaty */}
-      <section id="section-schedule" className={sectionBlockClass}>
-        <div className="flex items-center gap-4 border-b border-amber-100 bg-amber-50/80 px-5 py-3">
-          <span className={`shrink-0 [&_svg]:h-12 [&_svg]:w-12 ${getSectionIcon('schedule').colorClass}`}>
-            {getSectionIcon('schedule').icon}
-          </span>
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--color-domesta-gray)]">
-              Harmonogram spłaty
-            </h1>
-            <p className="mt-1 text-[11px] text-amber-500">
-              Status: <span className="font-medium">aktualnie</span>
-            </p>
+      <section
+        id="section-schedule"
+        className={`${sectionBlockClass} ${
+          !expandedSections.schedule ? 'animate-[gold-pulse_2.4s_ease-in-out_infinite]' : ''
+        }`}
+      >
+        <button
+          type="button"
+          className="flex w-full items-stretch border-b border-amber-100 text-left"
+          onClick={() => toggleSection('schedule')}
+        >
+          <div className="flex items-center gap-3 bg-white px-5 py-3">
+            <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
+              <span className={`shrink-0 [&_svg]:h-10 [&_svg]:w-10 ${getSectionIcon('schedule').colorClass}`}>
+                {getSectionIcon('schedule').icon}
+              </span>
+              {!expandedSections.schedule && (
+                <span className="absolute -bottom-1 -right-1 animate-[gold-pulse_2.4s_ease-in-out_infinite]">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4 text-amber-400"
+                  >
+                    <polyline
+                      points="15 18 9 12 15 6"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+              )}
+            </span>
+            <span className="h-8 w-px rounded-full bg-gray-200" />
           </div>
-        </div>
-        <div className="p-5 md:p-6 bg-amber-50/40">
+          <div className="flex flex-1 items-center gap-3 bg-amber-50/80 px-5 py-3">
+            <div className="flex-1">
+              <h1 className="text-xl font-semibold text-[var(--color-domesta-gray)]">
+                Harmonogram spłaty
+              </h1>
+              <p className="mt-1 text-[11px] text-amber-500">
+                Status: <span className="font-medium">aktualnie</span>
+              </p>
+            </div>
+            <span className="ml-3 text-xs text-gray-500">
+              {expandedSections.schedule ? 'Zwiń' : 'Rozwiń'}
+            </span>
+          </div>
+        </button>
+        {expandedSections.schedule && (
+        <div className="p-5 md:p-6 bg-amber-50/40 animate-[section-expand_0.25s_ease-out]">
         <div className="space-y-3">
           {installments.map((item) => {
             const tone = toneClasses[item.tone]
@@ -466,44 +623,82 @@ export function MainContent() {
           })}
         </div>
         </div>
+        )}
       </section>
 
       {/* Dokumenty do odbioru mieszkania */}
       <section id="section-documents" className={sectionBlockClass}>
-        <div className="flex items-center gap-4 border-b border-slate-200 bg-slate-50/80 px-5 py-3">
-          <span className={`shrink-0 [&_svg]:h-12 [&_svg]:w-12 ${getSectionIcon('documents').colorClass}`}>
-            {getSectionIcon('documents').icon}
-          </span>
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--color-domesta-gray)]">
-              Dokumenty do odbioru mieszkania
-            </h1>
-            <p className="mt-1 text-[11px] text-gray-500">
-              Status: <span className="font-medium">w oczekiwaniu</span>
-            </p>
+        <button
+          type="button"
+          className="flex w-full items-stretch border-b border-slate-200 text-left"
+          onClick={() => toggleSection('documents')}
+        >
+          <div className="flex items-center gap-3 bg-white px-5 py-3">
+            <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
+              <span className={`shrink-0 [&_svg]:h-10 [&_svg]:w-10 ${getSectionIcon('documents').colorClass}`}>
+                {getSectionIcon('documents').icon}
+              </span>
+              <span className="absolute -bottom-1 -right-1">
+                {getSectionStatusIcon('documents')}
+              </span>
+            </span>
+            <span className="h-8 w-px rounded-full bg-gray-200" />
+          </div>
+          <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
+            <div className="flex-1">
+              <h1 className="text-xl font-semibold text-[var(--color-domesta-gray)]">
+                Dokumenty do odbioru mieszkania
+              </h1>
+              <p className="mt-1 text-[11px] text-gray-500">
+                Status: <span className="font-medium">w oczekiwaniu</span>
+              </p>
+            </div>
+            <span className="ml-3 text-xs text-gray-500">
+              {expandedSections.documents ? 'Zwiń' : 'Rozwiń'}
+            </span>
+          </div>
+        </button>
+        {expandedSections.documents && (
+        <div className="p-5 md:p-6 bg-slate-50/40 animate-[section-expand_0.25s_ease-out]">
+          <div className="rounded-xl bg-white p-4 text-xs text-gray-600">
+            Tutaj pojawi się lista dokumentów wymaganych do odbioru mieszkania (mock).
           </div>
         </div>
-        <div className="p-5 md:p-6 bg-slate-50/40">
-        <div className="rounded-xl bg-white p-4 text-xs text-gray-600">
-          Tutaj pojawi się lista dokumentów wymaganych do odbioru mieszkania (mock).
-        </div>
-        </div>
+        )}
       </section>
 
       {/* Reklamacje */}
       <section id="section-complaints" className={sectionBlockClass}>
-        <div className="flex items-center gap-4 border-b border-slate-200 bg-slate-50/80 px-5 py-3">
-          <span className={`shrink-0 [&_svg]:h-12 [&_svg]:w-12 ${getSectionIcon('complaints').colorClass}`}>
-            {getSectionIcon('complaints').icon}
-          </span>
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--color-domesta-gray)]">Reklamacje</h1>
-            <p className="mt-1 text-[11px] text-gray-500">
-              Status: <span className="font-medium">w oczekiwaniu</span>
-            </p>
+        <button
+          type="button"
+          className="flex w-full items-stretch border-b border-slate-200 text-left"
+          onClick={() => toggleSection('complaints')}
+        >
+          <div className="flex items-center gap-3 bg-white px-5 py-3">
+            <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
+              <span className={`shrink-0 [&_svg]:h-10 [&_svg]:w-10 ${getSectionIcon('complaints').colorClass}`}>
+                {getSectionIcon('complaints').icon}
+              </span>
+              <span className="absolute -bottom-1 -right-1">
+                {getSectionStatusIcon('complaints')}
+              </span>
+            </span>
+            <span className="h-8 w-px rounded-full bg-gray-200" />
           </div>
-        </div>
-        <div className="p-5 md:p-6 bg-slate-50/40">
+          <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
+            <div className="flex-1">
+              <h1 className="text-xl font-semibold text-[var(--color-domesta-gray)]">Reklamacje</h1>
+              <p className="mt-1 text-[11px] text-gray-500">
+                Status: <span className="font-medium">w oczekiwaniu</span>
+              </p>
+            </div>
+            <span className="ml-3 text-xs text-gray-500">
+              {expandedSections.complaints ? 'Zwiń' : 'Rozwiń'}
+            </span>
+          </div>
+        </button>
+        {expandedSections.complaints && (
+        <div className="p-5 md:p-6 bg-slate-50/40 animate-[section-expand_0.25s_ease-out]">
         {(() => {
           const complaintTypes = [
             'Krzywizna ścian',
@@ -777,22 +972,41 @@ export function MainContent() {
           )
         })()}
         </div>
+        )}
       </section>
 
       {/* Odbiór mieszkania */}
       <section id="section-handover" className={sectionBlockClass}>
-        <div className="flex items-center gap-4 border-b border-slate-200 bg-slate-50/80 px-5 py-3">
-          <span className={`shrink-0 [&_svg]:h-12 [&_svg]:w-12 ${getSectionIcon('handover').colorClass}`}>
-            {getSectionIcon('handover').icon}
-          </span>
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--color-domesta-gray)]">Odbiór mieszkania</h1>
-            <p className="mt-1 text-[11px] text-gray-500">
-              Status: <span className="font-medium">w oczekiwaniu</span>
-            </p>
+        <button
+          type="button"
+          className="flex w-full items-stretch border-b border-slate-200 text-left"
+          onClick={() => toggleSection('handover')}
+        >
+          <div className="flex items-center gap-3 bg-white px-5 py-3">
+            <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
+              <span className={`shrink-0 [&_svg]:h-10 [&_svg]:w-10 ${getSectionIcon('handover').colorClass}`}>
+                {getSectionIcon('handover').icon}
+              </span>
+              <span className="absolute -bottom-1 -right-1">
+                {getSectionStatusIcon('handover')}
+              </span>
+            </span>
+            <span className="h-8 w-px rounded-full bg-gray-200" />
           </div>
-        </div>
-        <div className="p-5 md:p-6 bg-slate-50/40">
+          <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
+            <div className="flex-1">
+              <h1 className="text-xl font-semibold text-[var(--color-domesta-gray)]">Odbiór mieszkania</h1>
+              <p className="mt-1 text-[11px] text-gray-500">
+                Status: <span className="font-medium">w oczekiwaniu</span>
+              </p>
+            </div>
+            <span className="ml-3 text-xs text-gray-500">
+              {expandedSections.handover ? 'Zwiń' : 'Rozwiń'}
+            </span>
+          </div>
+        </button>
+        {expandedSections.handover && (
+        <div className="p-5 md:p-6 bg-slate-50/40 animate-[section-expand_0.25s_ease-out]">
         <section className="rounded-xl bg-white p-4 shadow-sm">
           <h2 className="text-lg font-semibold text-[var(--color-domesta-gray)]">
             Umów spotkanie – odbiór mieszkania
@@ -838,6 +1052,7 @@ export function MainContent() {
           </div>
         </section>
         </div>
+        )}
       </section>
 
       {handoverToastVisible && handoverSelectedSlot && (
@@ -853,20 +1068,38 @@ export function MainContent() {
 
       {/* Zgłoszenia licznika do energii */}
       <section id="section-meter" className={sectionBlockClass}>
-        <div className="flex items-center gap-4 border-b border-amber-100 bg-amber-50/80 px-5 py-3">
-          <span className={`shrink-0 [&_svg]:h-12 [&_svg]:w-12 ${getSectionIcon('meter').colorClass}`}>
-            {getSectionIcon('meter').icon}
-          </span>
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--color-domesta-gray)]">
-              Zgłoszenia licznika do energii
-            </h1>
-            <p className="mt-1 text-[11px] text-gray-500">
-              Status: <span className="font-medium">w oczekiwaniu</span>
-            </p>
+        <button
+          type="button"
+          className="flex w-full items-stretch border-b border-slate-200 text-left"
+          onClick={() => toggleSection('meter')}
+        >
+          <div className="flex items-center gap-3 bg-white px-5 py-3">
+            <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
+              <span className={`shrink-0 [&_svg]:h-10 [&_svg]:w-10 ${getSectionIcon('meter').colorClass}`}>
+                {getSectionIcon('meter').icon}
+              </span>
+              <span className="absolute -bottom-1 -right-1">
+                {getSectionStatusIcon('meter')}
+              </span>
+            </span>
+            <span className="h-8 w-px rounded-full bg-gray-200" />
           </div>
-        </div>
-        <div className="p-5 md:p-6 bg-amber-50/40">
+          <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
+            <div className="flex-1">
+              <h1 className="text-xl font-semibold text-[var(--color-domesta-gray)]">
+                Zgłoszenia licznika do energii
+              </h1>
+              <p className="mt-1 text-[11px] text-gray-500">
+                Status: <span className="font-medium">w oczekiwaniu</span>
+              </p>
+            </div>
+            <span className="ml-3 text-xs text-gray-500">
+              {expandedSections.meter ? 'Zwiń' : 'Rozwiń'}
+            </span>
+          </div>
+        </button>
+        {expandedSections.meter && (
+        <div className="p-5 md:p-6 bg-slate-50/40 animate-[section-expand_0.25s_ease-out]">
         <section
           className={`rounded-xl bg-white p-4 shadow-sm transition-shadow ${
             !meterSubmitted ? 'cursor-pointer' : ''
@@ -973,24 +1206,80 @@ export function MainContent() {
           )}
         </section>
         </div>
+        )}
+      </section>
+
+      {/* Podpisanie aktu notarialnego – placeholder */}
+      <section id="section-notary" className={sectionBlockClass}>
+        <button
+          type="button"
+          className="flex w-full items-stretch border-b border-slate-200 text-left"
+          onClick={() => toggleSection('notary')}
+        >
+          <div className="flex items-center gap-3 bg-white px-5 py-3">
+            <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
+              <span className={`shrink-0 [&_svg]:h-10 [&_svg]:w-10 ${getSectionIcon('notary').colorClass}`}>
+                {getSectionIcon('notary').icon}
+              </span>
+              <span className="absolute -bottom-1 -right-1">
+                {getSectionStatusIcon('notary')}
+              </span>
+            </span>
+            <span className="h-8 w-px rounded-full bg-gray-200" />
+          </div>
+          <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
+            <div className="flex-1">
+              <h1 className="text-xl font-semibold text-[var(--color-domesta-gray)]">
+                Podpisanie aktu notarialnego
+              </h1>
+              <p className="mt-1 text-[11px] text-gray-500">
+                Status: <span className="font-medium">w oczekiwaniu</span>
+              </p>
+            </div>
+            <span className="ml-3 text-xs text-gray-500">
+              {expandedSections.notary ? 'Zwiń' : 'Rozwiń'}
+            </span>
+          </div>
+        </button>
+        {expandedSections.notary && (
+        <div className="p-5 md:p-6 bg-slate-50/40 animate-[section-expand_0.25s_ease-out]">
+          <div className="rounded-xl bg-white p-4 text-xs text-gray-600">
+            W tym miejscu w przyszłości pojawi się harmonogram i szczegóły podpisania aktu
+            notarialnego (mock).
+          </div>
+        </div>
+        )}
       </section>
 
       {/* Dziennik budowy */}
       <section id="section-siteLog" className={sectionBlockClass}>
-        <div className="flex items-center gap-4 border-b border-amber-100 bg-amber-50/80 px-5 py-3">
-          <span className={`shrink-0 [&_svg]:h-12 [&_svg]:w-12 ${getSectionIcon('siteLog').colorClass}`}>
-            {getSectionIcon('siteLog').icon}
-          </span>
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--color-domesta-gray)]">
-              Dziennik budowy
-            </h1>
-            <p className="mt-1 text-[11px] text-amber-500">
-              Status: <span className="font-medium">aktualnie</span>
-            </p>
+        <button
+          type="button"
+          className="flex w-full items-stretch border-b border-amber-100 text-left"
+          onClick={() => toggleSection('siteLog')}
+        >
+          <div className="flex items-center gap-3 bg-white px-5 py-3">
+            <span className="shrink-0 [&_svg]:h-10 [&_svg]:w-10 rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
+              {getSectionIcon('siteLog').icon}
+            </span>
+            <span className="h-8 w-px rounded-full bg-gray-200" />
           </div>
-        </div>
-        <div className="p-5 md:p-6 bg-amber-50/40">
+          <div className="flex flex-1 items-center gap-3 bg-amber-50/80 px-5 py-3">
+            <div className="flex-1">
+              <h1 className="text-xl font-semibold text-[var(--color-domesta-gray)]">
+                Dziennik budowy
+              </h1>
+              <p className="mt-1 text-[11px] text-amber-500">
+                Status: <span className="font-medium">aktualnie</span>
+              </p>
+            </div>
+            <span className="ml-3 text-xs text-gray-500">
+              {expandedSections.siteLog ? 'Zwiń' : 'Rozwiń'}
+            </span>
+          </div>
+        </button>
+        {expandedSections.siteLog && (
+        <div className="p-5 md:p-6 bg-amber-50/40 animate-[section-expand_0.25s_ease-out]">
         <div className="space-y-4">
           {monthsForSiteLog.map((month) => (
             <section key={month.id} className="rounded-xl bg-white p-4 shadow-sm">
@@ -1022,29 +1311,7 @@ export function MainContent() {
           ))}
         </div>
         </div>
-      </section>
-
-      {/* Podpisanie aktu notarialnego – placeholder */}
-      <section id="section-notary" className={sectionBlockClass}>
-        <div className="flex items-center gap-4 border-b border-slate-200 bg-slate-50/80 px-5 py-3">
-          <span className={`shrink-0 [&_svg]:h-12 [&_svg]:w-12 ${getSectionIcon('notary').colorClass}`}>
-            {getSectionIcon('notary').icon}
-          </span>
-          <div>
-            <h1 className="text-xl font-semibold text-[var(--color-domesta-gray)]">
-              Podpisanie aktu notarialnego
-            </h1>
-            <p className="mt-1 text-[11px] text-gray-500">
-              Status: <span className="font-medium">w oczekiwaniu</span>
-            </p>
-          </div>
-        </div>
-        <div className="p-5 md:p-6 bg-slate-50/40">
-        <div className="rounded-xl bg-white p-4 text-xs text-gray-600">
-          W tym miejscu w przyszłości pojawi się harmonogram i szczegóły podpisania aktu
-          notarialnego (mock).
-        </div>
-        </div>
+        )}
       </section>
     </main>
   )

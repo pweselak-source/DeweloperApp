@@ -44,6 +44,28 @@ body {
   }
 }
 
+@keyframes gold-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.0);
+  }
+  50% {
+    transform: scale(1.015);
+    box-shadow: 0 0 18px 0 rgba(234, 179, 8, 0.35);
+  }
+}
+
+@keyframes section-expand {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes arrow-glow {
   0%, 100% {
     filter: drop-shadow(0 0 3px rgba(251, 191, 36, 0.7)) drop-shadow(0 0 8px rgba(251, 191, 36, 0.35));
