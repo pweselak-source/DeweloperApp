@@ -345,7 +345,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
         >
           <div className="flex items-center gap-3 bg-white px-5 py-3">
             <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
-              <span className={`shrink-0 [&_svg]:h-10 [&_svg]:w-10 ${getSectionIcon('formalities').colorClass}`}>
+              <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('formalities').colorClass}`}>
                 {getSectionIcon('formalities').icon}
               </span>
               <span className="absolute -bottom-1 -right-1">
@@ -356,7 +356,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
           <div className="flex flex-1 items-center gap-3 bg-emerald-50/70 px-5 py-3">
             <div className="flex-1">
-              <h1 className="text-base font-semibold text-[var(--color-domesta-gray)]">
+              <h1 className="text-[10px] font-semibold text-[var(--color-domesta-gray)]">
                 Formalności początkowe
               </h1>
               <p className="mt-1 text-[11px] text-emerald-600">
@@ -527,7 +527,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
         >
           <div className="flex items-center gap-3 bg-white px-5 py-3">
             <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
-              <span className={`shrink-0 [&_svg]:h-10 [&_svg]:w-10 ${getSectionIcon('schedule').colorClass}`}>
+              <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('schedule').colorClass}`}>
                 {getSectionIcon('schedule').icon}
               </span>
               {!expandedSections.schedule && (
@@ -553,7 +553,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
           <div className="flex flex-1 items-center gap-3 bg-amber-50/80 px-5 py-3">
             <div className="flex-1">
-              <h1 className="text-base font-semibold text-[var(--color-domesta-gray)]">
+              <h1 className="text-[10px] font-semibold text-[var(--color-domesta-gray)]">
                 Harmonogram spłaty
               </h1>
               <p className="mt-1 text-[11px] text-amber-500">
@@ -635,7 +635,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
         >
           <div className="flex items-center gap-3 bg-white px-5 py-3">
             <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
-              <span className={`shrink-0 [&_svg]:h-10 [&_svg]:w-10 ${getSectionIcon('documents').colorClass}`}>
+              <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('documents').colorClass}`}>
                 {getSectionIcon('documents').icon}
               </span>
               <span className="absolute -bottom-1 -right-1">
@@ -646,7 +646,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
           <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
             <div className="flex-1">
-              <h1 className="text-base font-semibold text-[var(--color-domesta-gray)]">
+              <h1 className="text-[10px] font-semibold text-[var(--color-domesta-gray)]">
                 Dokumenty do odbioru mieszkania
               </h1>
               <p className="mt-1 text-[11px] text-gray-500">
@@ -676,7 +676,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
         >
           <div className="flex items-center gap-3 bg-white px-5 py-3">
             <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
-              <span className={`shrink-0 [&_svg]:h-10 [&_svg]:w-10 ${getSectionIcon('complaints').colorClass}`}>
+              <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('complaints').colorClass}`}>
                 {getSectionIcon('complaints').icon}
               </span>
               <span className="absolute -bottom-1 -right-1">
@@ -687,7 +687,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
           <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
             <div className="flex-1">
-              <h1 className="text-base font-semibold text-[var(--color-domesta-gray)]">Reklamacje</h1>
+              <h1 className="text-[10px] font-semibold text-[var(--color-domesta-gray)]">Reklamacje</h1>
               <p className="mt-1 text-[11px] text-gray-500">
                 Status: <span className="font-medium">w oczekiwaniu</span>
               </p>
@@ -984,7 +984,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
         >
           <div className="flex items-center gap-3 bg-white px-5 py-3">
             <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
-              <span className={`shrink-0 [&_svg]:h-10 [&_svg]:w-10 ${getSectionIcon('handover').colorClass}`}>
+              <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('handover').colorClass}`}>
                 {getSectionIcon('handover').icon}
               </span>
               <span className="absolute -bottom-1 -right-1">
@@ -995,7 +995,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
           <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
             <div className="flex-1">
-              <h1 className="text-base font-semibold text-[var(--color-domesta-gray)]">Odbiór mieszkania</h1>
+              <h1 className="text-[10px] font-semibold text-[var(--color-domesta-gray)]">Odbiór mieszkania</h1>
               <p className="mt-1 text-[11px] text-gray-500">
                 Status: <span className="font-medium">w oczekiwaniu</span>
               </p>
@@ -1021,7 +1021,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
                 <p className="text-center text-sm font-medium text-emerald-700">
                   ✓ Termin odbioru potwierdzony
                 </p>
-                <p className="text-center text-base font-semibold text-[var(--color-domesta-gray)]">
+                <p className="text-center text-[10px] font-semibold text-[var(--color-domesta-gray)]">
                   {handoverSelectedSlot.replace('T', ' ')}
                 </p>
                 <p className="text-center text-xs text-gray-500">
@@ -1075,7 +1075,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
         >
           <div className="flex items-center gap-3 bg-white px-5 py-3">
             <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
-              <span className={`shrink-0 [&_svg]:h-10 [&_svg]:w-10 ${getSectionIcon('meter').colorClass}`}>
+              <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('meter').colorClass}`}>
                 {getSectionIcon('meter').icon}
               </span>
               <span className="absolute -bottom-1 -right-1">
@@ -1086,7 +1086,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
           <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
             <div className="flex-1">
-              <h1 className="text-base font-semibold text-[var(--color-domesta-gray)]">
+              <h1 className="text-[10px] font-semibold text-[var(--color-domesta-gray)]">
                 Zgłoszenia licznika do energii
               </h1>
               <p className="mt-1 text-[11px] text-gray-500">
@@ -1218,7 +1218,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
         >
           <div className="flex items-center gap-3 bg-white px-5 py-3">
             <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
-              <span className={`shrink-0 [&_svg]:h-10 [&_svg]:w-10 ${getSectionIcon('notary').colorClass}`}>
+              <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('notary').colorClass}`}>
                 {getSectionIcon('notary').icon}
               </span>
               <span className="absolute -bottom-1 -right-1">
@@ -1229,7 +1229,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
           <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
             <div className="flex-1">
-              <h1 className="text-base font-semibold text-[var(--color-domesta-gray)]">
+              <h1 className="text-[10px] font-semibold text-[var(--color-domesta-gray)]">
                 Podpisanie aktu notarialnego
               </h1>
               <p className="mt-1 text-[11px] text-gray-500">
@@ -1259,14 +1259,14 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           onClick={() => toggleSection('siteLog')}
         >
           <div className="flex items-center gap-3 bg-white px-5 py-3">
-            <span className="shrink-0 [&_svg]:h-10 [&_svg]:w-10 rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
+            <span className="shrink-0 [&_svg]:h-5 [&_svg]:w-5 rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
               {getSectionIcon('siteLog').icon}
             </span>
             <span className="h-8 w-px rounded-full bg-gray-200" />
           </div>
           <div className="flex flex-1 items-center gap-3 bg-amber-50/80 px-5 py-3">
             <div className="flex-1">
-              <h1 className="text-base font-semibold text-[var(--color-domesta-gray)]">
+              <h1 className="text-[10px] font-semibold text-[var(--color-domesta-gray)]">
                 Dziennik budowy
               </h1>
               <p className="mt-1 text-[11px] text-amber-500">
