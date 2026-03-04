@@ -12,18 +12,15 @@ export function AppBar({ onNavigateTo }: AppBarProps) {
 
   return (
     <div className="sticky top-0 z-30">
-      <header className="flex h-14 items-center gap-4 border-b border-gray-200 bg-white px-4 shadow-sm">
-      {/* 1. Logo */}
-      <div className="flex shrink-0 items-center">
+      <header className="flex h-14 items-center border-b border-gray-200 bg-white px-4 shadow-sm">
+      {/* Lewa część: logo + Aktualności (szerokość jak w nav, żeby prawa krawędź się zgadzała) */}
+      <div className="flex w-[320px] shrink-0 items-center gap-4">
         <img src={domestaLogo} alt="Domesta" className="h-8 w-auto object-contain" />
-      </div>
-
-      {/* 2. Aktualności */}
-      <button
-        type="button"
-        onClick={() => onNavigateTo('news')}
-        className="ml-4 inline-flex min-w-[150px] shrink-0 items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[11px] text-gray-600 shadow-sm hover:bg-gray-100"
-      >
+        <button
+          type="button"
+          onClick={() => onNavigateTo('news')}
+          className="ml-auto inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[11px] text-gray-600 shadow-sm hover:bg-gray-100"
+        >
         <span className="flex h-4 w-4 items-center justify-center rounded-full border border-gray-400 text-[10px] font-semibold text-gray-500">
           !
         </span>
@@ -31,9 +28,10 @@ export function AppBar({ onNavigateTo }: AppBarProps) {
         <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-domesta-coral)] px-1 text-[10px] font-semibold text-white animate-[coral-pulse_1.2s_ease-in-out_infinite]">
           2
         </span>
-      </button>
+        </button>
+      </div>
 
-      {/* 3. Lupka, Czat, Menu – dopchnięte do prawej */}
+      {/* Lupka, Czat, Menu – dopchnięte do prawej */}
       <div className="ml-auto flex items-center gap-2">
         <button
           type="button"
@@ -123,38 +121,39 @@ export function AppBar({ onNavigateTo }: AppBarProps) {
         </div>
       </div>
       </header>
-      {/* Drugi poziomy pasek – przyciski pod logo i „Aktualności” */}
-      <nav className="flex h-12 w-full items-center justify-start gap-0 border-b border-gray-200 bg-gray-50 px-4">
-        <button
-          type="button"
-          className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[11px] text-gray-600 shadow-sm hover:bg-gray-100"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            className="h-4 w-4 text-gray-500"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+      {/* Drugi poziomy pasek – przyciski pod logo i „Aktualności” (ta sama szerokość lewej części = wyrównana prawa krawędź) */}
+      <nav className="flex h-12 w-full items-center border-b border-gray-200 bg-gray-50 px-4">
+        <div className="flex w-[320px] shrink-0 items-center">
+          <button
+            type="button"
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[11px] text-gray-600 shadow-sm hover:bg-gray-100"
           >
-            {/* lewy wieżowiec */}
-            <rect x="3" y="6" width="7" height="14" rx="1" />
-            <path d="M6.5 3.5v2.5" />
-            <path d="M5 9h1.5M7.5 9H9" />
-            <path d="M5 12h1.5M7.5 12H9" />
-            <path d="M5 15h1.5M7.5 15H9" />
-            {/* prawy wieżowiec */}
-            <rect x="12" y="4" width="9" height="16" rx="1" />
-            <path d="M16.5 2.5v2" />
-            <path d="M14 8h2M18 8h2" />
-            <path d="M14 11h2M18 11h2" />
-            <path d="M14 14h2M18 14h2" />
-          </svg>
-          <span>Twoje inwestycje</span>
-        </button>
-        <div className="relative ml-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              className="h-4 w-4 text-gray-500"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              {/* lewy wieżowiec */}
+              <rect x="3" y="6" width="7" height="14" rx="1" />
+              <path d="M6.5 3.5v2.5" />
+              <path d="M5 9h1.5M7.5 9H9" />
+              <path d="M5 12h1.5M7.5 12H9" />
+              <path d="M5 15h1.5M7.5 15H9" />
+              {/* prawy wieżowiec */}
+              <rect x="12" y="4" width="9" height="16" rx="1" />
+              <path d="M16.5 2.5v2" />
+              <path d="M14 8h2M18 8h2" />
+              <path d="M14 11h2M18 11h2" />
+              <path d="M14 14h2M18 14h2" />
+            </svg>
+            <span>Twoje inwestycje</span>
+          </button>
+          <div className="relative ml-auto">
           <button
             type="button"
             onClick={() => setTasksOpen((open) => !open)}
@@ -266,6 +265,7 @@ export function AppBar({ onNavigateTo }: AppBarProps) {
               </div>
             </div>
           )}
+          </div>
         </div>
       </nav>
     </div>

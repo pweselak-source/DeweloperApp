@@ -24,26 +24,17 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
         <div className="flex h-14 items-center border-b border-gray-200 bg-white px-3">
           {collapsed ? (
             <div className="flex w-full items-center gap-3">
+              <div className="flex min-w-0 flex-col">
+                <span className="text-[0.8125rem] tracking-wide">
+                  <span className="text-[var(--color-domesta-red)]">{firstWord}</span>
+                  {restWords ? <>{' '}<span className="text-[var(--color-domesta-gray)]">{restWords}</span></> : null}
+                </span>
+                <span className="min-w-0 truncate text-[0.583rem] text-gray-600">Mieszkanie: Uranowa 21A/3</span>
+              </div>
               <button
                 type="button"
                 onClick={onToggleCollapse}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[var(--color-domesta-gray)] hover:bg-gray-200"
-                aria-label="Rozwiń menu"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </button>
-              <span className="text-[1.2175625rem] tracking-wide">
-                <span className="text-[var(--color-domesta-red)]">{firstWord}</span>
-                {restWords ? <>{' '}<span className="text-[var(--color-domesta-gray)]">{restWords}</span></> : null}
-              </span>
-              <span className="h-6 w-px shrink-0 bg-gray-300" aria-hidden />
-              <span className="min-w-0 truncate text-sm text-gray-600">Mieszkanie: Uranowa 21A/3</span>
-              <button
-                type="button"
-                onClick={onToggleCollapse}
-                className="ml-auto flex shrink-0 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] text-gray-600 shadow-sm hover:bg-gray-100"
+                className="ml-auto mr-3 flex shrink-0 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] text-gray-600 shadow-sm hover:bg-gray-100"
                 aria-label="Szczegóły podróży"
               >
                 <svg
@@ -63,12 +54,13 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
             </div>
           ) : (
             <div className="flex w-full items-center gap-3">
-              <span className="text-[1.2175625rem] tracking-wide">
-                <span className="text-[var(--color-domesta-red)]">{firstWord}</span>
-                {restWords ? <>{' '}<span className="text-[var(--color-domesta-gray)]">{restWords}</span></> : null}
-              </span>
-              <span className="h-6 w-px shrink-0 bg-gray-300" aria-hidden />
-              <span className="min-w-0 truncate text-sm text-gray-600">Mieszkanie: Uranowa 21A/3</span>
+              <div className="flex min-w-0 flex-col">
+                <span className="text-[0.8125rem] tracking-wide">
+                  <span className="text-[var(--color-domesta-red)]">{firstWord}</span>
+                  {restWords ? <>{' '}<span className="text-[var(--color-domesta-gray)]">{restWords}</span></> : null}
+                </span>
+                <span className="min-w-0 truncate text-[0.583rem] text-gray-600">Mieszkanie: Uranowa 21A/3</span>
+              </div>
               <button
                 type="button"
                 onClick={onToggleCollapse}
@@ -121,17 +113,17 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
                         : 'text-gray-400'
                   const statusIcon =
                     item.status === 'done' ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4 text-emerald-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-[0.9rem] w-[0.9rem] text-emerald-300">
                         <polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     ) : item.status === 'current' ? (
                       <span className="inline-flex items-center justify-center rounded-full animate-[coral-pulse_1.2s_ease-in-out_infinite]">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4 text-amber-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-[0.9rem] w-[0.9rem] text-amber-300">
                           <polyline points="15 18 9 12 15 6" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </span>
                     ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4 text-gray-400 animate-pulse">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-[0.9rem] w-[0.9rem] text-gray-400 animate-pulse">
                         <path d="M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9Z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         <path d="M12 7v5l3 2" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
@@ -144,7 +136,7 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
                         className={`group relative flex items-center justify-start gap-2 rounded-lg px-2 py-1.5 text-left transition-colors ${isActive ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5'}`}
                         title={item.label}
                       >
-                        <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${statusIconClass}`}>{item.icon}</span>
+                        <span className={`shrink-0 [&_svg]:h-[1.125rem] [&_svg]:w-[1.125rem] ${statusIconClass}`}>{item.icon}</span>
                         <span className="shrink-0">{statusIcon}</span>
                       </button>
                     </li>
@@ -157,7 +149,7 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
                     className={`flex items-center justify-start rounded-lg px-2 py-1.5 ${activeId === 'siteLog' ? 'bg-white/10' : 'hover:bg-white/5'}`}
                     title="Dziennik budowy"
                   >
-                    <span className="[&_svg]:h-5 [&_svg]:w-5 text-amber-300">
+                    <span className="[&_svg]:h-[1.125rem] [&_svg]:w-[1.125rem] text-amber-300">
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M19 5H9a2 2 0 0 0-2 2v11" /><path d="M13 9H7" /><path d="M15 13H7" /><path d="M17 17H7" /><path d="M5 5v14a2 2 0 0 0 2 2h11" /><path d="M19 21h-2a2 2 0 0 1-2-2V3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2Z" />
                       </svg>
@@ -190,10 +182,10 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
 
               <div className="relative">
                 <p className="text-[0.9625rem] font-semibold leading-snug text-white">
-                  Deweloper Domesta – Twój partner w tej podróży
+                  Deweloper Domesta – Twój partner w podróży
                 </p>
                 <p className="mt-3 text-[0.825rem] leading-relaxed text-white/85">
-                  Zadbaliśmy o to, aby ta wymagająca przeprawa była dla Was jak najmniej wyboista. Jako Domesta, nie tylko budujemy ściany – budujemy Wasz komfort. Nasz zespół czuwa nad każdym etapem inwestycji, byście mogli skupić się na tym, co najmilsze: planowaniu koloru ścian w salonie i pierwszej kawie na nowym tarasie.
+                  Aplikacja poprowadzi Cię krok po kroku – od podpisania umowy deweloperskiej aż po akt notarialny.
                 </p>
                 <p className="mt-3 text-[0.825rem] font-medium italic leading-snug text-white/95">
                   Klamka Zapadła – otwieramy przed Wami drzwi do nowego życia!
