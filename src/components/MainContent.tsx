@@ -232,7 +232,7 @@ export function MainContent() {
     },
   ]
 
-const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: string }> = {
+  const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: string }> = {
   green: {
     badge: 'bg-emerald-50 text-emerald-700',
     dot: 'bg-emerald-500',
@@ -241,11 +241,11 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
     badge: 'bg-amber-50 text-amber-700',
     dot: 'bg-amber-500',
   },
-  slate: {
-    badge: 'bg-slate-50 text-slate-600',
-    dot: 'bg-slate-400',
-  },
-}
+    slate: {
+      badge: 'bg-slate-100 text-slate-700',
+      dot: 'bg-slate-500',
+    },
+  }
 
   const monthsForSiteLog = [
     {
@@ -644,7 +644,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
             </span>
             <span className="h-8 w-px rounded-full bg-gray-200" />
           </div>
-          <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
+          <div className="flex flex-1 items-center gap-3 bg-slate-100/80 px-5 py-3">
             <div className="flex-1">
               <h1 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">
                 Dokumenty do odbioru mieszkania
@@ -659,7 +659,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
         </button>
         {expandedSections.documents && (
-        <div className="p-5 md:p-6 bg-slate-50/40 animate-[section-expand_0.25s_ease-out]">
+        <div className="p-5 md:p-6 bg-slate-100/60 animate-[section-expand_0.25s_ease-out]">
           <div className="rounded-xl bg-white p-4 text-xs text-gray-600">
             Tutaj pojawi się lista dokumentów wymaganych do odbioru mieszkania (mock).
           </div>
@@ -685,7 +685,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
             </span>
             <span className="h-8 w-px rounded-full bg-gray-200" />
           </div>
-          <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
+          <div className="flex flex-1 items-center gap-3 bg-slate-100/80 px-5 py-3">
             <div className="flex-1">
               <h1 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">Reklamacje</h1>
               <p className="mt-1 text-[11px] text-gray-500">
@@ -698,7 +698,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
         </button>
         {expandedSections.complaints && (
-        <div className="p-5 md:p-6 bg-slate-50/40 animate-[section-expand_0.25s_ease-out]">
+        <div className="p-5 md:p-6 bg-slate-100/60 animate-[section-expand_0.25s_ease-out]">
         {(() => {
           const complaintTypes = [
             'Krzywizna ścian',
@@ -993,7 +993,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
             </span>
             <span className="h-8 w-px rounded-full bg-gray-200" />
           </div>
-          <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
+          <div className="flex flex-1 items-center gap-3 bg-slate-100/80 px-5 py-3">
             <div className="flex-1">
               <h1 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">Odbiór mieszkania</h1>
               <p className="mt-1 text-[11px] text-gray-500">
@@ -1006,7 +1006,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
         </button>
         {expandedSections.handover && (
-        <div className="p-5 md:p-6 bg-slate-50/40 animate-[section-expand_0.25s_ease-out]">
+        <div className="p-5 md:p-6 bg-slate-100/60 animate-[section-expand_0.25s_ease-out]">
         <section className="rounded-xl bg-white p-4 shadow-sm">
           <h2 className="text-lg font-semibold text-[var(--color-domesta-gray)]">
             Umów spotkanie – odbiór mieszkania
@@ -1084,7 +1084,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
             </span>
             <span className="h-8 w-px rounded-full bg-gray-200" />
           </div>
-          <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
+          <div className="flex flex-1 items-center gap-3 bg-slate-100/80 px-5 py-3">
             <div className="flex-1">
               <h1 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">
                 Zgłoszenia licznika do energii
@@ -1099,7 +1099,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
         </button>
         {expandedSections.meter && (
-        <div className="p-5 md:p-6 bg-slate-50/40 animate-[section-expand_0.25s_ease-out]">
+        <div className="p-5 md:p-6 bg-slate-100/60 animate-[section-expand_0.25s_ease-out]">
         <section
           className={`rounded-xl bg-white p-4 shadow-sm transition-shadow ${
             !meterSubmitted ? 'cursor-pointer' : ''
@@ -1227,7 +1227,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
             </span>
             <span className="h-8 w-px rounded-full bg-gray-200" />
           </div>
-          <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
+          <div className="flex flex-1 items-center gap-3 bg-slate-100/80 px-5 py-3">
             <div className="flex-1">
               <h1 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">
                 Podpisanie aktu notarialnego
@@ -1242,7 +1242,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
         </button>
         {expandedSections.notary && (
-        <div className="p-5 md:p-6 bg-slate-50/40 animate-[section-expand_0.25s_ease-out]">
+        <div className="p-5 md:p-6 bg-slate-100/60 animate-[section-expand_0.25s_ease-out]">
           <div className="rounded-xl bg-white p-4 text-xs text-gray-600">
             W tym miejscu w przyszłości pojawi się harmonogram i szczegóły podpisania aktu
             notarialnego (mock).

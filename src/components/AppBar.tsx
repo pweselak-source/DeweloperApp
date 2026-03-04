@@ -15,31 +15,58 @@ export function AppBar({ onNavigateTo, selectedInvestment, onInvestmentChange }:
   const [tasksOpen, setTasksOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-gray-200 bg-white px-4 shadow-sm">
+    <div className="sticky top-0 z-30">
+      <header className="flex h-14 items-center gap-4 border-b border-gray-200 bg-white px-4 shadow-sm">
       {/* 1. Logo */}
       <div className="flex shrink-0 items-center">
         <img src={domestaLogo} alt="Domesta" className="h-8 w-auto object-contain" />
       </div>
 
-      {/* 2. Twoje inwestycje */}
-      <label className="ml-4 flex shrink-0 items-center gap-2">
-        <span className="hidden text-sm font-medium text-gray-600 sm:inline">Twoje inwestycje</span>
-        <select
-          value={selectedInvestment}
-          onChange={(e) => onInvestmentChange(e.target.value)}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-800 shadow-sm focus:border-[var(--color-domesta-red)] focus:outline-none focus:ring-1 focus:ring-[var(--color-domesta-red)]"
-          aria-label="Twoje inwestycje"
+      {/* 2. Aktualności */}
+      <button
+        type="button"
+        onClick={() => onNavigateTo('news')}
+        className="ml-4 flex shrink-0 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-600 shadow-sm hover:bg-gray-100"
+      >
+        <span>Aktualności</span>
+        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-domesta-coral)] text-[10px] font-semibold text-white">
+          !
+        </span>
+      </button>
+      </header>
+      {/* Delikatnie szary poziomy pasek pod górnym barem */}
+      <div className="h-2 w-full bg-gray-100 border-b border-gray-200" />
+      {/* Drugi poziomy pasek – przycisk + ikony z górnego paska */}
+      <nav className="flex h-12 w-full items-center justify-start gap-2 border-b border-gray-200 bg-gray-50 px-4">
+        <button
+          type="button"
+          className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[11px] text-gray-600 shadow-sm hover:bg-gray-100"
         >
-          {INVESTMENTS.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      {/* 3. Reszta ikon – dopchnięte do prawej */}
-      <div className="ml-auto flex items-center gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            className="h-4 w-4 text-gray-500"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            {/* lewy wieżowiec */}
+            <rect x="3" y="6" width="7" height="14" rx="1" />
+            <path d="M6.5 3.5v2.5" />
+            <path d="M5 9h1.5M7.5 9H9" />
+            <path d="M5 12h1.5M7.5 12H9" />
+            <path d="M5 15h1.5M7.5 15H9" />
+            {/* prawy wieżowiec */}
+            <rect x="12" y="4" width="9" height="16" rx="1" />
+            <path d="M16.5 2.5v2" />
+            <path d="M14 8h2M18 8h2" />
+            <path d="M14 11h2M18 11h2" />
+            <path d="M14 14h2M18 14h2" />
+          </svg>
+          <span>Twoje inwestycje</span>
+        </button>
         <div className="relative">
           <button
             type="button"
@@ -92,13 +119,12 @@ export function AppBar({ onNavigateTo, selectedInvestment, onInvestmentChange }:
             </span>
           </button>
           {tasksOpen && (
-            <div className="absolute right-0 mt-2 w-72 rounded-xl border border-gray-200 bg-white p-3 text-xs shadow-xl">
+            <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-gray-200 bg-white p-3 text-xs shadow-xl">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-[11px] font-medium text-[var(--color-domesta-gray)]">
                   Bieżące zadania
                 </span>
               </div>
-
               <div className="space-y-2">
                 <button
                   className="flex w-full items-start gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2 text-left text-gray-700 hover:border-[var(--color-domesta-coral)]/40 hover:bg-white"
@@ -119,7 +145,6 @@ export function AppBar({ onNavigateTo, selectedInvestment, onInvestmentChange }:
                     </span>
                   </div>
                 </button>
-
                 <button
                   className="flex w-full items-start gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2 text-left text-gray-700 hover:border-[var(--color-domesta-coral)]/40 hover:bg-white"
                   onClick={() => {
@@ -139,7 +164,6 @@ export function AppBar({ onNavigateTo, selectedInvestment, onInvestmentChange }:
                     </span>
                   </div>
                 </button>
-
                 <button
                   className="flex w-full items-start gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2 text-left text-gray-700 hover:border-[var(--color-domesta-coral)]/40 hover:bg-white"
                   onClick={() => {
@@ -159,7 +183,6 @@ export function AppBar({ onNavigateTo, selectedInvestment, onInvestmentChange }:
                     </span>
                   </div>
                 </button>
-
                 <button
                   className="flex w-full items-start gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2 text-left text-gray-700 hover:border-[var(--color-domesta-coral)]/40 hover:bg-white"
                   onClick={() => {
@@ -246,7 +269,7 @@ export function AppBar({ onNavigateTo, selectedInvestment, onInvestmentChange }:
             </svg>
           </button>
           {menuOpen && (
-            <div className="absolute right-0 mt-2 w-48 rounded-xl border border-gray-200 bg-white py-2 text-sm shadow-lg">
+            <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-gray-200 bg-white py-2 text-sm shadow-lg">
               <button className="flex w-full items-center px-3 py-2 text-left text-gray-700 hover:bg-gray-50">
                 Moje konto
               </button>
@@ -269,7 +292,7 @@ export function AppBar({ onNavigateTo, selectedInvestment, onInvestmentChange }:
             </div>
           )}
         </div>
-      </div>
-    </header>
+      </nav>
+    </div>
   )
 }
