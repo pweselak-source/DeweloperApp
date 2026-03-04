@@ -121,7 +121,11 @@ function getSectionStatusIcon(sectionId: SectionId): React.ReactNode {
   )
 }
 
-export function MainContent() {
+interface MainContentProps {
+  activeSectionId?: MenuId | null
+}
+
+export function MainContent({ activeSectionId = null }: MainContentProps) {
   const [expandedSections, setExpandedSections] = useState<Record<SectionId, boolean>>({
     formalities: false,
     schedule: false,
@@ -164,6 +168,15 @@ export function MainContent() {
     const t = setTimeout(() => setHandoverToastVisible(false), 4000)
     return () => clearTimeout(t)
   }, [handoverToastVisible])
+
+  // Po kliknięciu w menu i przewinięciu do sekcji – automatycznie ją rozwiń
+  useEffect(() => {
+    if (!activeSectionId) return
+    const sectionIds: SectionId[] = ['formalities', 'schedule', 'documents', 'complaints', 'handover', 'meter', 'notary', 'siteLog', 'news']
+    if (sectionIds.includes(activeSectionId as SectionId)) {
+      setExpandedSections((prev) => ({ ...prev, [activeSectionId]: true }))
+    }
+  }, [activeSectionId])
 
   const installments = [
     {
@@ -332,7 +345,7 @@ export function MainContent() {
     `${MONTH_NAMES[handoverMonthView.getMonth()]} ${handoverMonthView.getFullYear()}`
 
   const sectionBlockClass =
-    'rounded-2xl border border-gray-200 bg-white shadow-md overflow-hidden'
+    'scroll-mt-28 rounded-2xl border border-gray-200 bg-white shadow-md overflow-hidden'
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">

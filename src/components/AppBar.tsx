@@ -22,18 +22,109 @@ export function AppBar({ onNavigateTo }: AppBarProps) {
       <button
         type="button"
         onClick={() => onNavigateTo('news')}
-        className="ml-4 flex shrink-0 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-600 shadow-sm hover:bg-gray-100"
+        className="ml-4 inline-flex min-w-[150px] shrink-0 items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[11px] text-gray-600 shadow-sm hover:bg-gray-100"
       >
-        <span>Aktualności</span>
-        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-domesta-coral)] text-[10px] font-semibold text-white">
+        <span className="flex h-4 w-4 items-center justify-center rounded-full border border-gray-400 text-[10px] font-semibold text-gray-500">
           !
         </span>
+        <span>Aktualności</span>
+        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-domesta-coral)] px-1 text-[10px] font-semibold text-white animate-[coral-pulse_1.2s_ease-in-out_infinite]">
+          2
+        </span>
       </button>
+
+      {/* 3. Lupka, Czat, Menu – dopchnięte do prawej */}
+      <div className="ml-auto flex items-center gap-2">
+        <button
+          type="button"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          aria-label="Szukaj"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <line x1="16.5" y1="16.5" x2="21" y2="21" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          aria-label="Czat"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+          </svg>
+        </button>
+        <div className="relative">
+          <button
+            type="button"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            aria-label="Menu użytkownika"
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="5" cy="12" r="1" />
+              <circle cx="12" cy="12" r="1" />
+              <circle cx="19" cy="12" r="1" />
+            </svg>
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-gray-200 bg-white py-2 text-sm shadow-lg">
+              <button className="flex w-full items-center px-3 py-2 text-left text-gray-700 hover:bg-gray-50">
+                Moje konto
+              </button>
+              <button className="flex w-full items-center px-3 py-2 text-left text-gray-700 hover:bg-gray-50">
+                Ustawienia
+              </button>
+              <button className="flex w-full items-center px-3 py-2 text-left text-gray-700 hover:bg-gray-50">
+                Pomoc
+              </button>
+              <div className="my-1 border-t border-gray-100" />
+              <div className="flex items-center gap-2 px-3 py-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-domesta-gray)] text-xs font-medium text-white">
+                  K
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-gray-800">Katarzyna Kowalska</span>
+                  <span className="text-[11px] text-gray-400">mieszkaniec</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
       </header>
-      {/* Delikatnie szary poziomy pasek pod górnym barem */}
-      <div className="h-2 w-full bg-gray-100 border-b border-gray-200" />
-      {/* Drugi poziomy pasek – przycisk + ikony z górnego paska */}
-      <nav className="flex h-12 w-full items-center justify-start gap-2 border-b border-gray-200 bg-gray-50 px-4">
+      {/* Drugi poziomy pasek – przyciski pod logo i „Aktualności” */}
+      <nav className="flex h-12 w-full items-center justify-start gap-0 border-b border-gray-200 bg-gray-50 px-4">
         <button
           type="button"
           className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[11px] text-gray-600 shadow-sm hover:bg-gray-100"
@@ -63,54 +154,28 @@ export function AppBar({ onNavigateTo }: AppBarProps) {
           </svg>
           <span>Twoje inwestycje</span>
         </button>
-        <div className="relative">
+        <div className="relative ml-4">
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Aktualności"
-            onClick={() => onNavigateTo('news')}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M2 4h9a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H2z" />
-              <path d="M22 4h-9a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h9z" />
-            </svg>
-            <span className="absolute -right-1 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-domesta-coral)] px-1 text-[10px] font-semibold text-white animate-[coral-pulse_1.2s_ease-in-out_infinite]">
-              2
-            </span>
-          </button>
-        </div>
-        <div className="relative">
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-            aria-label="Bieżące zadania"
             onClick={() => setTasksOpen((open) => !open)}
+            className="inline-flex min-w-[150px] items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[11px] text-gray-600 shadow-sm hover:bg-gray-100"
+            aria-label="Bieżące zadania"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
               viewBox="0 0 24 24"
+              className="h-4 w-4 text-gray-500"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="1.8"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M18 8a6 6 0 0 0-12 0c0 3.5-1.5 5-2 5h16c-.5 0-2-1.5-2-5" />
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
               <path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
-            <span className="absolute -right-1 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-domesta-coral)] px-1 text-[10px] font-semibold text-white animate-[coral-pulse_1.2s_ease-in-out_infinite]">
+            <span>Bieżące zadania</span>
+            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-domesta-coral)] px-1 text-[10px] font-semibold text-white">
               3
             </span>
           </button>
@@ -198,92 +263,6 @@ export function AppBar({ onNavigateTo }: AppBarProps) {
                     </span>
                   </div>
                 </button>
-              </div>
-            </div>
-          )}
-        </div>
-        <button
-          type="button"
-          className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-          aria-label="Szukaj"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="11" cy="11" r="7" />
-            <line x1="16.5" y1="16.5" x2="21" y2="21" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-          aria-label="Czat"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-          </svg>
-        </button>
-        <div className="relative">
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-            aria-label="Menu użytkownika"
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="5" cy="12" r="1" />
-              <circle cx="12" cy="12" r="1" />
-              <circle cx="19" cy="12" r="1" />
-            </svg>
-          </button>
-          {menuOpen && (
-            <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-gray-200 bg-white py-2 text-sm shadow-lg">
-              <button className="flex w-full items-center px-3 py-2 text-left text-gray-700 hover:bg-gray-50">
-                Moje konto
-              </button>
-              <button className="flex w-full items-center px-3 py-2 text-left text-gray-700 hover:bg-gray-50">
-                Ustawienia
-              </button>
-              <button className="flex w-full items-center px-3 py-2 text-left text-gray-700 hover:bg-gray-50">
-                Pomoc
-              </button>
-              <div className="my-1 border-t border-gray-100" />
-              <div className="flex items-center gap-2 px-3 py-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-domesta-gray)] text-xs font-medium text-white">
-                  K
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-medium text-gray-800">Katarzyna Kowalska</span>
-                  <span className="text-[11px] text-gray-400">mieszkaniec</span>
-                </div>
               </div>
             </div>
           )}

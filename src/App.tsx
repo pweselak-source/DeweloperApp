@@ -6,7 +6,7 @@ import { NewsContent } from './components/NewsContent'
 import type { MenuId } from './data/menuItems'
 
 function App() {
-  const [menuCollapsed, setMenuCollapsed] = useState(false)
+  const [menuCollapsed, setMenuCollapsed] = useState(true)
   const [activeSection, setActiveSection] = useState<MenuId | null>(null)
   const [showNewsOnly, setShowNewsOnly] = useState(false)
   const selectedInvestment = 'Polana Kampinowska'
@@ -21,6 +21,7 @@ function App() {
 
     setShowNewsOnly(false)
     setActiveSection(id)
+    setMenuCollapsed(false)
     // Przewiń do odpowiedniej sekcji na stronie (tylko dla ekranu głównego)
     const target = document.getElementById(`section-${id}`)
     if (target) {
@@ -34,16 +35,20 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[var(--color-domesta-bg)]">
-      <SideMenu
-        collapsed={menuCollapsed}
-        activeId={activeSection}
-        onSelect={handleSelectSection}
-        onToggleCollapse={handleToggleCollapse}
-        investmentName={selectedInvestment}
-      />
       <div className="flex min-h-screen flex-col bg-[var(--color-domesta-bg)]">
         <AppBar onNavigateTo={handleSelectSection} />
-        {showNewsOnly ? <NewsContent sidebarCollapsed={menuCollapsed} /> : <MainContent />}
+        {!showNewsOnly && (
+          <div className="px-4 pt-3 md:px-6">
+            <SideMenu
+              collapsed={menuCollapsed}
+              activeId={activeSection}
+              onSelect={handleSelectSection}
+              onToggleCollapse={handleToggleCollapse}
+              investmentName={selectedInvestment}
+            />
+          </div>
+        )}
+        {showNewsOnly ? <NewsContent sidebarCollapsed={menuCollapsed} /> : <MainContent activeSectionId={activeSection} />}
       </div>
     </div>
   )
