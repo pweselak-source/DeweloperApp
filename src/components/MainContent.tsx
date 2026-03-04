@@ -356,7 +356,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
           <div className="flex flex-1 items-center gap-3 bg-emerald-50/70 px-5 py-3">
             <div className="flex-1">
-              <h1 className="text-[11px] font-semibold text-[var(--color-domesta-gray)]">
+              <h1 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">
                 Formalności początkowe
               </h1>
               <p className="mt-1 text-[11px] text-emerald-600">
@@ -553,7 +553,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
           <div className="flex flex-1 items-center gap-3 bg-amber-50/80 px-5 py-3">
             <div className="flex-1">
-              <h1 className="text-[11px] font-semibold text-[var(--color-domesta-gray)]">
+              <h1 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">
                 Harmonogram spłaty
               </h1>
               <p className="mt-1 text-[11px] text-amber-500">
@@ -646,7 +646,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
           <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
             <div className="flex-1">
-              <h1 className="text-[11px] font-semibold text-[var(--color-domesta-gray)]">
+              <h1 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">
                 Dokumenty do odbioru mieszkania
               </h1>
               <p className="mt-1 text-[11px] text-gray-500">
@@ -687,7 +687,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
           <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
             <div className="flex-1">
-              <h1 className="text-[11px] font-semibold text-[var(--color-domesta-gray)]">Reklamacje</h1>
+              <h1 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">Reklamacje</h1>
               <p className="mt-1 text-[11px] text-gray-500">
                 Status: <span className="font-medium">w oczekiwaniu</span>
               </p>
@@ -995,7 +995,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
           <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
             <div className="flex-1">
-              <h1 className="text-[11px] font-semibold text-[var(--color-domesta-gray)]">Odbiór mieszkania</h1>
+              <h1 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">Odbiór mieszkania</h1>
               <p className="mt-1 text-[11px] text-gray-500">
                 Status: <span className="font-medium">w oczekiwaniu</span>
               </p>
@@ -1021,7 +1021,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
                 <p className="text-center text-sm font-medium text-emerald-700">
                   ✓ Termin odbioru potwierdzony
                 </p>
-                <p className="text-center text-[11px] font-semibold text-[var(--color-domesta-gray)]">
+                <p className="text-center text-[13px] font-semibold text-[var(--color-domesta-gray)]">
                   {handoverSelectedSlot.replace('T', ' ')}
                 </p>
                 <p className="text-center text-xs text-gray-500">
@@ -1086,7 +1086,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
           <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
             <div className="flex-1">
-              <h1 className="text-[11px] font-semibold text-[var(--color-domesta-gray)]">
+              <h1 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">
                 Zgłoszenia licznika do energii
               </h1>
               <p className="mt-1 text-[11px] text-gray-500">
@@ -1229,7 +1229,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
           <div className="flex flex-1 items-center gap-3 bg-slate-50/80 px-5 py-3">
             <div className="flex-1">
-              <h1 className="text-[11px] font-semibold text-[var(--color-domesta-gray)]">
+              <h1 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">
                 Podpisanie aktu notarialnego
               </h1>
               <p className="mt-1 text-[11px] text-gray-500">
@@ -1266,7 +1266,7 @@ const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: str
           </div>
           <div className="flex flex-1 items-center gap-3 bg-amber-50/80 px-5 py-3">
             <div className="flex-1">
-              <h1 className="text-[11px] font-semibold text-[var(--color-domesta-gray)]">
+              <h1 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">
                 Dziennik budowy
               </h1>
               <p className="mt-1 text-[11px] text-amber-500">
