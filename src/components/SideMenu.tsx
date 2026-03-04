@@ -1,5 +1,6 @@
 import { MENU_ITEMS } from '../data/menuItems'
 import type { MenuId } from '../data/menuItems'
+import type { AppTheme } from '../App'
 import dom1 from '../assets/dom1.jpg'
 import dom2 from '../assets/dom2.jpg'
 import dom3 from '../assets/dom3.jpg'
@@ -10,37 +11,38 @@ interface SideMenuProps {
   onSelect: (id: MenuId) => void
   onToggleCollapse: () => void
   investmentName: string
+  theme?: AppTheme
 }
 
-export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, investmentName }: SideMenuProps) {
+export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, investmentName, theme = 'halfBlack' }: SideMenuProps) {
   const slideshowImages = [dom1, dom2, dom3]
   const parts = investmentName.split(/\s+/)
   const firstWord = parts[0] ?? ''
   const restWords = parts.slice(1).join(' ')
   return (
     <>
-      <aside className="relative w-full overflow-hidden rounded-2xl bg-[var(--color-domesta-gray)] text-white shadow-md">
+      <aside className={`relative w-full overflow-hidden rounded-2xl shadow-md ${theme === 'domestaColors' ? 'bg-white theme-domesta-colors-menu' : 'bg-[var(--color-domesta-gray)] text-white'}`}>
         {/* Header: nazwa inwestycji + collapse/expand control – wysokość jak górny pasek (h-14) */}
-        <div className="flex h-14 items-center border-b border-gray-200 bg-white px-3">
+        <div className={`flex h-14 items-center border-b px-3 ${theme === 'allBlack' ? 'border-gray-600 bg-[#252525]' : 'border-gray-200 bg-white'}`}>
           {collapsed ? (
             <div className="flex w-full items-center gap-3">
               <div className="flex min-w-0 flex-col">
-                <span className="text-[0.8125rem] tracking-wide">
-                  <span className="text-[var(--color-domesta-red)]">{firstWord}</span>
-                  {restWords ? <>{' '}<span className="text-[var(--color-domesta-gray)]">{restWords}</span></> : null}
+                <span className={`text-[0.8125rem] tracking-wide ${theme === 'allBlack' ? 'text-white' : ''}`}>
+                  <span className={theme === 'allBlack' ? 'font-bold text-white' : 'text-[var(--color-domesta-red)]'}>{firstWord}</span>
+                  {restWords ? <>{' '}<span className={theme === 'allBlack' ? 'text-white' : 'text-[var(--color-domesta-gray)]'}>{restWords}</span></> : null}
                 </span>
-                <span className="min-w-0 truncate text-[0.583rem] text-gray-600">Mieszkanie: Uranowa 21A/3</span>
+                <span className={`min-w-0 truncate text-[0.583rem] ${theme === 'allBlack' ? 'text-white' : 'text-gray-600'}`}>Mieszkanie: Uranowa 21A/3</span>
               </div>
               <button
                 type="button"
                 onClick={onToggleCollapse}
-                className="ml-auto mr-3 flex shrink-0 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] text-gray-600 shadow-sm hover:bg-gray-100"
+                className={`ml-auto mr-3 flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px] shadow-sm ${theme === 'allBlack' ? 'border-gray-500 bg-[#333333] text-gray-200 hover:bg-[#404040]' : 'border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-100'}`}
                 aria-label="Szczegóły podróży"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
-                  className="h-4 w-4 text-gray-500"
+                  className={`h-4 w-4 ${theme === 'allBlack' ? 'text-gray-400' : 'text-gray-500'}`}
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
@@ -55,16 +57,16 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
           ) : (
             <div className="flex w-full items-center gap-3">
               <div className="flex min-w-0 flex-col">
-                <span className="text-[0.8125rem] tracking-wide">
-                  <span className="text-[var(--color-domesta-red)]">{firstWord}</span>
-                  {restWords ? <>{' '}<span className="text-[var(--color-domesta-gray)]">{restWords}</span></> : null}
+                <span className={`text-[0.8125rem] tracking-wide ${theme === 'allBlack' ? 'text-white' : ''}`}>
+                  <span className={theme === 'allBlack' ? 'font-bold text-white' : 'text-[var(--color-domesta-red)]'}>{firstWord}</span>
+                  {restWords ? <>{' '}<span className={theme === 'allBlack' ? 'text-white' : 'text-[var(--color-domesta-gray)]'}>{restWords}</span></> : null}
                 </span>
-                <span className="min-w-0 truncate text-[0.583rem] text-gray-600">Mieszkanie: Uranowa 21A/3</span>
+                <span className={`min-w-0 truncate text-[0.583rem] ${theme === 'allBlack' ? 'text-white' : 'text-gray-600'}`}>Mieszkanie: Uranowa 21A/3</span>
               </div>
               <button
                 type="button"
                 onClick={onToggleCollapse}
-                className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-domesta-gray)] hover:bg-gray-200"
+                className={`ml-auto flex h-8 w-8 items-center justify-center rounded-lg ${theme === 'allBlack' ? 'text-gray-300 hover:bg-[#404040]' : 'text-[var(--color-domesta-gray)] hover:bg-gray-200'}`}
                 aria-label="Zwiń menu"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -180,7 +182,7 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
                 <div className="absolute inset-0 bg-[rgba(15,23,42,0.55)]" />
               </div>
 
-              <div className="relative">
+              <div className="relative theme-domesta-colors-intro-text">
                 <p className="text-[0.9625rem] font-semibold leading-snug text-white">
                   Deweloper Domesta – Twój partner w podróży
                 </p>

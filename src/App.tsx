@@ -1,15 +1,39 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AppBar } from './components/AppBar'
 import { SideMenu } from './components/SideMenu'
 import { MainContent } from './components/MainContent'
 import { NewsContent } from './components/NewsContent'
 import type { MenuId } from './data/menuItems'
 
+const THEME_STORAGE_KEY = 'app-theme'
+export type AppTheme = 'halfBlack' | 'allBlack' | 'domestaColors'
+
 function App() {
+  const [theme, setTheme] = useState<AppTheme>(() => {
+    try {
+      const saved = localStorage.getItem(THEME_STORAGE_KEY) as AppTheme | null
+      if (saved === 'allBlack' || saved === 'domestaColors') return saved
+      return 'halfBlack'
+    } catch {
+      return 'halfBlack'
+    }
+  })
   const [menuCollapsed, setMenuCollapsed] = useState(true)
   const [activeSection, setActiveSection] = useState<MenuId | null>(null)
   const [showNewsOnly, setShowNewsOnly] = useState(false)
   const selectedInvestment = 'Polana Kampinowska'
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme)
+    } catch {
+      /* ignore */
+    }
+  }, [theme])
+
+  const handleThemeChange = (newTheme: AppTheme) => {
+    setTheme(newTheme)
+  }
 
   const handleSelectSection = (id: MenuId) => {
     if (id === 'news') {
@@ -34,9 +58,9 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-domesta-bg)]">
-      <div className="flex min-h-screen flex-col bg-[var(--color-domesta-bg)]">
-        <AppBar onNavigateTo={handleSelectSection} />
+    <div className={`min-h-screen ${theme === 'allBlack' ? 'theme-all-black bg-[#1a1a1a]' : 'bg-[var(--color-domesta-bg)]'}`}>
+      <div className={`flex min-h-screen flex-col ${theme === 'allBlack' ? 'bg-[#1a1a1a]' : 'bg-[var(--color-domesta-bg)]'}`}>
+        <AppBar onNavigateTo={handleSelectSection} onThemeChange={handleThemeChange} theme={theme} />
         {!showNewsOnly && (
           <div className="px-4 pt-3 md:px-6">
             <SideMenu
@@ -45,6 +69,7 @@ function App() {
               onSelect={handleSelectSection}
               onToggleCollapse={handleToggleCollapse}
               investmentName={selectedInvestment}
+              theme={theme}
             />
           </div>
         )}

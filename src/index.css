@@ -20,6 +20,67 @@ body {
   min-height: 100vh;
 }
 
+/* Motyw All Black – nagłówki sekcji jak menu (szare tło, białe napisy), treść sekcji jasnoszara, podsekcje jak Half Black */
+body:has(.theme-all-black) {
+  background-color: #1a1a1a;
+  color: #e5e5e5;
+}
+.theme-all-black .px-4.pt-3 {
+  background-color: transparent;
+}
+
+/* Karta sekcji: jak Half Black (białe tło), żeby szczegóły wyglądały identycznie */
+.theme-all-black main section {
+  background-color: #fff !important;
+  border-color: #e5e7eb !important;
+}
+
+/* Nagłówek sekcji: lewa strona – matowe, pastelowe, nieco ciemniejsze tło; ikony jak w Half Black (bez nadpisywania kolorów); prawa strona – ciemnoszare, białe napisy */
+.theme-all-black main section > button {
+  background: #333333 !important;
+  border-color: #404040 !important;
+  color: #fff !important;
+}
+.theme-all-black main section > button > div:first-child {
+  background: #000 !important;
+}
+.theme-all-black main section > button > div:first-child [class*="bg-"] {
+  background: transparent !important;
+}
+/* Białe napisy tylko w prawej części nagłówka (tytuł, status), nie w lewej – żeby ikony miały te same kolory co w Half Black */
+.theme-all-black main section > button > div:nth-child(2) *,
+.theme-all-black main section > button > div:nth-child(2) h1,
+.theme-all-black main section > button > div:nth-child(2) p,
+.theme-all-black main section > button > div:nth-child(2) span {
+  color: #fff !important;
+}
+.theme-all-black main section > button > div:nth-child(2) .text-emerald-600,
+.theme-all-black main section > button > div:nth-child(2) .text-amber-600 {
+  color: #b0b0b0 !important;
+}
+.theme-all-black main section > button [class*="bg-emerald"],
+.theme-all-black main section > button [class*="bg-amber"],
+.theme-all-black main section > button [class*="bg-slate"] {
+  background: #333333 !important;
+}
+
+/* Zawartość sekcji (po rozwinięciu): bez nadpisań – identycznie jak w Half Black */
+
+/* Motyw DomestaColors: menu z białym tłem, ikony w menu – czerwone; napis „Deweloper Domesta” – biały */
+.theme-domesta-colors-menu > div:nth-child(2),
+.theme-domesta-colors-menu > div:nth-child(2) * {
+  color: var(--color-domesta-red) !important;
+}
+/* Cała treść w ramce (Deweloper Domesta…, Aplikacja…, Klamka Zapadła…) – biała czcionka */
+.theme-domesta-colors-menu .theme-domesta-colors-intro-text,
+.theme-domesta-colors-menu .theme-domesta-colors-intro-text *,
+.theme-domesta-colors-menu .theme-domesta-colors-intro-text p {
+  color: #fff !important;
+}
+.theme-domesta-colors-menu > div:nth-child(2) [class*="border-white"] {
+  border-color: rgba(194, 24, 32, 0.3) !important;
+}
+
 @keyframes slide-left {
   0% {
     transform: translateX(0%);

@@ -356,7 +356,7 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
           className="flex w-full items-stretch border-b border-gray-100 text-left"
           onClick={() => toggleSection('formalities')}
         >
-          <div className="flex items-center gap-3 bg-white px-5 py-3">
+          <div className="flex items-center gap-3 bg-gray-100 px-5 py-3">
             <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
               <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('formalities').colorClass}`}>
                 {getSectionIcon('formalities').icon}
@@ -538,7 +538,7 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
           className="flex w-full items-stretch border-b border-amber-100 text-left"
           onClick={() => toggleSection('schedule')}
         >
-          <div className="flex items-center gap-3 bg-white px-5 py-3">
+          <div className="flex items-center gap-3 bg-gray-100 px-5 py-3">
             <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
               <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('schedule').colorClass}`}>
                 {getSectionIcon('schedule').icon}
@@ -646,7 +646,7 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
           className="flex w-full items-stretch border-b border-slate-200 text-left"
           onClick={() => toggleSection('documents')}
         >
-          <div className="flex items-center gap-3 bg-white px-5 py-3">
+          <div className="flex items-center gap-3 bg-gray-100 px-5 py-3">
             <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
               <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('documents').colorClass}`}>
                 {getSectionIcon('documents').icon}
@@ -687,7 +687,7 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
           className="flex w-full items-stretch border-b border-slate-200 text-left"
           onClick={() => toggleSection('complaints')}
         >
-          <div className="flex items-center gap-3 bg-white px-5 py-3">
+          <div className="flex items-center gap-3 bg-gray-100 px-5 py-3">
             <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
               <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('complaints').colorClass}`}>
                 {getSectionIcon('complaints').icon}
@@ -995,7 +995,7 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
           className="flex w-full items-stretch border-b border-slate-200 text-left"
           onClick={() => toggleSection('handover')}
         >
-          <div className="flex items-center gap-3 bg-white px-5 py-3">
+          <div className="flex items-center gap-3 bg-gray-100 px-5 py-3">
             <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
               <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('handover').colorClass}`}>
                 {getSectionIcon('handover').icon}
@@ -1086,7 +1086,7 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
           className="flex w-full items-stretch border-b border-slate-200 text-left"
           onClick={() => toggleSection('meter')}
         >
-          <div className="flex items-center gap-3 bg-white px-5 py-3">
+          <div className="flex items-center gap-3 bg-gray-100 px-5 py-3">
             <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
               <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('meter').colorClass}`}>
                 {getSectionIcon('meter').icon}
@@ -1229,7 +1229,7 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
           className="flex w-full items-stretch border-b border-slate-200 text-left"
           onClick={() => toggleSection('notary')}
         >
-          <div className="flex items-center gap-3 bg-white px-5 py-3">
+          <div className="flex items-center gap-3 bg-gray-100 px-5 py-3">
             <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
               <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('notary').colorClass}`}>
                 {getSectionIcon('notary').icon}
@@ -1271,7 +1271,7 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
           className="flex w-full items-stretch border-b border-amber-100 text-left"
           onClick={() => toggleSection('siteLog')}
         >
-          <div className="flex items-center gap-3 bg-white px-5 py-3">
+          <div className="flex items-center gap-3 bg-gray-100 px-5 py-3">
             <span className="shrink-0 [&_svg]:h-5 [&_svg]:w-5 rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
               {getSectionIcon('siteLog').icon}
             </span>
