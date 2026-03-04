@@ -42,11 +42,7 @@ function App() {
         investmentName={selectedInvestment}
       />
       <div className="flex min-h-screen flex-col bg-[var(--color-domesta-bg)]">
-        <AppBar
-          onNavigateTo={handleSelectSection}
-          selectedInvestment={selectedInvestment}
-          onInvestmentChange={setSelectedInvestment}
-        />
+        <AppBar onNavigateTo={handleSelectSection} />
         {showNewsOnly ? <NewsContent sidebarCollapsed={menuCollapsed} /> : <MainContent />}
       </div>
     </div>

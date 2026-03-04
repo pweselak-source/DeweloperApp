@@ -2,15 +2,11 @@ import { useState } from 'react'
 import type { MenuId } from '../data/menuItems'
 import domestaLogo from '../assets/domesta-logo.png.svg'
 
-const INVESTMENTS = ['Polana Kampinowska', 'Zielone Wzgórze', 'Czarny Staw'] as const
-
 interface AppBarProps {
   onNavigateTo: (id: MenuId) => void
-  selectedInvestment: string
-  onInvestmentChange: (name: string) => void
 }
 
-export function AppBar({ onNavigateTo, selectedInvestment, onInvestmentChange }: AppBarProps) {
+export function AppBar({ onNavigateTo }: AppBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [tasksOpen, setTasksOpen] = useState(false)
 
