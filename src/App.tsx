@@ -9,7 +9,7 @@ function App() {
   const [menuCollapsed, setMenuCollapsed] = useState(false)
   const [activeSection, setActiveSection] = useState<MenuId | null>(null)
   const [showNewsOnly, setShowNewsOnly] = useState(false)
-  const [selectedInvestment, setSelectedInvestment] = useState('Polana Kampinowska')
+  const selectedInvestment = 'Polana Kampinowska'
 
   const handleSelectSection = (id: MenuId) => {
     if (id === 'news') {
