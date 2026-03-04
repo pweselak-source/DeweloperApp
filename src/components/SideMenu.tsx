@@ -3,14 +3,13 @@ import type { MenuId } from '../data/menuItems'
 
 interface SideMenuProps {
   collapsed: boolean
-  expanded: boolean
   activeId: MenuId | null
   onSelect: (id: MenuId) => void
   onToggleCollapse: () => void
   investmentName: string
 }
 
-export function SideMenu({ collapsed, expanded, activeId, onSelect, onToggleCollapse, investmentName }: SideMenuProps) {
+export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, investmentName }: SideMenuProps) {
   const parts = investmentName.split(/\s+/)
   const firstWord = parts[0] ?? ''
   const restWords = parts.slice(1).join(' ')
