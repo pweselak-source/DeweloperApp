@@ -42,7 +42,7 @@ body:has(.theme-all-black) {
   color: #fff !important;
 }
 .theme-all-black main section > button > div:first-child {
-  background: #000 !important;
+  background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 50%, #000 100%) !important;
 }
 .theme-all-black main section > button > div:first-child [class*="bg-"] {
   background: transparent !important;
