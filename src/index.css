@@ -120,6 +120,56 @@ body:has(.theme-all-black) {
   color: #ea580c !important;
 }
 
+@keyframes celebrate-pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Mała „fajerwerki” / iskry w tle overlay celebracji */
+.celebrate-burst::before,
+.celebrate-burst::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 215, 0, 0.9);
+  box-shadow:
+    0 0 12px 2px rgba(255, 215, 0, 0.6),
+    0 0 24px 4px rgba(255, 111, 97, 0.4);
+  animation: celebrate-spark 0.8s ease-out forwards;
+  opacity: 0;
+}
+.celebrate-burst::after {
+  animation-delay: 0.15s;
+  background: rgba(255, 111, 97, 0.9);
+  box-shadow:
+    0 0 12px 2px rgba(255, 111, 97, 0.6),
+    0 0 24px 4px rgba(255, 215, 0, 0.3);
+}
+@keyframes celebrate-spark {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(8);
+    opacity: 0;
+  }
+}
+
 @keyframes slide-left {
   0% {
     transform: translateX(0%);
@@ -163,6 +213,26 @@ body:has(.theme-all-black) {
   100% {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes gray-blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes trash-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.85;
   }
 }
 

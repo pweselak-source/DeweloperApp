@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { MenuId } from '../data/menuItems'
 import type { AppTheme } from '../App'
 import domestaLogo from '../assets/domesta-logo.png.svg'
@@ -7,16 +7,43 @@ interface AppBarProps {
   onNavigateTo: (id: MenuId) => void
   onThemeChange?: (theme: AppTheme) => void
   theme?: AppTheme
+  onGoHome?: () => void
 }
 
-export function AppBar({ onNavigateTo, onThemeChange, theme = 'halfBlack' }: AppBarProps) {
+export function AppBar({ onNavigateTo, onThemeChange, theme = 'halfBlack', onGoHome }: AppBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [tasksOpen, setTasksOpen] = useState(false)
+  const tasksRef = useRef<HTMLDivElement | null>(null)
+
+  // Zamykaj panel "Bieżące zadania" po kliknięciu poza nim
+  useEffect(() => {
+    if (!tasksOpen) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!tasksRef.current) return
+      const target = event.target as Node | null
+      if (target && !tasksRef.current.contains(target)) {
+        setTasksOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [tasksOpen])
 
   return (
     <div className="sticky top-0 z-30">
       <header className={`flex h-14 items-center border-b px-4 shadow-sm ${theme === 'allBlack' ? 'border-gray-700 bg-[#252525]' : 'border-gray-200 bg-white'}`}>
-        <img src={domestaLogo} alt="Domesta" className="h-8 w-auto shrink-0 object-contain" />
+        <button
+          type="button"
+          onClick={() => onGoHome?.()}
+          className="flex items-center justify-center rounded-lg p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-domesta-coral)]"
+          aria-label="Strona główna"
+        >
+          <img src={domestaLogo} alt="Domesta" className="h-8 w-auto shrink-0 object-contain" />
+        </button>
         {/* Aktualności – tylko ikona */}
         <button
           type="button"
@@ -34,7 +61,7 @@ export function AppBar({ onNavigateTo, onThemeChange, theme = 'halfBlack' }: App
           </span>
         </button>
         {/* Bieżące zadania – tylko ikona + dropdown */}
-        <div className="relative ml-2">
+        <div className="relative ml-2" ref={tasksRef}>
           <button
             type="button"
             onClick={() => setTasksOpen((open) => !open)}

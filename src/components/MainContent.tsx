@@ -149,8 +149,9 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
   const [handoverCalendarVisible, setHandoverCalendarVisible] = useState(false)
   const [handoverConfirmed, setHandoverConfirmed] = useState(false)
   const [handoverToastVisible, setHandoverToastVisible] = useState(false)
+  type ComplaintSubmissionStatus = 'draft' | 'submitted'
   const [complaints, setComplaints] = useState<
-    { id: number; type: string; description: string; hasPhoto: boolean; status: string }[]
+    { id: number; type: string; description: string; hasPhoto: boolean; status: string; submissionStatus?: ComplaintSubmissionStatus }[]
   >([])
   const [complaintType, setComplaintType] = useState('Krzywizna ścian')
   const [complaintDescription, setComplaintDescription] = useState('')
@@ -158,6 +159,18 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
   const [complaintFormOpen, setComplaintFormOpen] = useState(false)
   const [complaintsConfirmed, setComplaintsConfirmed] = useState(false)
   const [complaintsConfirmOpen, setComplaintsConfirmOpen] = useState(false)
+  const [complaintSubmittedOverlayVisible, setComplaintSubmittedOverlayVisible] = useState(false)
+  const [complaintsListExpanded, setComplaintsListExpanded] = useState(true)
+  const [clearListConfirmOpen, setClearListConfirmOpen] = useState(false)
+  const [listClearedOverlayVisible, setListClearedOverlayVisible] = useState(false)
+  const [listConfirmedOverlayVisible, setListConfirmedOverlayVisible] = useState(false)
+  const [revertedOverlayVisible, setRevertedOverlayVisible] = useState(false)
+  const [listOpenedOverlayVisible, setListOpenedOverlayVisible] = useState(false)
+  const [editingComplaintId, setEditingComplaintId] = useState<number | null>(null)
+  const [listConfirmBlockedVisible, setListConfirmBlockedVisible] = useState(false)
+  const [editComplaintType, setEditComplaintType] = useState('')
+  const [editComplaintDescription, setEditComplaintDescription] = useState('')
+  const [editComplaintHasPhoto, setEditComplaintHasPhoto] = useState(false)
 
   const toggleSection = (id: SectionId) => {
     setExpandedSections((prev) => ({ ...prev, [id]: !prev[id] }))
@@ -731,13 +744,60 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
                 type: complaintType,
                 description: complaintDescription.trim(),
                 hasPhoto: complaintHasPhoto,
-                status: 'Nowa',
+                status: 'Wersja robocza zgłoszenia',
+                submissionStatus: 'draft',
               },
               ...prev,
             ])
             setComplaintDescription('')
             setComplaintHasPhoto(false)
             setComplaintFormOpen(false)
+          }
+
+          const handleRequestSubmitComplaint = (id: number) => {
+            setComplaints((prev) =>
+              prev.map((c) =>
+                c.id === id
+                  ? { ...c, status: 'Przekazano', submissionStatus: 'submitted' as const }
+                  : c
+              )
+            )
+            setComplaintSubmittedOverlayVisible(true)
+          }
+
+          const handleRevertComplaint = (id: number) => {
+            setComplaints((prev) =>
+              prev.map((c) =>
+                c.id === id
+                  ? { ...c, status: 'Wersja robocza zgłoszenia', submissionStatus: 'draft' as const }
+                  : c
+              )
+            )
+            setRevertedOverlayVisible(true)
+          }
+
+          const handleRemoveComplaint = (id: number) => {
+            setComplaints((prev) => prev.filter((c) => c.id !== id))
+            if (editingComplaintId === id) setEditingComplaintId(null)
+          }
+
+          const handleStartEditComplaint = (c: { id: number; type: string; description: string; hasPhoto: boolean }) => {
+            setEditingComplaintId(c.id)
+            setEditComplaintType(c.type)
+            setEditComplaintDescription(c.description)
+            setEditComplaintHasPhoto(c.hasPhoto)
+          }
+
+          const handleSaveEditComplaint = () => {
+            if (editingComplaintId === null) return
+            setComplaints((prev) =>
+              prev.map((c) =>
+                c.id === editingComplaintId
+                  ? { ...c, type: editComplaintType, description: editComplaintDescription.trim(), hasPhoto: editComplaintHasPhoto }
+                  : c
+              )
+            )
+            setEditingComplaintId(null)
           }
 
           const handleResetComplaints = () => {
@@ -747,30 +807,82 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
             setComplaintType('Krzywizna ścian')
             setComplaintFormOpen(false)
             setComplaintsConfirmed(false)
+            setComplaintSubmittedOverlayVisible(false)
+            setComplaintsListExpanded(true)
+            setClearListConfirmOpen(false)
+            setListConfirmedOverlayVisible(false)
+            setRevertedOverlayVisible(false)
+            setListOpenedOverlayVisible(false)
+            setListClearedOverlayVisible(true)
+            setEditingComplaintId(null)
           }
 
           const handleConfirmComplaints = () => {
             if (complaintsConfirmOpen || complaintsConfirmed) return
+            const hasDrafts = complaints.some((c) => c.submissionStatus === 'draft')
+            if (hasDrafts) {
+              setListConfirmBlockedVisible(true)
+              return
+            }
             setComplaintsConfirmOpen(true)
           }
 
           return (
             <section className="mt-2 rounded-xl bg-white p-4 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-medium text-[var(--color-domesta-gray)]">
-                  Lista reklamacji
+                <h2 className="text-[18px] font-bold text-[var(--color-domesta-gray)]">
+                  Lista reklamacji{' '}
+                  <span className="font-normal text-base text-gray-500">
+                    ({complaintsConfirmed ? 'kompletna' : 'otwarta'})
+                  </span>
                 </h2>
                 <div className="flex items-center gap-2">
+                  {!complaintsConfirmed && (
+                    <button
+                      type="button"
+                      className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-gray-300 bg-gray-100 text-gray-500 animate-[gray-blink_1.5s_ease-in-out_infinite] hover:border-gray-400 hover:bg-gray-200"
+                      onClick={() => setComplaintFormOpen(true)}
+                      aria-label="Dodaj reklamację"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="22"
+                        height="22"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                    </button>
+                  )}
+                  {complaintsConfirmed && (
+                    <button
+                      type="button"
+                      className="inline-flex items-center rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-50"
+                      onClick={() => {
+                        setComplaintsConfirmed(false)
+                        setComplaintFormOpen(true)
+                        setListOpenedOverlayVisible(true)
+                      }}
+                    >
+                      Otwórz listę reklamacji
+                    </button>
+                  )}
                   <button
                     type="button"
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-domesta-red)] text-white text-xs animate-[coral-pulse_1.2s_ease-in-out_infinite]"
-                    onClick={() => setComplaintFormOpen(true)}
-                    aria-label="Dodaj reklamację"
+                    className="inline-flex items-center gap-1.5 text-[11px] text-gray-500 underline hover:text-gray-700"
+                    onClick={() => setClearListConfirmOpen(true)}
+                    aria-label="Wyczyść listę"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      width="12"
-                      height="12"
+                      width="14"
+                      height="14"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -778,16 +890,13 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     >
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
+                      <path d="M3 6h18" />
+                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                      <line x1="10" y1="11" x2="10" y2="17" />
+                      <line x1="14" y1="11" x2="14" y2="17" />
                     </svg>
-                  </button>
-                  <button
-                    type="button"
-                    className="text-[11px] text-gray-500 underline"
-                    onClick={handleResetComplaints}
-                  >
-                    Reset listy (mock)
+                    Wyczyść listę
                   </button>
                 </div>
               </div>
@@ -862,7 +971,14 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
                       </button>
                     </div>
 
-                    <div className="mt-2 flex items-center justify-end">
+                    <div className="mt-2 flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                        onClick={() => setComplaintFormOpen(false)}
+                      >
+                        Anuluj
+                      </button>
                       <button
                         type="button"
                         className="inline-flex items-center rounded-lg bg-[var(--color-domesta-red)] px-4 py-2 text-xs font-medium text-white disabled:opacity-40"
@@ -891,44 +1007,164 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
                   </p>
                 ) : (
                   <>
+                    {complaintsConfirmed && !complaintsListExpanded && (
+                      <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
+                        <span className="text-[11px] font-medium text-emerald-600">
+                          Status: lista kompletna
+                        </span>
+                      </div>
+                    )}
                     <ul className="space-y-3 text-xs">
-                      {complaints.map((c) => (
+                      {complaints.map((c, index) => {
+                        const isSubmitted = c.submissionStatus === 'submitted'
+                        return (
                         <li
                           key={c.id}
-                          className="rounded-lg border border-gray-100 bg-gray-50/60 p-3"
+                          className={`rounded-lg border p-3 ${
+                            isSubmitted
+                              ? 'border-emerald-200 bg-emerald-50/40'
+                              : 'border-sky-200 bg-sky-50'
+                          }`}
                         >
-                          <div className="mb-1 flex items-center justify-between">
-                            <span className="text-[11px] font-medium text-[var(--color-domesta-gray)]">
-                              {c.type}
+                          <div className="mb-2 flex items-center justify-between gap-2">
+                            <span className="text-[13px] font-bold text-[var(--color-domesta-gray)]">
+                              Zgłoszenie {index + 1}
                             </span>
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600">
+                            <span
+                              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] ${
+                                isSubmitted
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}
+                            >
                               {c.status}
                             </span>
                           </div>
-                          <p className="mb-1 text-[11px] text-gray-600">{c.description}</p>
-                          {c.hasPhoto && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-900/5 px-2 py-0.5 text-[10px] text-gray-500">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="12"
-                                height="12"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <path d="M4 7h4l2-3h4l2 3h4v12H4z" />
-                                <circle cx="12" cy="13" r="3" />
-                              </svg>
-                              zdjęcie załączone (mock)
-                            </span>
+
+                          {editingComplaintId === c.id ? (
+                            <div className="mt-2 space-y-3 rounded-lg border border-gray-200 bg-white/60 p-3">
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[10px] text-gray-500">Typ usterki</label>
+                                <select
+                                  className="h-8 w-full rounded-md border border-gray-200 bg-white px-2 text-xs outline-none focus:border-[var(--color-domesta-red)]"
+                                  value={editComplaintType}
+                                  onChange={(e) => setEditComplaintType(e.target.value)}
+                                >
+                                  {complaintTypes.map((t) => (
+                                    <option key={t} value={t}>{t}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[10px] text-gray-500">Opis problemu</label>
+                                <textarea
+                                  rows={2}
+                                  className="w-full rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-[var(--color-domesta-red)]"
+                                  value={editComplaintDescription}
+                                  onChange={(e) => setEditComplaintDescription(e.target.value)}
+                                />
+                              </div>
+                              <label className="flex items-center gap-2 text-[11px] text-gray-600">
+                                <input
+                                  type="checkbox"
+                                  checked={editComplaintHasPhoto}
+                                  onChange={(e) => setEditComplaintHasPhoto(e.target.checked)}
+                                />
+                                Zdjęcie załączone (mock)
+                              </label>
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[11px] text-gray-600 hover:bg-gray-50"
+                                  onClick={() => setEditingComplaintId(null)}
+                                >
+                                  Anuluj
+                                </button>
+                                <button
+                                  type="button"
+                                  className="rounded-lg bg-[var(--color-domesta-red)] px-3 py-1.5 text-[11px] font-medium text-white hover:opacity-90 disabled:opacity-50"
+                                  disabled={!editComplaintDescription.trim()}
+                                  onClick={handleSaveEditComplaint}
+                                >
+                                  Zapisz
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <p className="mb-1 text-[11px] text-gray-700">
+                                <span className="font-semibold uppercase tracking-wide text-gray-600">
+                                  Typ zgłoszenia:{' '}
+                                </span>
+                                {c.type}
+                              </p>
+                              <p className="mb-1 text-[11px] text-gray-700">
+                                <span className="font-semibold uppercase tracking-wide text-gray-600">
+                                  Opis:{' '}
+                                </span>
+                                {c.description}
+                              </p>
+                              {c.hasPhoto && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-slate-900/5 px-2 py-0.5 text-[10px] text-gray-500">
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="12"
+                                    height="12"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <path d="M4 7h4l2-3h4l2 3h4v12H4z" />
+                                    <circle cx="12" cy="13" r="3" />
+                                  </svg>
+                                  zdjęcie załączone (mock)
+                                </span>
+                              )}
+                              {isSubmitted ? (
+                                <div className="mt-2 flex justify-end">
+                                  <button
+                                    type="button"
+                                    className="inline-flex items-center rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
+                                    onClick={() => handleRevertComplaint(c.id)}
+                                  >
+                                    Wycofaj
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
+                                  <button
+                                    type="button"
+                                    className="inline-flex items-center rounded-lg bg-[var(--color-domesta-red)] px-3 py-1.5 text-[11px] font-medium text-white hover:opacity-90"
+                                    onClick={() => handleRequestSubmitComplaint(c.id)}
+                                  >
+                                    Przekaż zgłoszenie
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[11px] font-medium text-gray-600 hover:bg-gray-50"
+                                    onClick={() => handleStartEditComplaint(c)}
+                                  >
+                                    Edytuj
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-medium text-red-700 hover:bg-red-100"
+                                    onClick={() => handleRemoveComplaint(c.id)}
+                                  >
+                                    Usuń
+                                  </button>
+                                </div>
+                              )}
+                            </>
                           )}
                         </li>
-                      ))}
+                      );
+                      })}
                     </ul>
-                    <div className="mt-3 flex items-center justify-between">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                       {!complaintsConfirmed && (
                         <button
                           type="button"
@@ -938,7 +1174,7 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
                           Potwierdzam kompletność listy
                         </button>
                       )}
-                      {complaintsConfirmed && (
+                      {complaintsConfirmed && complaintsListExpanded && (
                         <span className="text-[11px] font-medium text-emerald-600">
                           Status: lista kompletna
                         </span>
@@ -970,6 +1206,8 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
                               onClick={() => {
                                 setComplaintsConfirmed(true)
                                 setComplaintsConfirmOpen(false)
+                                setComplaintsListExpanded(false)
+                                setListConfirmedOverlayVisible(true)
                               }}
                             >
                               Potwierdzam
@@ -978,9 +1216,224 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
                         </div>
                       </div>
                     )}
+
+                    {/* Popup: blokada potwierdzenia – istnieją nieprzekazane zgłoszenia */}
+                    {listConfirmBlockedVisible && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+                        <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl text-center">
+                          <div className="mb-4 flex justify-center">
+                            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-600" aria-hidden>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="40"
+                                height="40"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                aria-label="Stop"
+                              >
+                                <path d="M12 4 L6.34 6.34 L4 12 L6.34 17.66 L12 20 L17.66 17.66 L20 12 L17.66 6.34 Z" />
+                              </svg>
+                            </span>
+                          </div>
+                          <p className="mb-4 text-[13px] font-medium text-[var(--color-domesta-gray)]">
+                            Nie możesz zamknąć listy — istnieją nie przekazane zgłoszenia.
+                          </p>
+                          <button
+                            type="button"
+                            className="w-full rounded-lg bg-[var(--color-domesta-red)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
+                            onClick={() => setListConfirmBlockedVisible(false)}
+                          >
+                            OK
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {clearListConfirmOpen && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+                        <div className="w-full max-w-sm rounded-2xl bg-white p-4 shadow-xl">
+                          <h3 className="mb-2 text-sm font-semibold text-[var(--color-domesta-gray)]">
+                            Czy chcesz wyczyścić listę?
+                          </h3>
+                          <p className="mb-4 text-[11px] text-gray-600">
+                            Wszystkie reklamacje zostaną usunięte. Tej operacji nie można cofnąć.
+                          </p>
+                          <div className="flex justify-end gap-2 text-[11px]">
+                            <button
+                              type="button"
+                              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-gray-600 hover:bg-gray-50"
+                              onClick={() => setClearListConfirmOpen(false)}
+                            >
+                              Nie
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded-lg bg-[var(--color-domesta-red)] px-3 py-1.5 font-medium text-white hover:opacity-90"
+                              onClick={handleResetComplaints}
+                            >
+                              Tak
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Pełnoekranowy overlay po przekazaniu zgłoszenia – potwierdzenie „Przekazano zgłoszenie” */}
+                    {complaintSubmittedOverlayVisible && (
+                      <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/50 px-4">
+                        <div className="celebrate-burst absolute inset-0 pointer-events-none" aria-hidden />
+                        <div className="relative flex flex-col items-center rounded-2xl bg-white p-8 shadow-2xl max-w-sm w-full text-center">
+                          <div className="mb-4 flex justify-center">
+                            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl animate-[celebrate-pop_0.5s_ease-out]">
+                              ✓
+                            </span>
+                          </div>
+                          <h3 className="text-lg font-semibold text-[var(--color-domesta-gray)]">
+                            Przekazano zgłoszenie
+                          </h3>
+                          <p className="mt-2 text-[11px] text-gray-500">
+                            Zgłoszenie zostało przekazane i nie można go już edytować.
+                          </p>
+                          <button
+                            type="button"
+                            className="mt-6 w-full rounded-lg bg-[var(--color-domesta-red)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
+                            onClick={() => setComplaintSubmittedOverlayVisible(false)}
+                          >
+                            OK
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Overlay: Wycofano zgłoszenie (po kliknięciu Wycofaj) */}
+                    {revertedOverlayVisible && (
+                      <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/50 px-4">
+                        <div className="celebrate-burst absolute inset-0 pointer-events-none" aria-hidden />
+                        <div className="relative flex flex-col items-center rounded-2xl bg-white p-8 shadow-2xl max-w-sm w-full text-center">
+                          <div className="mb-4 flex justify-center">
+                            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl animate-[celebrate-pop_0.5s_ease-out]">
+                              ✓
+                            </span>
+                          </div>
+                          <h3 className="text-lg font-semibold text-[var(--color-domesta-gray)]">
+                            Wycofano zgłoszenie
+                          </h3>
+                          <p className="mt-2 text-[11px] text-gray-500">
+                            Zgłoszenie wróciło do wersji roboczej. Możesz je edytować lub przekazać ponownie.
+                          </p>
+                          <button
+                            type="button"
+                            className="mt-6 w-full rounded-lg bg-[var(--color-domesta-red)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
+                            onClick={() => setRevertedOverlayVisible(false)}
+                          >
+                            OK
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Overlay: Otworzono listę reklamacji (po kliknięciu Otwórz listę) */}
+                    {listOpenedOverlayVisible && (
+                      <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/50 px-4">
+                        <div className="celebrate-burst absolute inset-0 pointer-events-none" aria-hidden />
+                        <div className="relative flex flex-col items-center rounded-2xl bg-white p-8 shadow-2xl max-w-sm w-full text-center">
+                          <div className="mb-4 flex justify-center">
+                            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl animate-[celebrate-pop_0.5s_ease-out]">
+                              ✓
+                            </span>
+                          </div>
+                          <h3 className="text-lg font-semibold text-[var(--color-domesta-gray)]">
+                            Otworzono listę reklamacji
+                          </h3>
+                          <p className="mt-2 text-[11px] text-gray-500">
+                            Możesz dodawać i edytować zgłoszenia.
+                          </p>
+                          <button
+                            type="button"
+                            className="mt-6 w-full rounded-lg bg-[var(--color-domesta-red)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
+                            onClick={() => setListOpenedOverlayVisible(false)}
+                          >
+                            OK
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Overlay: Lista potwierdzona (po kliknięciu Potwierdzam) */}
+                    {listConfirmedOverlayVisible && (
+                      <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/50 px-4">
+                        <div className="celebrate-burst absolute inset-0 pointer-events-none" aria-hidden />
+                        <div className="relative flex flex-col items-center rounded-2xl bg-white p-8 shadow-2xl max-w-sm w-full text-center">
+                          <div className="mb-4 flex justify-center">
+                            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl animate-[celebrate-pop_0.5s_ease-out]">
+                              ✓
+                            </span>
+                          </div>
+                          <h3 className="text-lg font-semibold text-[var(--color-domesta-gray)]">
+                            Lista potwierdzona
+                          </h3>
+                          <p className="mt-2 text-[11px] text-gray-500">
+                            Lista reklamacji została potwierdzona. Deweloper rozpocznie weryfikację zgłoszeń.
+                          </p>
+                          <button
+                            type="button"
+                            className="mt-6 w-full rounded-lg bg-[var(--color-domesta-red)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
+                            onClick={() => setListConfirmedOverlayVisible(false)}
+                          >
+                            OK
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                   </>
                 )}
               </div>
+
+              {/* Overlay: Lista została usunięta – poza warunkiem complaints.length, żeby pokazał się od razu po wyczyszczeniu */}
+              {listClearedOverlayVisible && (
+                <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/50 px-4">
+                  <div className="relative flex flex-col items-center rounded-2xl bg-white p-8 shadow-2xl max-w-sm w-full text-center">
+                    <div className="mb-4 flex justify-center">
+                      <span
+                        className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-gray-600 animate-[trash-pulse_1.2s_ease-in-out_infinite]"
+                        aria-hidden
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="32"
+                          height="32"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M3 6h18" />
+                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                          <line x1="10" y1="11" x2="10" y2="17" />
+                          <line x1="14" y1="11" x2="14" y2="17" />
+                        </svg>
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-[var(--color-domesta-gray)]">
+                      Lista została usunięta
+                    </h3>
+                    <p className="mt-2 text-[11px] text-gray-500">
+                      Wszystkie reklamacje zostały usunięte. Możesz dodać nowe zgłoszenia.
+                    </p>
+                    <button
+                      type="button"
+                      className="mt-6 w-full rounded-lg bg-[var(--color-domesta-red)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
+                      onClick={() => setListClearedOverlayVisible(false)}
+                    >
+                      OK
+                    </button>
+                  </div>
+                </div>
+              )}
             </section>
           )
         })()}

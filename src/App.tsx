@@ -57,24 +57,31 @@ function App() {
     setMenuCollapsed((prev) => !prev)
   }
 
+  const handleGoHome = () => {
+    setShowNewsOnly(false)
+    setActiveSection(null)
+    setMenuCollapsed(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const outerBackgroundClass =
     theme === 'allBlack'
       ? 'theme-all-black bg-[#1a1a1a]'
       : theme === 'halfBlack'
-        ? 'bg-[radial-gradient(circle_at_top,_#888888,_#555555,_#333333)]'
+        ? 'bg-[radial-gradient(circle_at_top,_#aaaaaa,_#666666,_#333333)]'
         : 'bg-[var(--color-domesta-bg)]'
 
   const innerBackgroundClass =
     theme === 'allBlack'
       ? 'bg-[#1a1a1a]'
       : theme === 'halfBlack'
-        ? 'bg-[radial-gradient(circle_at_top,_#888888,_#555555,_#333333)]'
+        ? 'bg-[radial-gradient(circle_at_top,_#aaaaaa,_#666666,_#333333)]'
         : 'bg-[var(--color-domesta-bg)]'
 
   return (
     <div className={`min-h-screen ${outerBackgroundClass}`}>
       <div className={`flex min-h-screen flex-col ${innerBackgroundClass}`}>
-        <AppBar onNavigateTo={handleSelectSection} onThemeChange={handleThemeChange} theme={theme} />
+        <AppBar onNavigateTo={handleSelectSection} onThemeChange={handleThemeChange} theme={theme} onGoHome={handleGoHome} />
         {!showNewsOnly && (
           <div className="px-4 pt-3 md:px-6">
             <SideMenu
