@@ -61,14 +61,14 @@ function App() {
     theme === 'allBlack'
       ? 'theme-all-black bg-[#1a1a1a]'
       : theme === 'halfBlack'
-        ? 'bg-[#666666]'
+        ? 'bg-[radial-gradient(circle_at_top,_#888888,_#555555,_#333333)]'
         : 'bg-[var(--color-domesta-bg)]'
 
   const innerBackgroundClass =
     theme === 'allBlack'
       ? 'bg-[#1a1a1a]'
       : theme === 'halfBlack'
-        ? 'bg-[#666666]'
+        ? 'bg-[radial-gradient(circle_at_top,_#888888,_#555555,_#333333)]'
         : 'bg-[var(--color-domesta-bg)]'
 
   return (

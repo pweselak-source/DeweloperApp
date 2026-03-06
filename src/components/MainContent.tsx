@@ -348,7 +348,7 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
     'scroll-mt-28 rounded-2xl border border-gray-200 bg-white shadow-md overflow-hidden'
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+    <main className="flex flex-1 flex-col gap-3 p-4 md:p-6">
       {/* Formalności początkowe */}
       <section id="section-formalities" className={sectionBlockClass}>
         <button
