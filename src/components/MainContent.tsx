@@ -63,7 +63,7 @@ function getSectionStatusIcon(sectionId: SectionId): React.ReactNode {
             points="20 6 9 17 4 12"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2.5"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -85,7 +85,7 @@ function getSectionStatusIcon(sectionId: SectionId): React.ReactNode {
             points="15 18 9 12 15 6"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2.5"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -554,7 +554,7 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
                       points="15 18 9 12 15 6"
                       fill="none"
                       stroke="currentColor"
-                      strokeWidth="2.5"
+                      strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
@@ -601,7 +601,7 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="3"
+                        strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       >

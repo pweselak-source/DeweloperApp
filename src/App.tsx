@@ -6,13 +6,13 @@ import { NewsContent } from './components/NewsContent'
 import type { MenuId } from './data/menuItems'
 
 const THEME_STORAGE_KEY = 'app-theme'
-export type AppTheme = 'halfBlack' | 'allBlack' | 'domestaColors'
+export type AppTheme = 'halfBlack' | 'allBlack' | 'domestaColors' | 'allWhite'
 
 function App() {
   const [theme, setTheme] = useState<AppTheme>(() => {
     try {
       const saved = localStorage.getItem(THEME_STORAGE_KEY) as AppTheme | null
-      if (saved === 'allBlack' || saved === 'domestaColors') return saved
+      if (saved === 'allBlack' || saved === 'domestaColors' || saved === 'allWhite') return saved
       return 'halfBlack'
     } catch {
       return 'halfBlack'
