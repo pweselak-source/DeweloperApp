@@ -175,7 +175,7 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
                     className={`flex items-center justify-start rounded-lg px-2 py-1.5 ${activeId === 'siteLog' ? 'bg-white/10' : 'hover:bg-white/5'}`}
                     title="Dziennik budowy"
                   >
-                    <span className="[&_svg]:h-[1.125rem] [&_svg]:w-[1.125rem] text-amber-300">
+                    <span className={`[&_svg]:h-[1.125rem] [&_svg]:w-[1.125rem] ${theme === 'allWhite' ? 'theme-all-white-site-log-icon' : 'text-amber-300'}`}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M19 5H9a2 2 0 0 0-2 2v11" /><path d="M13 9H7" /><path d="M15 13H7" /><path d="M17 17H7" /><path d="M5 5v14a2 2 0 0 0 2 2h11" /><path d="M19 21h-2a2 2 0 0 1-2-2V3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2Z" />
                       </svg>
@@ -187,13 +187,13 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
             <section className="relative ml-2 mr-0 flex min-h-0 flex-1 flex-col justify-end overflow-hidden rounded-xl rounded-r-none rounded-b-none border border-white/40 border-r-0 border-b-0 px-4 pt-3 pb-4 text-left self-stretch">
               {/* Tło: przyciemnione zdjęcia z Dziennika budowy – wypełnia całą ramkę */}
               <div className="pointer-events-none absolute inset-0">
-                <div className="absolute inset-0 opacity-[0.5]">
+                <div className="absolute inset-0">
                   {slideshowImages.map((src, idx) => (
                     <img
                       key={src}
                       src={src}
                       alt="Dziennik budowy"
-                      className={`absolute h-full w-full object-cover blur-[1px] ${
+                      className={`absolute h-full w-full object-cover ${
                         idx === 0
                           ? 'animate-[slideshow1_24s_ease-in-out_infinite]'
                           : idx === 1
@@ -203,19 +203,21 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
                     />
                   ))}
                 </div>
-                <div className="absolute inset-0 bg-[rgba(15,23,42,0.55)]" />
               </div>
 
+              {/* Kontener tekstu – Glassmorphism (rozmyte tło, ciemny tekst dla czytelności) */}
               <div className="relative theme-domesta-colors-intro-text">
-                <p className="text-[0.9625rem] font-semibold leading-snug text-white">
-                  Deweloper Domesta – Twój partner w podróży
-                </p>
-                <p className="mt-3 text-[0.825rem] leading-relaxed text-white/85">
-                  Aplikacja poprowadzi Cię krok po kroku – od podpisania umowy deweloperskiej aż po akt notarialny.
-                </p>
-                <p className="mt-3 text-[0.825rem] font-medium italic leading-snug text-white/95">
-                  Klamka Zapadła – otwieramy przed Wami drzwi do nowego życia!
-                </p>
+                <div className="menu-intro-glass rounded-2xl border border-white/30 bg-white/20 p-4 backdrop-blur-[12px]">
+                  <p className="text-[0.9625rem] font-semibold leading-snug text-[#1e293b]">
+                    Deweloper Domesta – Twój partner w podróży
+                  </p>
+                  <p className="mt-3 text-[0.825rem] leading-relaxed text-slate-800">
+                    Aplikacja poprowadzi Cię krok po kroku – od podpisania umowy deweloperskiej aż po akt notarialny.
+                  </p>
+                  <p className="mt-3 text-[0.825rem] font-medium italic leading-snug text-slate-900">
+                    Klamka Zapadła – otwieramy przed Wami drzwi do nowego życia!
+                  </p>
+                </div>
               </div>
             </section>
           </div>
@@ -413,7 +415,7 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
                 )}
                 {!collapsed ? (
                   <>
-                    <span className="shrink-0 [&_svg]:h-5 [&_svg]:w-5 text-amber-300">
+                    <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${theme === 'allWhite' ? 'theme-all-white-site-log-icon' : 'text-amber-300'}`}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M19 5H9a2 2 0 0 0-2 2v11" />
                         <path d="M13 9H7" />
@@ -428,7 +430,7 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
                     </span>
                   </>
                 ) : (
-                  <span className="[&_svg]:h-5 [&_svg]:w-5 text-amber-300">
+                  <span className={`[&_svg]:h-5 [&_svg]:w-5 ${theme === 'allWhite' ? 'theme-all-white-site-log-icon' : 'text-amber-300'}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M19 5H9a2 2 0 0 0-2 2v11" />
                       <path d="M13 9H7" />

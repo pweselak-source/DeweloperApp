@@ -77,6 +77,11 @@ body:has(.theme-all-black) {
 .theme-domesta-colors-menu .theme-domesta-colors-intro-text p {
   color: #fff !important;
 }
+/* Glassmorphism: tekst w kontenerze na zdjęciach zawsze ciemny (czytelność na rozmytym tle) */
+.menu-intro-glass,
+.menu-intro-glass * {
+  color: #1e293b !important;
+}
 .theme-domesta-colors-menu > div:nth-child(2) [class*="border-white"] {
   border-color: rgba(194, 24, 32, 0.3) !important;
 }
@@ -95,15 +100,23 @@ body:has(.theme-all-black) {
 .theme-all-white-menu .theme-domesta-colors-intro-text p {
   color: #374151 !important;
 }
-/* Ikony statusu w All White – zachowaj odcienie (sukces/ostrzeżenie/oczekujące) dla spójności */
-.theme-all-white-menu > div:nth-child(2) .text-emerald-300 {
+/* Ikony w All White – zielone (formalności), żółte (harmonogram), szare (pozostałe); ikona i potomkowie (SVG) */
+.theme-all-white-menu > div:nth-child(2) .text-emerald-300,
+.theme-all-white-menu > div:nth-child(2) .text-emerald-300 * {
   color: #059669 !important;
 }
-.theme-all-white-menu > div:nth-child(2) .text-amber-300 {
+.theme-all-white-menu > div:nth-child(2) .text-amber-300,
+.theme-all-white-menu > div:nth-child(2) .text-amber-300 * {
   color: #d97706 !important;
 }
-.theme-all-white-menu > div:nth-child(2) .text-gray-400 {
+.theme-all-white-menu > div:nth-child(2) .text-gray-400,
+.theme-all-white-menu > div:nth-child(2) .text-gray-400 * {
   color: #6b7280 !important;
+}
+/* Dziennik budowy w All White – pomarańczowa ikona (osobny kolor) */
+.theme-all-white-menu .theme-all-white-site-log-icon,
+.theme-all-white-menu .theme-all-white-site-log-icon * {
+  color: #ea580c !important;
 }
 
 @keyframes slide-left {
