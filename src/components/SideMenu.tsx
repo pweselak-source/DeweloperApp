@@ -207,15 +207,12 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
 
               {/* Kontener tekstu – Glassmorphism (rozmyte tło, ciemny tekst dla czytelności) */}
               <div className="relative theme-domesta-colors-intro-text">
-                <div className="menu-intro-glass rounded-2xl border border-white/30 bg-white/20 p-4 backdrop-blur-[12px]">
-                  <p className="text-[0.9625rem] font-semibold leading-snug text-[#1e293b]">
+                <div className="menu-intro-glass rounded-2xl border border-white/30 bg-white/10 p-4 backdrop-blur-[12px]">
+                  <p className="text-[0.8125rem] font-semibold leading-tight text-[#1e293b]">
                     Deweloper Domesta – Twój partner w podróży
                   </p>
-                  <p className="mt-3 text-[0.825rem] leading-relaxed text-slate-800">
+                  <p className="mt-1 text-[0.6875rem] leading-tight text-slate-800">
                     Aplikacja poprowadzi Cię krok po kroku – od podpisania umowy deweloperskiej aż po akt notarialny.
-                  </p>
-                  <p className="mt-3 text-[0.825rem] font-medium italic leading-snug text-slate-900">
-                    Klamka Zapadła – otwieramy przed Wami drzwi do nowego życia!
                   </p>
                 </div>
               </div>

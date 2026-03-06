@@ -77,10 +77,11 @@ body:has(.theme-all-black) {
 .theme-domesta-colors-menu .theme-domesta-colors-intro-text p {
   color: #fff !important;
 }
-/* Glassmorphism: tekst w kontenerze na zdjęciach zawsze ciemny (czytelność na rozmytym tle) */
+/* Glassmorphism: tekst w kontenerze na zdjęciach zawsze czarny (czytelność na rozmytym tle) + delikatny cień */
 .menu-intro-glass,
 .menu-intro-glass * {
-  color: #1e293b !important;
+  color: #000000 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 .theme-domesta-colors-menu > div:nth-child(2) [class*="border-white"] {
   border-color: rgba(194, 24, 32, 0.3) !important;
