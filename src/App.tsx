@@ -57,9 +57,23 @@ function App() {
     setMenuCollapsed((prev) => !prev)
   }
 
+  const outerBackgroundClass =
+    theme === 'allBlack'
+      ? 'theme-all-black bg-[#1a1a1a]'
+      : theme === 'halfBlack'
+        ? 'bg-[#666666]'
+        : 'bg-[var(--color-domesta-bg)]'
+
+  const innerBackgroundClass =
+    theme === 'allBlack'
+      ? 'bg-[#1a1a1a]'
+      : theme === 'halfBlack'
+        ? 'bg-[#666666]'
+        : 'bg-[var(--color-domesta-bg)]'
+
   return (
-    <div className={`min-h-screen ${theme === 'allBlack' ? 'theme-all-black bg-[#1a1a1a]' : 'bg-[var(--color-domesta-bg)]'}`}>
-      <div className={`flex min-h-screen flex-col ${theme === 'allBlack' ? 'bg-[#1a1a1a]' : 'bg-[var(--color-domesta-bg)]'}`}>
+    <div className={`min-h-screen ${outerBackgroundClass}`}>
+      <div className={`flex min-h-screen flex-col ${innerBackgroundClass}`}>
         <AppBar onNavigateTo={handleSelectSection} onThemeChange={handleThemeChange} theme={theme} />
         {!showNewsOnly && (
           <div className="px-4 pt-3 md:px-6">
