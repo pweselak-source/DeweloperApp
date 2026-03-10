@@ -21,7 +21,8 @@ function App() {
   const [menuCollapsed, setMenuCollapsed] = useState(true)
   const [activeSection, setActiveSection] = useState<MenuId | null>(null)
   const [showNewsOnly, setShowNewsOnly] = useState(false)
-  const selectedInvestment = 'Polana Kampinowska'
+  const [selectedInvestment, setSelectedInvestment] = useState('Polana Kampinowska')
+  const [selectedApartment, setSelectedApartment] = useState('Uranowa 21A/3')
 
   useEffect(() => {
     try {
@@ -90,6 +91,9 @@ function App() {
               onSelect={handleSelectSection}
               onToggleCollapse={handleToggleCollapse}
               investmentName={selectedInvestment}
+              apartmentLabel={selectedApartment}
+              onInvestmentChange={setSelectedInvestment}
+              onApartmentChange={setSelectedApartment}
               theme={theme}
             />
           </div>

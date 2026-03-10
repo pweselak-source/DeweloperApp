@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { MENU_ITEMS } from '../data/menuItems'
 import type { MenuId } from '../data/menuItems'
 import type { AppTheme } from '../App'
@@ -11,14 +12,28 @@ interface SideMenuProps {
   onSelect: (id: MenuId) => void
   onToggleCollapse: () => void
   investmentName: string
+   apartmentLabel: string
   theme?: AppTheme
 }
 
-export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, investmentName, theme = 'halfBlack' }: SideMenuProps) {
+export function SideMenu({
+  collapsed,
+  activeId,
+  onSelect,
+  onToggleCollapse,
+  investmentName,
+  apartmentLabel,
+  theme = 'halfBlack',
+  onInvestmentChange,
+  onApartmentChange,
+}: SideMenuProps & { onInvestmentChange: (name: string) => void; onApartmentChange: (apartment: string) => void }) {
   const slideshowImages = [dom1, dom2, dom3]
   const parts = investmentName.split(/\s+/)
   const firstWord = parts[0] ?? ''
   const restWords = parts.slice(1).join(' ')
+  const [unitPopupOpen, setUnitPopupOpen] = useState(false)
+  const [popupStep, setPopupStep] = useState<'investment' | 'apartment'>('investment')
+  const [pendingInvestment, setPendingInvestment] = useState(investmentName)
   return (
     <>
       <aside className={`relative w-full overflow-hidden rounded-2xl shadow-md ${
@@ -34,7 +49,11 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
         }`}>
           {collapsed ? (
             <div className="flex w-full items-center gap-3">
-              <div className="flex min-w-0 flex-col">
+              <button
+                type="button"
+                onClick={() => setUnitPopupOpen(true)}
+                className="flex min-w-0 flex-col text-left"
+              >
                 <span className={`text-[0.8125rem] tracking-wide ${theme === 'allBlack' ? 'text-white' : ''} ${theme === 'allWhite' ? 'text-gray-800' : ''}`}>
                   <span className={
                     theme === 'allBlack' ? 'font-bold text-white' :
@@ -43,8 +62,8 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
                   }>{firstWord}</span>
                   {restWords ? <>{' '}<span className={theme === 'allBlack' ? 'text-white' : theme === 'allWhite' ? 'text-gray-700' : 'text-[var(--color-domesta-gray)]'}>{restWords}</span></> : null}
                 </span>
-                <span className={`min-w-0 truncate text-[0.583rem] ${theme === 'allBlack' ? 'text-white' : 'text-gray-600'}`}>Mieszkanie: Uranowa 21A/3</span>
-              </div>
+                <span className={`min-w-0 truncate text-[0.583rem] ${theme === 'allBlack' ? 'text-white' : 'text-gray-600'}`}>Mieszkanie: {apartmentLabel}</span>
+              </button>
               <button
                 type="button"
                 onClick={onToggleCollapse}
@@ -72,7 +91,11 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
             </div>
           ) : (
             <div className="flex w-full items-center gap-3">
-              <div className="flex min-w-0 flex-col">
+              <button
+                type="button"
+                onClick={() => setUnitPopupOpen(true)}
+                className="flex min-w-0 flex-col text-left"
+              >
                 <span className={`text-[0.8125rem] tracking-wide ${theme === 'allBlack' ? 'text-white' : ''} ${theme === 'allWhite' ? 'text-gray-800' : ''}`}>
                   <span className={
                     theme === 'allBlack' ? 'font-bold text-white' :
@@ -81,8 +104,8 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
                   }>{firstWord}</span>
                   {restWords ? <>{' '}<span className={theme === 'allBlack' ? 'text-white' : theme === 'allWhite' ? 'text-gray-700' : 'text-[var(--color-domesta-gray)]'}>{restWords}</span></> : null}
                 </span>
-                <span className={`min-w-0 truncate text-[0.583rem] ${theme === 'allBlack' ? 'text-white' : 'text-gray-600'}`}>Mieszkanie: Uranowa 21A/3</span>
-              </div>
+                <span className={`min-w-0 truncate text-[0.583rem] ${theme === 'allBlack' ? 'text-white' : 'text-gray-600'}`}>Mieszkanie: {apartmentLabel}</span>
+              </button>
               <button
                 type="button"
                 onClick={onToggleCollapse}
@@ -100,6 +123,109 @@ export function SideMenu({ collapsed, activeId, onSelect, onToggleCollapse, inve
             </div>
           )}
         </div>
+
+        {unitPopupOpen && (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-[var(--color-domesta-gray)]">
+                  {popupStep === 'investment' ? 'Wybierz inwestycję' : 'Wybierz mieszkanie'}
+                </h2>
+                <button
+                  type="button"
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                  onClick={() => {
+                    setUnitPopupOpen(false)
+                    setPopupStep('investment')
+                    setPendingInvestment(investmentName)
+                  }}
+                  aria-label="Zamknij"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+
+              {popupStep === 'investment' ? (
+                <>
+                  <p className="mb-3 text-xs text-gray-600">
+                    Aktualnie wybrana inwestycja:{' '}
+                    <span className="font-semibold">{investmentName}</span>
+                  </p>
+                  <p className="mb-2 text-[11px] text-gray-500">
+                    Wybierz inwestycję, a następnie mieszkanie w tej lokalizacji.
+                  </p>
+                  <div className="space-y-2 text-xs">
+                    {['Polana Kampinowska', 'Zielone Ogrody', 'Nowa Morena'].map((name) => (
+                      <button
+                        key={name}
+                        type="button"
+                        className={`flex w-full items-center justify-between rounded-md border px-3 py-1.5 text-left text-gray-800 hover:border-[var(--color-domesta-red)] hover:bg-gray-50 ${
+                          pendingInvestment === name ? 'border-[var(--color-domesta-red)] bg-gray-50' : 'border-gray-200'
+                        }`}
+                        onClick={() => {
+                          setPendingInvestment(name)
+                          setPopupStep('apartment')
+                        }}
+                      >
+                        <span className="text-gray-800">{name}</span>
+                        <span className="text-[10px] text-[var(--color-domesta-red)]">
+                          {pendingInvestment === name ? 'Wybrane' : 'Wybierz'}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="mb-2 text-xs text-gray-600">
+                    Inwestycja:{' '}
+                    <span className="font-semibold">{pendingInvestment}</span>
+                  </p>
+                  <p className="mb-2 text-[11px] text-gray-500">
+                    Wybierz mieszkanie, które chcesz powiązać z kontem.
+                  </p>
+                  <div className="space-y-2 text-xs">
+                    {(
+                      pendingInvestment === 'Zielone Ogrody'
+                        ? ['Lipowa 3/7', 'Lipowa 5/2', 'Kasztanowa 12/4', 'Klonowa 8/1'] // 4 mieszkania
+                        : pendingInvestment === 'Nowa Morena'
+                          ? ['Morena 10/1'] // 1 mieszkanie
+                          : ['Uranowa 21A/3', 'Uranowa 21A/5'] // 2 mieszkania
+                    ).map((address) => (
+                      <button
+                        key={address}
+                        type="button"
+                        className="flex w-full items-center justify-between rounded-md border border-gray-200 px-3 py-1.5 text-left text-gray-800 hover:border-[var(--color-domesta-red)] hover:bg-gray-50"
+                        onClick={() => {
+                          onInvestmentChange(pendingInvestment)
+                          onApartmentChange(address)
+                          setUnitPopupOpen(false)
+                          setPopupStep('investment')
+                        }}
+                      >
+                        <span className="text-gray-800">{address}</span>
+                        <span className="text-[10px] text-[var(--color-domesta-red)]">Wybierz</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="relative overflow-hidden">
           {/* Zwinięty: animowane pojawianie/znikanie */}
