@@ -149,6 +149,16 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
   const [handoverCalendarVisible, setHandoverCalendarVisible] = useState(false)
   const [handoverConfirmed, setHandoverConfirmed] = useState(false)
   const [handoverToastVisible, setHandoverToastVisible] = useState(false)
+  const [notaryMonthView, setNotaryMonthView] = useState(() => {
+    const d = new Date(2026, 1, 1)
+    d.setHours(0, 0, 0, 0)
+    return d
+  })
+  const [notarySelectedDate, setNotarySelectedDate] = useState<Date | null>(null)
+  const [notarySelectedSlot, setNotarySelectedSlot] = useState<string | null>(null)
+  const [notaryCalendarVisible, setNotaryCalendarVisible] = useState(false)
+  const [notaryConfirmed, setNotaryConfirmed] = useState(false)
+  const [notaryToastVisible, setNotaryToastVisible] = useState(false)
   type ComplaintSubmissionStatus = 'draft' | 'submitted'
   const [complaints, setComplaints] = useState<
     { id: number; type: string; description: string; hasPhoto: boolean; status: string; submissionStatus?: ComplaintSubmissionStatus }[]
@@ -398,6 +408,28 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
   const handoverCalendarDays = getCalendarDays(handoverMonthView)
   const handoverMonthLabel = () =>
     `${MONTH_NAMES[handoverMonthView.getMonth()]} ${handoverMonthView.getFullYear()}`
+
+  const notaryPrevMonth = () => {
+    const d = new Date(notaryMonthView)
+    d.setMonth(d.getMonth() - 1)
+    setNotaryMonthView(d)
+  }
+  const notaryNextMonth = () => {
+    const d = new Date(notaryMonthView)
+    d.setMonth(d.getMonth() + 1)
+    setNotaryMonthView(d)
+  }
+  const notarySelectDate = (date: Date | null) => {
+    setNotarySelectedDate(date)
+    setNotarySelectedSlot(null)
+  }
+  const notarySelectTime = (time: string) => {
+    if (!notarySelectedDate || isHandoverSlotOccupied(notarySelectedDate, time)) return
+    setNotarySelectedSlot(handoverSlotKey(notarySelectedDate, time))
+  }
+  const notaryCalendarDays = getCalendarDays(notaryMonthView)
+  const notaryMonthLabel = () =>
+    `${MONTH_NAMES[notaryMonthView.getMonth()]} ${notaryMonthView.getFullYear()}`
 
   const sectionBlockClass =
     'scroll-mt-28 rounded-2xl border border-gray-200 bg-white shadow-md overflow-hidden'
@@ -1660,6 +1692,151 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
         </div>
       )}
 
+      {notaryToastVisible && notarySelectedSlot && (
+        <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/50 px-4">
+          <div className="relative flex flex-col items-center rounded-2xl bg-white p-8 shadow-2xl max-w-sm w-full text-center">
+            <div className="mb-4 flex justify-center">
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl animate-[celebrate-pop_0.5s_ease-out]">
+                ✓
+              </span>
+            </div>
+            <h3 className="text-lg font-semibold text-[var(--color-domesta-gray)]">
+              Spotkanie notarialne
+            </h3>
+            <p className="mt-2 text-[11px] text-gray-500">
+              Spotkanie notarialne – spotkanie umówione na{' '}
+              <span className="font-semibold">
+                {notarySelectedSlot.replace('T', ' ')}
+              </span>{' '}
+              z Panem Danielem Olszyńskim. Tel. 531 213 345, e-mail: d.olszynski@onet.com
+            </p>
+            <button
+              type="button"
+              className="mt-6 w-full rounded-lg bg-[var(--color-domesta-red)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
+              onClick={() => setNotaryToastVisible(false)}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {notaryCalendarVisible && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-4 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={notaryPrevMonth}
+                className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+              >
+                ←
+              </button>
+              <span className="text-sm font-medium text-gray-700">
+                {notaryMonthLabel()}
+              </span>
+              <button
+                type="button"
+                onClick={notaryNextMonth}
+                className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+              >
+                →
+              </button>
+            </div>
+            <div className="flex justify-center pb-4">
+              <div className="grid w-full max-w-[260px] grid-cols-7 gap-x-0.5 gap-y-1 text-center text-xs scale-125 origin-top">
+                {HANDOVER_DAY_ABBREV.map((abbr) => (
+                  <div
+                    key={abbr}
+                    className="py-1 text-[10px] font-medium uppercase tracking-wide text-gray-400"
+                  >
+                    {abbr}
+                  </div>
+                ))}
+                {notaryCalendarDays.map((cell, i) => {
+                  const isSelected =
+                    !!notarySelectedDate && !!cell.date && notarySelectedDate.getTime() === cell.date.getTime()
+                  return (
+                    <div
+                      key={i}
+                      className={`flex items-center justify-center ${
+                        cell.date ? 'cursor-pointer' : 'cursor-default'
+                      }`}
+                      onClick={() => cell.date && notarySelectDate(cell.date)}
+                    >
+                      {cell.date ? (
+                        <span
+                          className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] ${
+                            isSelected ? 'bg-gray-800 text-white' : 'text-gray-800'
+                          }`}
+                        >
+                          {cell.dayNum}
+                        </span>
+                      ) : null}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+            {notarySelectedDate && (
+              <div className="mt-6">
+                <p className="mb-2 text-xs text-gray-600">
+                  Godziny na dzień {notarySelectedDate.getDate()}.{String(notarySelectedDate.getMonth() + 1).padStart(2, '0')}:
+                </p>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {HANDOVER_TIME_SLOTS.map((time) => {
+                    const occupied = isHandoverSlotOccupied(notarySelectedDate, time)
+                    const key = handoverSlotKey(notarySelectedDate, time)
+                    const selected = notarySelectedSlot === key
+                    return (
+                      <button
+                        key={time}
+                        type="button"
+                        onClick={() => notarySelectTime(time)}
+                        disabled={occupied}
+                        className={`shrink-0 rounded-full border px-3 py-1.5 text-xs ${
+                          occupied
+                            ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400'
+                            : selected
+                            ? 'border-gray-400 bg-gray-100 text-gray-800'
+                            : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                        }`}
+                      >
+                        {time}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+            <div className="mt-8 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setNotaryCalendarVisible(false)
+                }}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Anuluj
+              </button>
+              <button
+                type="button"
+                disabled={!notarySelectedSlot}
+                onClick={() => {
+                  if (!notarySelectedSlot) return
+                  setNotaryConfirmed(true)
+                  setNotaryCalendarVisible(false)
+                  setNotaryToastVisible(true)
+                }}
+                className="rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-400/60"
+              >
+                Potwierdź
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Zgłoszenia licznika do energii */}
       <section id="section-meter" className={sectionBlockClass}>
         <button
@@ -1827,7 +2004,10 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
                 Podpisanie aktu notarialnego
               </h1>
               <p className="mt-1 text-[11px] text-gray-500">
-                Status: <span className="font-medium">w oczekiwaniu</span>
+                Status:{' '}
+                <span className="font-medium">
+                  {notaryConfirmed ? 'umówione' : 'w oczekiwaniu'}
+                </span>
               </p>
             </div>
             <span className="ml-3 text-xs text-gray-500">
@@ -1905,64 +2085,6 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
         )}
       </section>
 
-      {/* notaryCalendarVisible && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-4 shadow-xl">
-            <div className="mb-3 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={notaryPrevMonth}
-                className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
-              >
-                ←
-              </button>
-              <span className="text-sm font-medium text-gray-700">
-                {notaryMonthLabel()}
-              </span>
-              <button
-                type="button"
-                onClick={notaryNextMonth}
-                className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
-              >
-                →
-              </button>
-            </div>
-            <div className="flex justify-center pb-4">
-              <div className="grid w-full max-w-[260px] grid-cols-7 gap-x-0.5 gap-y-1 text-center text-xs scale-125 origin-top">
-                {HANDOVER_DAY_ABBREV.map((abbr) => (
-                  <div
-                    key={abbr}
-                    className="py-1 text-[10px] font-medium uppercase tracking-wide text-gray-400"
-                  >
-                    {abbr}
-                  </div>
-                ))}
-                {notaryCalendarDays.map((cell, i) => {
-                  const isSelected =
-                    !!notarySelectedDate && !!cell.date && notarySelectedDate.getTime() === cell.date.getTime()
-                  return (
-                    <div
-                      key={i}
-                      className={`flex items-center justify-center ${
-                        cell.date ? 'cursor-pointer' : 'cursor-default'
-                      }`}
-                      onClick={() => cell.date && notarySelectDate(cell.date)}
-                    >
-                      {cell.date ? (
-                        <span
-                          className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] ${
-                            isSelected ? 'bg-gray-800 text-white' : 'text-gray-800'
-                          }`}
-                        >
-                          {cell.dayNum}
-                        </span>
-                      ) : null}
-                    </div>
-                  )
-                })}
-        *** End Patch```}  -->
-*** End Patch
- 
       {/* Dziennik budowy */}
       <section id="section-siteLog" className={sectionBlockClass}>
         <button
