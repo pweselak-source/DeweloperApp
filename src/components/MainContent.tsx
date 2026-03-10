@@ -171,9 +171,51 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
   const [editComplaintType, setEditComplaintType] = useState('')
   const [editComplaintDescription, setEditComplaintDescription] = useState('')
   const [editComplaintHasPhoto, setEditComplaintHasPhoto] = useState(false)
+  const [documentsChecklist, setDocumentsChecklist] = useState<
+    { id: string; label: string; description?: string; received: boolean }[]
+  >([
+    {
+      id: 'layout',
+      label: 'Projekt (plan mieszkania/lokalu)',
+      description: 'Rzut mieszkania z zaznaczonymi pomieszczeniami i wymiarami.',
+      received: false,
+    },
+    {
+      id: 'installationProject',
+      label: 'Projekt instalacji',
+      description: 'Schemat instalacji (elektrycznej, wodno-kanalizacyjnej, CO).',
+      received: false,
+    },
+    {
+      id: 'installationPhotos',
+      label: 'Fotografie instalacji',
+      description: 'Zestaw zdjęć instalacji (np. z dziennika budowy) przypisany do lokalu.',
+      received: false,
+    },
+    {
+      id: 'changesPlan',
+      label: 'Plan zmian i lista zmian aranżacyjnych',
+      description: 'Zestawienie wszystkich uzgodnionych zmian i modyfikacji w lokalu.',
+      received: false,
+    },
+    {
+      id: 'manual',
+      label: 'Instrukcja obsługi (dokument)',
+      description: 'Dokument z instrukcjami korzystania z instalacji i wyposażenia.',
+      received: false,
+    },
+  ])
 
   const toggleSection = (id: SectionId) => {
     setExpandedSections((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  const toggleDocumentReceived = (id: string) => {
+    setDocumentsChecklist((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, received: !item.received } : item
+      )
+    )
   }
 
   useEffect(() => {
@@ -676,7 +718,14 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
                 Dokumenty do odbioru mieszkania
               </h1>
               <p className="mt-1 text-[11px] text-gray-500">
-                Status: <span className="font-medium">w oczekiwaniu</span>
+                Status:{' '}
+                <span className="font-medium">
+                  {documentsChecklist.every((d) => d.received)
+                    ? 'odebrane'
+                    : documentsChecklist.some((d) => d.received)
+                    ? 'częściowo odebrane'
+                    : 'nieodebrane'}
+                </span>
               </p>
             </div>
             <span className="ml-3 text-xs text-gray-500">
@@ -686,8 +735,50 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
         </button>
         {expandedSections.documents && (
         <div className="p-5 md:p-6 bg-slate-100/60 animate-[section-expand_0.25s_ease-out]">
-          <div className="rounded-xl bg-white p-4 text-xs text-gray-600">
-            Tutaj pojawi się lista dokumentów wymaganych do odbioru mieszkania (mock).
+          <div className="rounded-xl bg-white p-4 shadow-sm">
+            <h2 className="mb-3 text-sm font-medium text-[var(--color-domesta-gray)]">
+              Lista dokumentów do odbioru
+            </h2>
+            <p className="mb-3 text-[11px] text-gray-500">
+              Zaznacz przy każdym dokumencie checkbox <span className="font-semibold">„Odebrane”</span>, gdy otrzymasz komplet
+              materiałów od dewelopera.
+            </p>
+            <ul className="space-y-2 text-xs">
+              {documentsChecklist.map((doc) => (
+                <li
+                  key={doc.id}
+                  className="flex items-start justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50/40 px-3 py-2"
+                >
+                  <label className="flex flex-1 cursor-pointer items-start gap-2">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-3.5 w-3.5 rounded border-gray-300 text-[var(--color-domesta-red)] focus:ring-[var(--color-domesta-red)]"
+                      checked={doc.received}
+                      onChange={() => toggleDocumentReceived(doc.id)}
+                    />
+                    <span>
+                      <span className="block text-[11px] font-medium text-[var(--color-domesta-gray)]">
+                        {doc.label}
+                      </span>
+                      {doc.description && (
+                        <span className="mt-0.5 block text-[10px] text-gray-500">
+                          {doc.description}
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                      doc.received
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : 'bg-amber-50 text-amber-700'
+                    }`}
+                  >
+                    {doc.received ? 'odebrane' : 'nieodebrane'}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
         )}
@@ -1487,17 +1578,36 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
                 <p className="text-center text-sm font-medium text-emerald-700">
                   ✓ Termin odbioru potwierdzony
                 </p>
-                <p className="text-center text-[13px] font-semibold text-[var(--color-domesta-gray)]">
-                  {handoverSelectedSlot.replace('T', ' ')}
-                </p>
-                <p className="text-center text-xs text-gray-500">
-                  Otrzymasz potwierdzenie e-mailem. W razie zmiany terminu skontaktuj się z opiekunem klienta.
+                <p className="text-center text-[11px] text-gray-600">
+                  Odbiór mieszkania – spotkanie umówione na{' '}
+                  <span className="font-semibold text-[var(--color-domesta-gray)]">
+                    {handoverSelectedSlot.replace('T', ' ')}
+                  </span>{' '}
+                  z Panem Danielem Olszyńskim. Tel. 531 213 345, e-mail: d.olszynski@onet.com
                 </p>
                 <button
                   type="button"
                   onClick={() => setHandoverCalendarVisible(true)}
-                  className="text-[11px] text-gray-500 underline hover:text-gray-700"
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] text-gray-500 underline hover:text-gray-700"
                 >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                    <path d="M9 16h6" />
+                    <path d="M12 13v6" />
+                  </svg>
                   Zmień termin
                 </button>
               </>
@@ -1522,13 +1632,31 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
       </section>
 
       {handoverToastVisible && handoverSelectedSlot && (
-        <div className="fixed bottom-4 left-4 z-50 flex max-w-xs items-start gap-2 rounded-lg bg-emerald-600 px-4 py-3 text-[11px] text-white shadow-lg">
-          <span className="mt-0.5">
-            ✓ Wizyta została potwierdzona na{' '}
-            <span className="font-semibold">
-              {handoverSelectedSlot.replace('T', ' ')}
-            </span>
-          </span>
+        <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/50 px-4">
+          <div className="relative flex flex-col items-center rounded-2xl bg-white p-8 shadow-2xl max-w-sm w-full text-center">
+            <div className="mb-4 flex justify-center">
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl animate-[celebrate-pop_0.5s_ease-out]">
+                ✓
+              </span>
+            </div>
+            <h3 className="text-lg font-semibold text-[var(--color-domesta-gray)]">
+              Odbiór mieszkania
+            </h3>
+            <p className="mt-2 text-[11px] text-gray-500">
+              Odbiór mieszkania – spotkanie umówione na{' '}
+              <span className="font-semibold">
+                {handoverSelectedSlot.replace('T', ' ')}
+              </span>{' '}
+              z Panem Danielem Olszyńskim. Tel. 531 213 345, e-mail: d.olszynski@onet.com
+            </p>
+            <button
+              type="button"
+              className="mt-6 w-full rounded-lg bg-[var(--color-domesta-red)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
+              onClick={() => setHandoverToastVisible(false)}
+            >
+              OK
+            </button>
+          </div>
         </div>
       )}
 
@@ -1675,7 +1803,7 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
         )}
       </section>
 
-      {/* Podpisanie aktu notarialnego – placeholder */}
+      {/* Podpisanie aktu notarialnego */}
       <section id="section-notary" className={sectionBlockClass}>
         <button
           type="button"
@@ -1709,14 +1837,132 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
         </button>
         {expandedSections.notary && (
         <div className="p-5 md:p-6 bg-slate-100/60 animate-[section-expand_0.25s_ease-out]">
-          <div className="rounded-xl bg-white p-4 text-xs text-gray-600">
-            W tym miejscu w przyszłości pojawi się harmonogram i szczegóły podpisania aktu
-            notarialnego (mock).
+        <section className="rounded-xl bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-[var(--color-domesta-gray)]">
+            Umów spotkanie – podpisanie aktu notarialnego
+          </h2>
+          <p className="mt-1 text-[11px] text-gray-500">
+            Spotkanie w kancelarii notarialnej trwa zwykle 30–60 minut. Weź ze sobą dokument tożsamości
+            oraz – jeśli dotyczy – pełnomocnictwa.
+          </p>
+          <div className="mt-4" />
+          <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-gray-100 bg-gray-50/60 py-12">
+            {notaryConfirmed && notarySelectedSlot ? (
+              <>
+                <p className="text-center text-sm font-medium text-emerald-700">
+                  ✓ Termin spotkania notarialnego potwierdzony
+                </p>
+                <p className="text-center text-[11px] text-gray-600">
+                  Spotkanie notarialne – spotkanie umówione na{' '}
+                  <span className="font-semibold text-[var(--color-domesta-gray)]">
+                    {notarySelectedSlot.replace('T', ' ')}
+                  </span>{' '}
+                  z Panem Danielem Olszyńskim. Tel. 531 213 345, e-mail: d.olszynski@onet.com
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setNotaryCalendarVisible(true)}
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] text-gray-500 underline hover:text-gray-700"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                    <path d="M9 16h6" />
+                    <path d="M12 13v6" />
+                  </svg>
+                  Zmień termin
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-center text-sm text-gray-600">
+                  Wybierz dogodny termin podpisania aktu notarialnego w kalendarzu dostępnych slotów.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setNotaryCalendarVisible(true)}
+                  className="rounded-lg bg-[var(--color-domesta-coral)] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90"
+                >
+                  Zarezerwuj termin
+                </button>
+              </>
+            )}
           </div>
+        </section>
         </div>
         )}
       </section>
 
+      {/* notaryCalendarVisible && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-4 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={notaryPrevMonth}
+                className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+              >
+                ←
+              </button>
+              <span className="text-sm font-medium text-gray-700">
+                {notaryMonthLabel()}
+              </span>
+              <button
+                type="button"
+                onClick={notaryNextMonth}
+                className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+              >
+                →
+              </button>
+            </div>
+            <div className="flex justify-center pb-4">
+              <div className="grid w-full max-w-[260px] grid-cols-7 gap-x-0.5 gap-y-1 text-center text-xs scale-125 origin-top">
+                {HANDOVER_DAY_ABBREV.map((abbr) => (
+                  <div
+                    key={abbr}
+                    className="py-1 text-[10px] font-medium uppercase tracking-wide text-gray-400"
+                  >
+                    {abbr}
+                  </div>
+                ))}
+                {notaryCalendarDays.map((cell, i) => {
+                  const isSelected =
+                    !!notarySelectedDate && !!cell.date && notarySelectedDate.getTime() === cell.date.getTime()
+                  return (
+                    <div
+                      key={i}
+                      className={`flex items-center justify-center ${
+                        cell.date ? 'cursor-pointer' : 'cursor-default'
+                      }`}
+                      onClick={() => cell.date && notarySelectDate(cell.date)}
+                    >
+                      {cell.date ? (
+                        <span
+                          className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] ${
+                            isSelected ? 'bg-gray-800 text-white' : 'text-gray-800'
+                          }`}
+                        >
+                          {cell.dayNum}
+                        </span>
+                      ) : null}
+                    </div>
+                  )
+                })}
+        *** End Patch```}  -->
+*** End Patch
+ 
       {/* Dziennik budowy */}
       <section id="section-siteLog" className={sectionBlockClass}>
         <button
