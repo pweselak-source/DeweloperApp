@@ -26,61 +26,137 @@ type BuildingLite = {
 export type AvailabilityBlock = {
   id: string
   userId: string
-  dayIndex: number
+  /** Dzień kalendarzowy (pon–ndz.), YYYY-MM-DD */
+  date: string
   startSlot: number
   endSlot: number
   buildingId: number
   buildingLabel: string
 }
 
-/** Przykładowe wpisy (zgodne z mockami budynków w App). */
-const SAMPLE_AVAILABILITY_BLOCKS: AvailabilityBlock[] = [
-  {
-    id: 'sample-1',
-    userId: 'u1',
-    dayIndex: 0,
-    startSlot: 20,
-    endSlot: 25,
-    buildingId: 1,
-    buildingLabel: 'ul. Kampinowska 12A',
-  },
-  {
-    id: 'sample-2',
-    userId: 'u1',
-    dayIndex: 1,
-    startSlot: 28,
-    endSlot: 33,
-    buildingId: 2,
-    buildingLabel: 'ul. Kampinowska 12B',
-  },
-  {
-    id: 'sample-3',
-    userId: 'u1',
-    dayIndex: 1,
-    startSlot: 30,
-    endSlot: 33,
-    buildingId: 3,
-    buildingLabel: 'ul. Ogrodowa 7A',
-  },
-  {
-    id: 'sample-4',
-    userId: 'u2',
-    dayIndex: 3,
-    startSlot: 16,
-    endSlot: 21,
-    buildingId: 4,
-    buildingLabel: 'ul. Ogrodowa 7B',
-  },
-  {
-    id: 'sample-5',
-    userId: 'u3',
-    dayIndex: 4,
-    startSlot: 32,
-    endSlot: 37,
-    buildingId: 5,
-    buildingLabel: 'ul. Morenowa 20A',
-  },
+/** Godziny pracy (sloty): 8:00–18:00 → indeksy 16–35 (20 półgodzin). */
+const WORK_START_SLOT = 16
+const WORK_END_SLOT = 35
+
+const MONTHS_GEN = [
+  'stycznia',
+  'lutego',
+  'marca',
+  'kwietnia',
+  'maja',
+  'czerwca',
+  'lipca',
+  'sierpnia',
+  'września',
+  'października',
+  'listopada',
+  'grudnia',
+] as const
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0')
+}
+
+function formatDateKey(d: Date): string {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+}
+
+function addDays(d: Date, n: number): Date {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  x.setDate(x.getDate() + n)
+  return x
+}
+
+function formatPolishDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const dt = new Date(y, m - 1, d)
+  return `${dt.getDate()} ${MONTHS_GEN[dt.getMonth()]} ${dt.getFullYear()}`
+}
+
+function formatWeekRangeLabel(weekStartMonday: Date): string {
+  const sun = addDays(weekStartMonday, 6)
+  const d1 = weekStartMonday.getDate()
+  const d2 = sun.getDate()
+  const m1 = weekStartMonday.getMonth()
+  const m2 = sun.getMonth()
+  const y1 = weekStartMonday.getFullYear()
+  const y2 = sun.getFullYear()
+  if (m1 === m2 && y1 === y2) {
+    return `${d1}–${d2} ${MONTHS_GEN[m1]} ${y1}`
+  }
+  if (y1 === y2) {
+    return `${d1} ${MONTHS_GEN[m1]} – ${d2} ${MONTHS_GEN[m2]} ${y1}`
+  }
+  return `${d1} ${MONTHS_GEN[m1]} ${y1} – ${d2} ${MONTHS_GEN[m2]} ${y2}`
+}
+
+const SAMPLE_BUILDINGS: { id: number; label: string }[] = [
+  { id: 1, label: 'ul. Kampinowska 12A' },
+  { id: 2, label: 'ul. Kampinowska 12B' },
+  { id: 3, label: 'ul. Ogrodowa 7A' },
+  { id: 4, label: 'ul. Ogrodowa 7B' },
+  { id: 5, label: 'ul. Morenowa 20A' },
 ]
+
+/**
+ * Przykładowe wpisy: kilka **dużych** bloków dziennie (wiele godzin), celowo **nachodzące** na siebie
+ * (wyświetlane obok siebie w pasach). Zakres slotów w obrębie 8:00–18:00 (WORK_START_SLOT…WORK_END_SLOT).
+ */
+function buildSampleAvailabilityBlocks(): AvailabilityBlock[] {
+  const users = ['u1', 'u2', 'u3'] as const
+  /** Punkt odniesienia: pon. 23 marca 2026 */
+  const anchorMonday = new Date(2026, 2, 23)
+  const out: AvailabilityBlock[] = []
+  let nid = 0
+
+  /** Wzorce slotów w obrębie [WORK_START_SLOT, WORK_END_SLOT] — 3 szerokie pasma z nakładaniem. */
+  const patterns: { start: number; end: number; bi: number }[][] = [
+    [
+      { start: WORK_START_SLOT, end: WORK_START_SLOT + 11, bi: 0 },
+      { start: 22, end: 33, bi: 1 },
+      { start: 28, end: WORK_END_SLOT, bi: 2 },
+    ],
+    [
+      { start: WORK_START_SLOT, end: WORK_START_SLOT + 9, bi: 2 },
+      { start: 20, end: 31, bi: 3 },
+      { start: 26, end: WORK_END_SLOT, bi: 4 },
+    ],
+    [
+      { start: 18, end: 29, bi: 4 },
+      { start: 24, end: WORK_END_SLOT, bi: 0 },
+      { start: WORK_START_SLOT, end: WORK_START_SLOT + 7, bi: 1 },
+    ],
+  ]
+
+  for (let w = -3; w <= 3; w++) {
+    const monday = addDays(anchorMonday, w * 7)
+    for (let u = 0; u < users.length; u++) {
+      const userId = users[u]
+      for (let wd = 0; wd < 5; wd++) {
+        const day = addDays(monday, wd)
+        const dateStr = formatDateKey(day)
+        const patternIndex = ((w + wd + u) % patterns.length + patterns.length) % patterns.length
+        const pat = patterns[patternIndex]
+        for (const spec of pat) {
+          const b = SAMPLE_BUILDINGS[spec.bi % SAMPLE_BUILDINGS.length]
+          out.push({
+            id: `sample-${++nid}`,
+            userId,
+            date: dateStr,
+            startSlot: spec.start,
+            endSlot: spec.end,
+            buildingId: b.id,
+            buildingLabel: b.label,
+          })
+        }
+      }
+    }
+  }
+
+  return out
+}
+
+const SAMPLE_AVAILABILITY_BLOCKS: AvailabilityBlock[] = buildSampleAvailabilityBlocks()
 
 type BackOfficeCalendarManagementProps = {
   users: CalendarManagementUser[]
@@ -131,9 +207,11 @@ function assignLanes(blocks: AvailabilityBlock[]): { idToLane: Map<string, numbe
 export function BackOfficeCalendarManagement({ users, investments, buildings }: BackOfficeCalendarManagementProps) {
   const [selectedUserId, setSelectedUserId] = useState(() => users[0]?.id ?? '')
   const [blocks, setBlocks] = useState<AvailabilityBlock[]>(() => [...SAMPLE_AVAILABILITY_BLOCKS])
+  /** Poniedziałek wyświetlanego tygodnia (godz. 0:00 lokalnie). */
+  const [weekStartMonday, setWeekStartMonday] = useState(() => new Date(2026, 2, 23))
   const [dialogOpen, setDialogOpen] = useState(false)
   const [blockToRemoveId, setBlockToRemoveId] = useState<string | null>(null)
-  const [pendingDay, setPendingDay] = useState<number | null>(null)
+  const [pendingDateStr, setPendingDateStr] = useState<string | null>(null)
   const [pendingStart, setPendingStart] = useState<number>(0)
   const [pendingEnd, setPendingEnd] = useState<number>(0)
   const [dialogInvestmentId, setDialogInvestmentId] = useState<number | ''>('')
@@ -153,14 +231,20 @@ export function BackOfficeCalendarManagement({ users, investments, buildings }: 
     [blocks, selectedUserId],
   )
 
+  const columnDateKeys = useMemo(
+    () => WEEKDAYS.map((_, dayIndex) => formatDateKey(addDays(weekStartMonday, dayIndex))),
+    [weekStartMonday],
+  )
+
   const laneLayoutByDay = useMemo(() => {
     const map = new Map<number, { idToLane: Map<string, number>; laneCount: number }>()
     for (let d = 0; d < WEEKDAYS.length; d++) {
-      const dayBlocks = blocksForUser.filter((b) => b.dayIndex === d)
+      const key = columnDateKeys[d]
+      const dayBlocks = blocksForUser.filter((b) => b.date === key)
       map.set(d, assignLanes(dayBlocks))
     }
     return map
-  }, [blocksForUser])
+  }, [blocksForUser, columnDateKeys])
 
   const buildingsForInvestment = useMemo(() => {
     if (dialogInvestmentId === '') return []
@@ -173,16 +257,19 @@ export function BackOfficeCalendarManagement({ users, investments, buildings }: 
     }
   }, [users, selectedUserId])
 
-  const openDialogForRange = useCallback((dayIndex: number, slotA: number, slotB: number) => {
-    const { start, end } = normalizeRange(slotA, slotB)
-    setPendingDay(dayIndex)
-    setPendingStart(start)
-    setPendingEnd(end)
-    const firstInv = investments[0]?.id
-    setDialogInvestmentId(firstInv !== undefined ? firstInv : '')
-    setDialogBuildingId('')
-    setDialogOpen(true)
-  }, [investments])
+  const openDialogForRange = useCallback(
+    (dayIndex: number, slotA: number, slotB: number) => {
+      const { start, end } = normalizeRange(slotA, slotB)
+      setPendingDateStr(formatDateKey(addDays(weekStartMonday, dayIndex)))
+      setPendingStart(start)
+      setPendingEnd(end)
+      const firstInv = investments[0]?.id
+      setDialogInvestmentId(firstInv !== undefined ? firstInv : '')
+      setDialogBuildingId('')
+      setDialogOpen(true)
+    },
+    [investments, weekStartMonday],
+  )
 
   const handleDayColumnPointerDown = (dayIndex: number) => (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return
@@ -235,7 +322,7 @@ export function BackOfficeCalendarManagement({ users, investments, buildings }: 
   }
 
   const handleSaveDialog = () => {
-    if (pendingDay === null || dialogInvestmentId === '' || dialogBuildingId === '') return
+    if (pendingDateStr === null || dialogInvestmentId === '' || dialogBuildingId === '') return
     const building = buildings.find((b) => b.id === dialogBuildingId)
     if (!building) return
     const id =
@@ -247,7 +334,7 @@ export function BackOfficeCalendarManagement({ users, investments, buildings }: 
       {
         id,
         userId: selectedUserId,
-        dayIndex: pendingDay,
+        date: pendingDateStr,
         startSlot: pendingStart,
         endSlot: pendingEnd,
         buildingId: building.id,
@@ -255,7 +342,7 @@ export function BackOfficeCalendarManagement({ users, investments, buildings }: 
       },
     ])
     setDialogOpen(false)
-    setPendingDay(null)
+    setPendingDateStr(null)
   }
 
   const slotHighlighted = (dayIndex: number, slot: number) => {
@@ -294,18 +381,48 @@ export function BackOfficeCalendarManagement({ users, investments, buildings }: 
         Przeciągnij myszą po polach jednego dnia, aby zaznaczyć przedział (bloki co 30 min). Po zwolnieniu przycisku wybierz inwestycję i budynek, potem zapisz.
       </p>
 
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => setWeekStartMonday((d) => addDays(d, -7))}
+          className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          Poprzedni tydzień
+        </button>
+        <p className="min-w-0 text-center text-sm font-semibold text-[var(--color-domesta-gray)]">{formatWeekRangeLabel(weekStartMonday)}</p>
+        <button
+          type="button"
+          onClick={() => setWeekStartMonday((d) => addDays(d, 7))}
+          className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+        >
+          Następny tydzień
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </button>
+      </div>
+
       <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
         <div className="min-w-[720px]">
           <div className="flex border-b border-gray-200 bg-gray-50">
             <div className="sticky left-0 z-20 w-14 shrink-0 border-r border-gray-200 bg-gray-50" aria-hidden />
-            {WEEKDAYS.map((label) => (
-              <div
-                key={label}
-                className="min-w-0 flex-1 border-l border-gray-100 px-1 py-2 text-center text-xs font-semibold text-[var(--color-domesta-gray)]"
-              >
-                {label}
-              </div>
-            ))}
+            {WEEKDAYS.map((label, dayIndex) => {
+              const col = addDays(weekStartMonday, dayIndex)
+              return (
+                <div
+                  key={label}
+                  className="min-w-0 flex-1 border-l border-gray-100 px-1 py-2 text-center text-xs font-semibold text-[var(--color-domesta-gray)]"
+                >
+                  <span className="block">{label}</span>
+                  <span className="mt-0.5 block text-[10px] font-normal text-gray-500">
+                    {col.getDate()}.{pad2(col.getMonth() + 1)}
+                  </span>
+                </div>
+              )
+            })}
           </div>
           <div className="flex max-h-[min(70vh,720px)] overflow-y-auto">
             <div className="sticky left-0 z-10 w-14 shrink-0 border-r border-gray-200 bg-gray-50 pr-1">
@@ -341,7 +458,7 @@ export function BackOfficeCalendarManagement({ users, investments, buildings }: 
                       />
                     ))}
                     {blocksForUser
-                      .filter((b) => b.dayIndex === dayIndex)
+                      .filter((b) => b.date === columnDateKeys[dayIndex])
                       .map((b) => {
                         const top = b.startSlot * SLOT_PX
                         const h = (b.endSlot - b.startSlot + 1) * SLOT_PX
@@ -420,7 +537,7 @@ export function BackOfficeCalendarManagement({ users, investments, buildings }: 
               <span className="font-medium text-gray-800">{blockPendingRemove.buildingLabel}</span>?
             </p>
             <p className="mb-6 text-xs text-gray-500">
-              {WEEKDAYS[blockPendingRemove.dayIndex]},{' '}
+              {formatPolishDate(blockPendingRemove.date)},{' '}
               {slotIndexToLabel(blockPendingRemove.startSlot)} – {slotIndexToLabel(blockPendingRemove.endSlot + 1)}
             </p>
             <div className="flex justify-end gap-2">
@@ -443,7 +560,7 @@ export function BackOfficeCalendarManagement({ users, investments, buildings }: 
         </div>
       )}
 
-      {dialogOpen && pendingDay !== null && (
+      {dialogOpen && pendingDateStr !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div
             role="dialog"
@@ -452,7 +569,7 @@ export function BackOfficeCalendarManagement({ users, investments, buildings }: 
             className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
           >
             <h2 id="availability-dialog-title" className="mb-4 text-lg font-semibold text-[var(--color-domesta-gray)]">
-              Dostępność: {WEEKDAYS[pendingDay]},{' '}
+              Dostępność: {formatPolishDate(pendingDateStr)},{' '}
               {slotIndexToLabel(pendingStart)} – {slotIndexToLabel(pendingEnd + 1)}
             </h2>
             <div className="space-y-4">
@@ -499,7 +616,7 @@ export function BackOfficeCalendarManagement({ users, investments, buildings }: 
                 type="button"
                 onClick={() => {
                   setDialogOpen(false)
-                  setPendingDay(null)
+                  setPendingDateStr(null)
                 }}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
