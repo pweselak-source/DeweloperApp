@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, useMemo, Fragment } from 'react'
 import { AppBar } from './components/AppBar'
 import { SideMenu } from './components/SideMenu'
 import { BackOfficeMenu } from './components/BackOfficeMenu'
@@ -81,6 +81,10 @@ const formatPlIsoDate = (iso: string) => {
 
 const pln = (value: number) =>
   new Intl.NumberFormat('pl-PL', { style: 'currency', currency: 'PLN', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
+
+/** Kwota z separatorem pl-PL i sufiksem „ PLN” (podsumowanie nad harmonogramem) */
+const formatPlnAmountPln = (value: number) =>
+  `${new Intl.NumberFormat('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)} PLN`
 
 const SAMPLE_APARTMENT_PAYMENT_SCHEDULE: PaymentScheduleSampleRow[] = [
   { installmentPln: 45_000, dueDate: '2025-03-31', paidPln: 45_000, paidDate: '2025-03-28', note: 'Wpłata przelewem, zgodnie z umową' },
@@ -326,6 +330,17 @@ function App() {
     ])
     setPaymentScheduleDraft({ installmentPln: '', dueDate: '', paidPln: '', paidDate: '', note: '' })
   }
+
+  const paymentScheduleTotals = useMemo(() => {
+    const cenaCalosci = paymentScheduleRows.reduce((sum, row) => sum + row.installmentPln, 0)
+    const splacono = paymentScheduleRows.reduce((sum, row) => sum + (row.paidPln ?? 0), 0)
+    return { cenaCalosci, splacono, pozostalo: cenaCalosci - splacono }
+  }, [paymentScheduleRows])
+
+  const paymentScheduleRowsSorted = useMemo(
+    () => [...paymentScheduleRows].sort((a, b) => a.dueDate.localeCompare(b.dueDate)),
+    [paymentScheduleRows],
+  )
 
   useEffect(() => {
     try {
@@ -1646,7 +1661,19 @@ function App() {
                           </div>
                             </>
                           ) : (
-                            <div className="overflow-x-auto rounded-xl border border-gray-200">
+                            <div className="space-y-3">
+                              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm leading-relaxed text-gray-800">
+                                <p>
+                                  Cena: {formatPlnAmountPln(paymentScheduleTotals.cenaCalosci)}
+                                </p>
+                                <p className="mt-1">
+                                  Spłacono: {formatPlnAmountPln(paymentScheduleTotals.splacono)}
+                                </p>
+                                <p className="mt-1">
+                                  Pozostało: {formatPlnAmountPln(paymentScheduleTotals.pozostalo)}
+                                </p>
+                              </div>
+                              <div className="overflow-x-auto rounded-xl border border-gray-200">
                               <table className="min-w-full bg-white text-sm">
                                 <thead className="bg-gray-50">
                                   <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
@@ -1669,7 +1696,7 @@ function App() {
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 text-gray-700">
-                                  {paymentScheduleRows.map((row, index) => (
+                                  {paymentScheduleRowsSorted.map((row, index) => (
                                     <tr key={`${row.dueDate}-${row.installmentPln}-${index}`}>
                                       <td className="px-3 py-3 align-middle tabular-nums text-gray-600">{index + 1}</td>
                                       <td className="px-3 py-3 align-middle font-medium tabular-nums">{pln(row.installmentPln)}</td>
@@ -1749,6 +1776,7 @@ function App() {
                                   </tr>
                                 </tbody>
                               </table>
+                            </div>
                             </div>
                           )}
                         </section>
