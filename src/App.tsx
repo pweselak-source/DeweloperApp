@@ -10,7 +10,10 @@ const THEME_STORAGE_KEY = 'app-theme'
 export type AppTheme = 'halfBlack' | 'allBlack' | 'domestaColors' | 'allWhite'
 type BackOfficeView = 'investments' | 'clients' | 'permissions' | 'calendar-management' | 'calendar-preview' | 'construction-schedule'
 type InvestmentTab = 'Inwestycje' | 'Budynki' | 'Mieszkania' | 'Komorki Lokatorskie' | 'Miejsca postojowe'
-type ApartmentFormSubTab = 'details' | 'paymentSchedule'
+type ApartmentFormSubTab = 'details' | 'paymentSchedule' | 'tasks'
+type ApartmentFormalitiesStatus = 'zablokowane' | 'do podpisu' | 'podpisana'
+type ApartmentHandoverTaskStatus = 'zablokowane' | 'czeka na umówienie' | 'zaplanowane' | 'rozpatrywanie reklamacji' | 'odebrano'
+type ApartmentNotarialActTaskStatus = 'zablokowane' | 'czeka na umówienie' | 'zaplanowane' | 'podpisany'
 type BuildingStatus = 'W budowie' | 'Na wykonczeniu' | 'Oddany' | 'Wyprzedany'
 type BuildingColumnKey =
   | 'lp'
@@ -339,6 +342,10 @@ function App() {
   const [paymentScheduleDraft, setPaymentScheduleDraft] = useState<PaymentScheduleDraftFields>(() => emptyPaymentScheduleDraft())
   const [editingPaymentScheduleId, setEditingPaymentScheduleId] = useState<number | null>(null)
   const [paymentScheduleEditDraft, setPaymentScheduleEditDraft] = useState<PaymentScheduleDraftFields>(() => emptyPaymentScheduleDraft())
+  const [apartmentTaskReservationStatus, setApartmentTaskReservationStatus] = useState<ApartmentFormalitiesStatus>('do podpisu')
+  const [apartmentTaskPreliminaryStatus, setApartmentTaskPreliminaryStatus] = useState<ApartmentFormalitiesStatus>('zablokowane')
+  const [apartmentTaskHandoverStatus, setApartmentTaskHandoverStatus] = useState<ApartmentHandoverTaskStatus>('czeka na umówienie')
+  const [apartmentTaskNotarialActStatus, setApartmentTaskNotarialActStatus] = useState<ApartmentNotarialActTaskStatus>('zablokowane')
 
   const beginEditPaymentScheduleRow = (row: PaymentScheduleSampleRow) => {
     setEditingPaymentScheduleId(row.id)
@@ -387,6 +394,11 @@ function App() {
   const paymentScheduleRowsSorted = useMemo(
     () => [...paymentScheduleRows].sort((a, b) => a.dueDate.localeCompare(b.dueDate)),
     [paymentScheduleRows],
+  )
+
+  const apartmentEnergyMeterPpeDigits = useMemo(
+    () => Array.from({ length: 18 }, () => Math.floor(Math.random() * 10)).join(''),
+    [editingApartmentId],
   )
 
   useEffect(() => {
@@ -1586,6 +1598,19 @@ function App() {
                             >
                               Harmonogram spłaty
                             </button>
+                            <button
+                              type="button"
+                              role="tab"
+                              aria-selected={apartmentFormSubTab === 'tasks'}
+                              onClick={() => setApartmentFormSubTab('tasks')}
+                              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                                apartmentFormSubTab === 'tasks'
+                                  ? 'bg-white text-[var(--color-domesta-gray)] shadow-sm'
+                                  : 'text-gray-600 hover:bg-white hover:text-[var(--color-domesta-gray)]'
+                              }`}
+                            >
+                              Zadania
+                            </button>
                           </div>
                           {apartmentFormSubTab === 'details' ? (
                             <>
@@ -1711,7 +1736,7 @@ function App() {
                             </button>
                           </div>
                             </>
-                          ) : (
+                          ) : apartmentFormSubTab === 'paymentSchedule' ? (
                             <div className="space-y-3">
                               <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm leading-relaxed text-gray-800">
                                 <p>
@@ -1913,6 +1938,164 @@ function App() {
                                 </tbody>
                               </table>
                             </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-8">
+                              <section>
+                                <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Formalności początkowe</h4>
+                                <ul className="space-y-3 rounded-xl border border-gray-200 bg-gray-50/80 p-4">
+                                  <li className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    <span className="text-sm text-gray-800">Podpisanie umowy rezerwacyjnej</span>
+                                    <select
+                                      value={apartmentTaskReservationStatus}
+                                      onChange={(e) => setApartmentTaskReservationStatus(e.target.value as ApartmentFormalitiesStatus)}
+                                      className="w-full min-w-[11rem] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-domesta-red)] sm:w-auto"
+                                    >
+                                      <option value="zablokowane">zablokowane</option>
+                                      <option value="do podpisu">do podpisu</option>
+                                      <option value="podpisana">podpisana</option>
+                                    </select>
+                                  </li>
+                                  <li className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    <span className="text-sm text-gray-800">Podpisanie umowy przedwstępnej</span>
+                                    <select
+                                      value={apartmentTaskPreliminaryStatus}
+                                      onChange={(e) => setApartmentTaskPreliminaryStatus(e.target.value as ApartmentFormalitiesStatus)}
+                                      className="w-full min-w-[11rem] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-domesta-red)] sm:w-auto"
+                                    >
+                                      <option value="zablokowane">zablokowane</option>
+                                      <option value="do podpisu">do podpisu</option>
+                                      <option value="podpisana">podpisana</option>
+                                    </select>
+                                  </li>
+                                </ul>
+                              </section>
+                              <section>
+                                <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Dokumenty do odbioru mieszkania</h4>
+                                <ul className="divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white">
+                                  <li className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <span className="text-sm text-gray-800">Projekt (plan mieszkania/lokalu)</span>
+                                    <button
+                                      type="button"
+                                      className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                                      title="Pobierz plik"
+                                      aria-label="Pobierz: Projekt (plan mieszkania/lokalu)"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4 text-[var(--color-domesta-gray)]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                        <path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" />
+                                      </svg>
+                                      Pobierz
+                                    </button>
+                                  </li>
+                                  <li className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <span className="text-sm text-gray-800">Projekt instalacji</span>
+                                    <button
+                                      type="button"
+                                      className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                                      title="Pobierz plik"
+                                      aria-label="Pobierz: Projekt instalacji"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4 text-[var(--color-domesta-gray)]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                        <path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" />
+                                      </svg>
+                                      Pobierz
+                                    </button>
+                                  </li>
+                                  <li className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <span className="text-sm text-gray-800">Fotografie instalacji</span>
+                                    <input
+                                      type="file"
+                                      className="max-w-full text-sm file:mr-2 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-2 file:py-1 file:text-xs file:text-gray-700 hover:file:bg-gray-50"
+                                      aria-label="Wgraj plik: Fotografie instalacji"
+                                    />
+                                  </li>
+                                  <li className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <span className="text-sm text-gray-800">Plan zmian i lista zmian aranżacyjnych</span>
+                                    <button
+                                      type="button"
+                                      className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                                      title="Pobierz plik"
+                                      aria-label="Pobierz: Plan zmian i lista zmian aranżacyjnych"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4 text-[var(--color-domesta-gray)]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                        <path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" />
+                                      </svg>
+                                      Pobierz
+                                    </button>
+                                  </li>
+                                  <li className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <span className="text-sm text-gray-800">Instrukcja obsługi (dokument)</span>
+                                    <input
+                                      type="file"
+                                      className="max-w-full text-sm file:mr-2 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-2 file:py-1 file:text-xs file:text-gray-700 hover:file:bg-gray-50"
+                                      aria-label="Wgraj plik: Instrukcja obsługi (dokument)"
+                                    />
+                                  </li>
+                                </ul>
+                              </section>
+                              <section>
+                                <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Odbiór mieszkania</h4>
+                                <ul className="space-y-3 rounded-xl border border-gray-200 bg-gray-50/80 p-4">
+                                  <li className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    <span className="text-sm text-gray-800">Odbiór mieszkania</span>
+                                    <select
+                                      value={apartmentTaskHandoverStatus}
+                                      onChange={(e) => setApartmentTaskHandoverStatus(e.target.value as ApartmentHandoverTaskStatus)}
+                                      className="w-full min-w-[12rem] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-domesta-red)] sm:w-auto"
+                                    >
+                                      <option value="zablokowane">zablokowane</option>
+                                      <option value="czeka na umówienie">czeka na umówienie</option>
+                                      <option value="zaplanowane">zaplanowane</option>
+                                      <option value="rozpatrywanie reklamacji">rozpatrywanie reklamacji</option>
+                                      <option value="odebrano">odebrano</option>
+                                    </select>
+                                  </li>
+                                </ul>
+                              </section>
+                              <section>
+                                <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Zgłoszenie licznika energii</h4>
+                                <ul className="space-y-4 rounded-xl border border-gray-200 bg-gray-50/80 p-4">
+                                  <li className="text-sm text-gray-800 tabular-nums">
+                                    Numer Twojego licznika to: PPE {apartmentEnergyMeterPpeDigits}
+                                  </li>
+                                  <li className="flex flex-col gap-2 border-t border-gray-200/80 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <span className="text-sm text-gray-800">Oświadczenie o wykonaniu przyłączenia</span>
+                                    <button
+                                      type="button"
+                                      className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                                      title="Pobierz plik"
+                                      aria-label="Pobierz: Oświadczenie o wykonaniu przyłączenia"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4 text-[var(--color-domesta-gray)]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                        <path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" />
+                                      </svg>
+                                      Pobierz
+                                    </button>
+                                  </li>
+                                </ul>
+                              </section>
+                              <section>
+                                <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Podpisanie aktu notarialnego</h4>
+                                <ul className="space-y-3 rounded-xl border border-gray-200 bg-gray-50/80 p-4">
+                                  <li className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    <span className="text-sm text-gray-800">Podpisanie aktu notarialnego</span>
+                                    <select
+                                      value={apartmentTaskNotarialActStatus}
+                                      onChange={(e) => setApartmentTaskNotarialActStatus(e.target.value as ApartmentNotarialActTaskStatus)}
+                                      className="w-full min-w-[12rem] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-domesta-red)] sm:w-auto"
+                                    >
+                                      <option value="zablokowane">zablokowane</option>
+                                      <option value="czeka na umówienie">czeka na umówienie</option>
+                                      <option value="zaplanowane">zaplanowane</option>
+                                      <option value="podpisany">podpisany</option>
+                                    </select>
+                                  </li>
+                                </ul>
+                              </section>
                             </div>
                           )}
                         </section>
