@@ -10,7 +10,23 @@ const THEME_STORAGE_KEY = 'app-theme'
 export type AppTheme = 'halfBlack' | 'allBlack' | 'domestaColors' | 'allWhite'
 type BackOfficeView = 'investments' | 'clients' | 'permissions' | 'calendar-management' | 'calendar-preview' | 'construction-schedule'
 type InvestmentTab = 'Inwestycje' | 'Budynki' | 'Mieszkania' | 'Komorki Lokatorskie' | 'Miejsca postojowe'
-type ApartmentFormSubTab = 'details' | 'paymentSchedule' | 'tasks'
+type ApartmentFormSubTab = 'details' | 'paymentSchedule' | 'tasks' | 'complaints'
+type ComplaintStatus = 'zgłoszona' | 'odrzucona' | 'uznana'
+type ComplaintTimelineEntry = {
+  id: string
+  kind: 'submitted' | 'comment' | 'status_change'
+  author: string
+  at: string
+  body?: string
+  newStatus?: ComplaintStatus
+}
+type ApartmentComplaint = {
+  id: number
+  submittedAt: string
+  title: string
+  status: ComplaintStatus
+  timeline: ComplaintTimelineEntry[]
+}
 type ApartmentFormalitiesStatus = 'zablokowane' | 'do podpisu' | 'podpisana'
 type ApartmentHandoverTaskStatus = 'zablokowane' | 'czeka na umówienie' | 'zaplanowane' | 'rozpatrywanie reklamacji' | 'odebrano'
 type ApartmentNotarialActTaskStatus = 'zablokowane' | 'czeka na umówienie' | 'zaplanowane' | 'podpisany'
@@ -141,6 +157,65 @@ const SAMPLE_APARTMENT_PAYMENT_SCHEDULE: PaymentScheduleSampleRow[] = [
   { id: 8, installmentPln: 50_000, dueDate: '2026-12-31', paidPln: null, paidDate: null, note: 'Ostatnia rata przed odbiorem kluczy' },
   { id: 9, installmentPln: 35_000, dueDate: '2027-03-31', paidPln: null, paidDate: null, note: null },
   { id: 10, installmentPln: 35_000, dueDate: '2027-06-30', paidPln: null, paidDate: null, note: 'Rozliczenie końcowe po odbiorze' },
+]
+
+const formatComplaintDateTime = (iso: string) =>
+  new Intl.DateTimeFormat('pl-PL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(iso))
+
+const complaintStatusBadgeClass = (s: ComplaintStatus) => {
+  switch (s) {
+    case 'zgłoszona':
+      return 'bg-amber-100 text-amber-900 ring-1 ring-amber-200/80'
+    case 'odrzucona':
+      return 'bg-red-100 text-red-800 ring-1 ring-red-200/80'
+    case 'uznana':
+      return 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200/80'
+    default:
+      return 'bg-gray-100 text-gray-800 ring-1 ring-gray-200'
+  }
+}
+
+const SAMPLE_APARTMENT_COMPLAINTS: ApartmentComplaint[] = [
+  {
+    id: 1,
+    submittedAt: '2025-11-12T09:15:00',
+    title: 'Nieszczelność okna w salonie',
+    status: 'uznana',
+    timeline: [
+      { id: '1a', kind: 'submitted', author: 'Jan Kowalski', at: '2025-11-12T09:15:00', body: 'Zgłoszenie zarejestrowane w systemie.' },
+      { id: '1b', kind: 'comment', author: 'Serwis Domesta', at: '2025-11-13T11:20:00', body: 'Umówiono wizytę technika.' },
+      { id: '1c', kind: 'comment', author: 'Technik P. Nowak', at: '2025-11-14T14:05:00', body: 'Potwierdzono wadę uszczelki.' },
+      { id: '1d', kind: 'status_change', author: 'Dział reklamacji', at: '2025-11-18T16:30:00', newStatus: 'uznana', body: 'Reklamacja uznana; naprawa w ramach gwarancji.' },
+    ],
+  },
+  {
+    id: 2,
+    submittedAt: '2025-10-03T08:40:00',
+    title: 'Różnica odcienia płytek w łazience',
+    status: 'odrzucona',
+    timeline: [
+      { id: '2a', kind: 'submitted', author: 'Anna Wiśniewska', at: '2025-10-03T08:40:00', body: 'Zgłoszenie zarejestrowane w systemie.' },
+      { id: '2b', kind: 'comment', author: 'Konsultant', at: '2025-10-05T10:00:00', body: 'Dopasowanie w tolerancji producenta.' },
+      { id: '2c', kind: 'status_change', author: 'Dział reklamacji', at: '2025-10-09T15:12:00', newStatus: 'odrzucona', body: 'Brak podstaw do uznania reklamacji.' },
+    ],
+  },
+  {
+    id: 3,
+    submittedAt: '2026-01-20T16:45:00',
+    title: 'Hałas od instalacji wentylacyjnej',
+    status: 'zgłoszona',
+    timeline: [
+      { id: '3a', kind: 'submitted', author: 'Marek Zieliński', at: '2026-01-20T16:45:00', body: 'Zgłoszenie zarejestrowane w systemie.' },
+      { id: '3b', kind: 'comment', author: 'Serwis Domesta', at: '2026-01-21T09:30:00', body: 'Prosimy o nagranie dźwięku — analiza w toku.' },
+      { id: '3c', kind: 'comment', author: 'Serwis Domesta', at: '2026-01-22T13:15:00', body: 'Zespół weryfikuje parametry instalacji.' },
+    ],
+  },
 ]
 
 function App() {
@@ -346,6 +421,7 @@ function App() {
   const [apartmentTaskPreliminaryStatus, setApartmentTaskPreliminaryStatus] = useState<ApartmentFormalitiesStatus>('zablokowane')
   const [apartmentTaskHandoverStatus, setApartmentTaskHandoverStatus] = useState<ApartmentHandoverTaskStatus>('czeka na umówienie')
   const [apartmentTaskNotarialActStatus, setApartmentTaskNotarialActStatus] = useState<ApartmentNotarialActTaskStatus>('zablokowane')
+  const [apartmentComplaintsExpandedId, setApartmentComplaintsExpandedId] = useState<number | null>(null)
 
   const beginEditPaymentScheduleRow = (row: PaymentScheduleSampleRow) => {
     setEditingPaymentScheduleId(row.id)
@@ -692,6 +768,7 @@ function App() {
     setEditingApartmentId(null)
     setEditingPaymentScheduleId(null)
     setPaymentScheduleEditDraft(emptyPaymentScheduleDraft())
+    setApartmentComplaintsExpandedId(null)
   }
 
   const handleSaveApartment = () => {
@@ -744,6 +821,7 @@ function App() {
     setEditingApartmentId(null)
     setEditingPaymentScheduleId(null)
     setPaymentScheduleEditDraft(emptyPaymentScheduleDraft())
+    setApartmentComplaintsExpandedId(null)
   }
 
   const outerBackgroundClass =
@@ -1611,6 +1689,19 @@ function App() {
                             >
                               Zadania
                             </button>
+                            <button
+                              type="button"
+                              role="tab"
+                              aria-selected={apartmentFormSubTab === 'complaints'}
+                              onClick={() => setApartmentFormSubTab('complaints')}
+                              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                                apartmentFormSubTab === 'complaints'
+                                  ? 'bg-white text-[var(--color-domesta-gray)] shadow-sm'
+                                  : 'text-gray-600 hover:bg-white hover:text-[var(--color-domesta-gray)]'
+                              }`}
+                            >
+                              Reklamacje
+                            </button>
                           </div>
                           {apartmentFormSubTab === 'details' ? (
                             <>
@@ -1939,7 +2030,7 @@ function App() {
                               </table>
                             </div>
                             </div>
-                          ) : (
+                          ) : apartmentFormSubTab === 'tasks' ? (
                             <div className="space-y-8">
                               <section>
                                 <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Formalności początkowe</h4>
@@ -2096,6 +2187,91 @@ function App() {
                                   </li>
                                 </ul>
                               </section>
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto rounded-xl border border-gray-200">
+                              <table className="min-w-full bg-white text-sm">
+                                <thead className="bg-gray-50">
+                                  <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
+                                    <th className="px-3 py-3 font-semibold">LP</th>
+                                    <th className="px-3 py-3 font-semibold">Zgłoszono</th>
+                                    <th className="px-3 py-3 font-semibold">Tytuł (max 50 znaków)</th>
+                                    <th className="px-3 py-3 font-semibold">Status</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 text-gray-700">
+                                  {SAMPLE_APARTMENT_COMPLAINTS.map((complaint, index) => (
+                                    <Fragment key={complaint.id}>
+                                      <tr
+                                        className={`cursor-pointer transition-colors ${
+                                          apartmentComplaintsExpandedId === complaint.id ? 'bg-amber-50/60' : 'hover:bg-gray-50'
+                                        }`}
+                                        onClick={() =>
+                                          setApartmentComplaintsExpandedId((prev) => (prev === complaint.id ? null : complaint.id))
+                                        }
+                                      >
+                                        <td className="px-3 py-3 align-middle tabular-nums text-gray-600">{index + 1}</td>
+                                        <td className="px-3 py-3 align-middle whitespace-nowrap">
+                                          {formatComplaintDateTime(complaint.submittedAt)}
+                                        </td>
+                                        <td className="max-w-[min(28rem,55vw)] px-3 py-3 align-middle">
+                                          <span className="line-clamp-2" title={complaint.title}>
+                                            {complaint.title.length > 50 ? `${complaint.title.slice(0, 50)}…` : complaint.title}
+                                          </span>
+                                        </td>
+                                        <td className="px-3 py-3 align-middle">
+                                          <span
+                                            className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${complaintStatusBadgeClass(complaint.status)}`}
+                                          >
+                                            {complaint.status}
+                                          </span>
+                                        </td>
+                                      </tr>
+                                      {apartmentComplaintsExpandedId === complaint.id && (
+                                        <tr>
+                                          <td colSpan={4} className="border-t border-gray-100 bg-gray-50/95 px-4 py-5">
+                                            <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Historia zgłoszenia</p>
+                                            <div className="space-y-0">
+                                              {complaint.timeline.map((entry, ti) => (
+                                                <div key={entry.id} className="grid grid-cols-[2rem_1fr] gap-3">
+                                                  <div className="flex flex-col items-center pt-1">
+                                                    <span className="z-10 h-3 w-3 shrink-0 rounded-full border-2 border-white bg-[var(--color-domesta-red)] shadow-sm" />
+                                                    {ti < complaint.timeline.length - 1 ? (
+                                                      <div className="mt-0.5 h-14 w-0.5 shrink-0 bg-gray-200" aria-hidden />
+                                                    ) : null}
+                                                  </div>
+                                                  <div className={`min-w-0 ${ti === complaint.timeline.length - 1 ? 'pb-2' : 'pb-8'}`}>
+                                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                                                      {entry.kind === 'submitted'
+                                                        ? 'Zgłoszenie'
+                                                        : entry.kind === 'comment'
+                                                          ? 'Komentarz'
+                                                          : 'Zmiana statusu'}
+                                                    </p>
+                                                    <p className="mt-1 text-xs text-gray-500">
+                                                      {formatComplaintDateTime(entry.at)}
+                                                      <span className="text-gray-400"> · </span>
+                                                      <span className="font-medium text-gray-700">{entry.author}</span>
+                                                    </p>
+                                                    {entry.body ? <p className="mt-2 text-sm leading-relaxed text-gray-800">{entry.body}</p> : null}
+                                                    {entry.kind === 'status_change' && entry.newStatus ? (
+                                                      <span
+                                                        className={`mt-3 inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${complaintStatusBadgeClass(entry.newStatus)}`}
+                                                      >
+                                                        {entry.newStatus}
+                                                      </span>
+                                                    ) : null}
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      )}
+                                    </Fragment>
+                                  ))}
+                                </tbody>
+                              </table>
                             </div>
                           )}
                         </section>
