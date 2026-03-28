@@ -2,13 +2,21 @@ import { useState, useEffect, useMemo, Fragment } from 'react'
 import { AppBar } from './components/AppBar'
 import { SideMenu } from './components/SideMenu'
 import { BackOfficeMenu } from './components/BackOfficeMenu'
+import { BackOfficeStatistics } from './components/BackOfficeStatistics'
 import { MainContent } from './components/MainContent'
 import { NewsContent } from './components/NewsContent'
 import type { MenuId } from './data/menuItems'
 
 const THEME_STORAGE_KEY = 'app-theme'
 export type AppTheme = 'halfBlack' | 'allBlack' | 'domestaColors' | 'allWhite'
-type BackOfficeView = 'investments' | 'clients' | 'permissions' | 'calendar-management' | 'calendar-preview' | 'construction-schedule'
+type BackOfficeView =
+  | 'investments'
+  | 'clients'
+  | 'permissions'
+  | 'calendar-management'
+  | 'calendar-preview'
+  | 'statistics'
+  | 'construction-schedule'
 type InvestmentTab = 'Inwestycje' | 'Budynki' | 'Mieszkania' | 'Komorki Lokatorskie' | 'Miejsca postojowe'
 type ApartmentFormSubTab = 'details' | 'paymentSchedule' | 'tasks' | 'complaints'
 type ComplaintStatus = 'zgłoszona' | 'odrzucona' | 'uznana'
@@ -2424,6 +2432,8 @@ function App() {
                     </div>
                   )}
                 </section>
+              ) : backOfficeView === 'statistics' ? (
+                <BackOfficeStatistics investments={investments} buildings={buildings} />
               ) : (
                 <section className="flex h-full items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50">
                   <p className="text-sm text-gray-500">Ta sekcja jest przygotowana do dalszej rozbudowy.</p>

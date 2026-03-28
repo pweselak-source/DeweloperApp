@@ -1,5 +1,12 @@
 interface BackOfficeMenuProps {
-  activeItem: 'investments' | 'clients' | 'permissions' | 'calendar-management' | 'calendar-preview' | 'construction-schedule'
+  activeItem:
+    | 'investments'
+    | 'clients'
+    | 'permissions'
+    | 'calendar-management'
+    | 'calendar-preview'
+    | 'statistics'
+    | 'construction-schedule'
   onSelectItem: (item: BackOfficeMenuProps['activeItem']) => void
 }
 
@@ -96,6 +103,23 @@ export function BackOfficeMenu({ activeItem, onSelectItem }: BackOfficeMenuProps
                 <circle cx="12" cy="12" r="3" />
               </svg>
               <span>Podglad kalendarza</span>
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
+              onClick={() => onSelectItem('statistics')}
+              className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm ${
+                activeItem === 'statistics'
+                  ? 'bg-gray-100 text-[var(--color-domesta-gray)]'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 3v18h18" />
+                <path d="M7 16l4-4 4 4 6-7" />
+              </svg>
+              <span>Statystyki</span>
             </button>
           </li>
           <li>
