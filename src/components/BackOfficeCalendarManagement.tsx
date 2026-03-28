@@ -33,6 +33,55 @@ export type AvailabilityBlock = {
   buildingLabel: string
 }
 
+/** Przykładowe wpisy (zgodne z mockami budynków w App). */
+const SAMPLE_AVAILABILITY_BLOCKS: AvailabilityBlock[] = [
+  {
+    id: 'sample-1',
+    userId: 'u1',
+    dayIndex: 0,
+    startSlot: 20,
+    endSlot: 25,
+    buildingId: 1,
+    buildingLabel: 'ul. Kampinowska 12A',
+  },
+  {
+    id: 'sample-2',
+    userId: 'u1',
+    dayIndex: 1,
+    startSlot: 28,
+    endSlot: 33,
+    buildingId: 2,
+    buildingLabel: 'ul. Kampinowska 12B',
+  },
+  {
+    id: 'sample-3',
+    userId: 'u1',
+    dayIndex: 1,
+    startSlot: 30,
+    endSlot: 33,
+    buildingId: 3,
+    buildingLabel: 'ul. Ogrodowa 7A',
+  },
+  {
+    id: 'sample-4',
+    userId: 'u2',
+    dayIndex: 3,
+    startSlot: 16,
+    endSlot: 21,
+    buildingId: 4,
+    buildingLabel: 'ul. Ogrodowa 7B',
+  },
+  {
+    id: 'sample-5',
+    userId: 'u3',
+    dayIndex: 4,
+    startSlot: 32,
+    endSlot: 37,
+    buildingId: 5,
+    buildingLabel: 'ul. Morenowa 20A',
+  },
+]
+
 type BackOfficeCalendarManagementProps = {
   users: CalendarManagementUser[]
   investments: InvestmentLite[]
@@ -81,8 +130,9 @@ function assignLanes(blocks: AvailabilityBlock[]): { idToLane: Map<string, numbe
 
 export function BackOfficeCalendarManagement({ users, investments, buildings }: BackOfficeCalendarManagementProps) {
   const [selectedUserId, setSelectedUserId] = useState(() => users[0]?.id ?? '')
-  const [blocks, setBlocks] = useState<AvailabilityBlock[]>([])
+  const [blocks, setBlocks] = useState<AvailabilityBlock[]>(() => [...SAMPLE_AVAILABILITY_BLOCKS])
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [blockToRemoveId, setBlockToRemoveId] = useState<string | null>(null)
   const [pendingDay, setPendingDay] = useState<number | null>(null)
   const [pendingStart, setPendingStart] = useState<number>(0)
   const [pendingEnd, setPendingEnd] = useState<number>(0)
@@ -172,6 +222,17 @@ export function BackOfficeCalendarManagement({ users, investments, buildings }: 
     },
     [openDialogForRange],
   )
+
+  const blockPendingRemove = useMemo(
+    () => (blockToRemoveId ? blocks.find((b) => b.id === blockToRemoveId) : undefined),
+    [blocks, blockToRemoveId],
+  )
+
+  const confirmRemoveBlock = () => {
+    if (!blockToRemoveId) return
+    setBlocks((prev) => prev.filter((b) => b.id !== blockToRemoveId))
+    setBlockToRemoveId(null)
+  }
 
   const handleSaveDialog = () => {
     if (pendingDay === null || dialogInvestmentId === '' || dialogBuildingId === '') return
@@ -295,12 +356,26 @@ export function BackOfficeCalendarManagement({ users, investments, buildings }: 
                         return (
                           <div
                             key={b.id}
-                            className="group absolute z-[2] overflow-visible rounded border border-emerald-600/40 bg-emerald-100 shadow-sm"
+                            role="button"
+                            tabIndex={0}
+                            className="group absolute z-[2] cursor-pointer overflow-visible rounded border border-emerald-600/40 bg-emerald-100 shadow-sm outline-none ring-emerald-500/30 focus-visible:ring-2"
                             style={{
                               top,
                               height: Math.max(h, SLOT_PX),
                               left: leftOff,
                               width: innerW,
+                            }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setBlockToRemoveId(b.id)
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                setBlockToRemoveId(b.id)
+                              }
                             }}
                           >
                             <div className="pointer-events-auto flex h-full w-full flex-col items-center justify-center overflow-hidden px-0.5 py-1">
@@ -324,6 +399,49 @@ export function BackOfficeCalendarManagement({ users, investments, buildings }: 
           </div>
         </div>
       </div>
+
+      {blockPendingRemove && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4"
+          onClick={() => setBlockToRemoveId(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="remove-block-title"
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="remove-block-title" className="mb-2 text-lg font-semibold text-[var(--color-domesta-gray)]">
+              Usunąć wpis?
+            </h2>
+            <p className="mb-1 text-sm text-gray-600">
+              Czy na pewno chcesz usunąć dostępność dla{' '}
+              <span className="font-medium text-gray-800">{blockPendingRemove.buildingLabel}</span>?
+            </p>
+            <p className="mb-6 text-xs text-gray-500">
+              {WEEKDAYS[blockPendingRemove.dayIndex]},{' '}
+              {slotIndexToLabel(blockPendingRemove.startSlot)} – {slotIndexToLabel(blockPendingRemove.endSlot + 1)}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setBlockToRemoveId(null)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Nie
+              </button>
+              <button
+                type="button"
+                onClick={confirmRemoveBlock}
+                className="rounded-lg bg-[var(--color-domesta-red)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+              >
+                Tak, usuń
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {dialogOpen && pendingDay !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
