@@ -55,6 +55,14 @@ function addMonthsYm(ym: string, delta: number): string {
   return `${yy}-${mm}`
 }
 
+/** Bieżący miesiąc w formacie YYYY-MM (porównywalny z etykietami serii). */
+function currentYearMonth(): string {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  return `${y}-${m}`
+}
+
 function interpolateAdvanceDistribution(u: number): number[] {
   const kf = ADVANCE_KEYFRAMES
   if (u <= kf[0]!.u) return [...kf[0]!.w]
@@ -207,19 +215,8 @@ function formatPlnCompact(n: number) {
 const formatPlnFull = (value: number) =>
   new Intl.NumberFormat('pl-PL', { style: 'currency', currency: 'PLN', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
 
-/** Ostatni miesiąc realizacji inwestycji na wykresie (projekcja do tego momentu) */
+/** Koniec zakresu osi X (koniec trwania inwestycji / harmonogramu) — bez przewidywań po dacie bieżącej */
 const REALIZATION_END_MONTH = '2027-12'
-
-/** Kolejne kwartały od `afterYm` (wyłącznie) do REALIZATION_END_MONTH włącznie */
-function projectionQuarterMonths(lastHistoricalYm: string): string[] {
-  const out: string[] = []
-  let cur = addMonthsYm(lastHistoricalYm, 3)
-  while (monthToComparable(cur) <= monthToComparable(REALIZATION_END_MONTH)) {
-    out.push(cur)
-    cur = addMonthsYm(cur, 3)
-  }
-  return out
-}
 
 function aggregateFinancePoints(
   buildingIds: number[],
@@ -260,68 +257,56 @@ function FinanceChart({ points }: { points: { month: string; expectedPln: number
       return null
     }
 
-    const last = points[points.length - 1]
-    const prev = points.length >= 2 ? points[points.length - 2] : last
-    const dExpected = last.expectedPln - prev.expectedPln
-    const dPaid = last.paidPln - prev.paidPln
+    const todayYm = currentYearMonth()
+    const dataMap = new Map(points.map((p) => [p.month, p]))
+    const startM = points[0]!.month
+    const domainMonths = eachQuarterMonth(startM, REALIZATION_END_MONTH)
 
-    const projMonths = projectionQuarterMonths(last.month)
-    const projPoints: { month: string; expectedPln: number; paidPln: number }[] = []
-    for (let i = 0; i < projMonths.length; i++) {
-      projPoints.push({
-        month: projMonths[i]!,
-        expectedPln: last.expectedPln + (i + 1) * dExpected,
-        paidPln: last.paidPln + (i + 1) * dPaid,
-      })
-    }
+    const all: { month: string; expectedPln: number; paidPln: number; hasData: boolean }[] = domainMonths.map((m) => {
+      if (monthToComparable(m) > monthToComparable(todayYm)) {
+        return { month: m, expectedPln: 0, paidPln: 0, hasData: false }
+      }
+      const row = dataMap.get(m)
+      if (row) return { month: m, expectedPln: row.expectedPln, paidPln: row.paidPln, hasData: true }
+      return { month: m, expectedPln: 0, paidPln: 0, hasData: false }
+    })
 
-    const all = [...points, ...projPoints]
-    const allValues = all.flatMap((p) => [p.expectedPln, p.paidPln])
-    const max = Math.max(...allValues, 1)
+    const dataIndices = all.map((p, i) => (p.hasData ? i : -1)).filter((i) => i >= 0)
+    const valueList = dataIndices.flatMap((i) => [all[i]!.expectedPln, all[i]!.paidPln])
+    const max = Math.max(...valueList, 1)
     const niceMax = Math.ceil((max * 1.08) / 100_000) * 100_000
 
     const total = all.length
-    const xAt = (i: number) => padL + (innerW * (total === 1 ? 0.5 : i / (total - 1)))
+    const xAt = (i: number) => padL + innerW * (total === 1 ? 0.5 : i / (total - 1))
     const yAt = (v: number) => padT + innerH - (innerH * v) / niceMax
 
-    const pathSolid = (slice: { expectedPln: number; paidPln: number }[], offset: number) => {
-      const line = (key: 'expectedPln' | 'paidPln') =>
-        slice
-          .map((p, j) => {
-            const i = offset + j
-            return `${j === 0 ? 'M' : 'L'} ${xAt(i).toFixed(1)} ${yAt(p[key]).toFixed(1)}`
-          })
-          .join(' ')
-      return { expected: line('expectedPln'), paid: line('paidPln') }
+    let pathExpected = ''
+    let pathPaid = ''
+    for (let k = 0; k < dataIndices.length; k++) {
+      const i = dataIndices[k]!
+      const p = all[i]!
+      const xe = xAt(i).toFixed(1)
+      const ye = yAt(p.expectedPln).toFixed(1)
+      const yp = yAt(p.paidPln).toFixed(1)
+      pathExpected += `${k === 0 ? 'M' : 'L'} ${xe} ${ye} `
+      pathPaid += `${k === 0 ? 'M' : 'L'} ${xe} ${yp} `
     }
 
-    const histLen = points.length
-    const solid = pathSolid(points, 0)
-
-    let dashExpected = ''
-    let dashPaid = ''
-    if (projPoints.length > 0 && histLen >= 1) {
-      const bridge = [points[histLen - 1]!, ...projPoints]
-      const br = pathSolid(bridge, histLen - 1)
-      dashExpected = br.expected.replace(/^M/, 'M')
-      dashPaid = br.paid.replace(/^M/, 'M')
-    }
+    const lastDataIdx = dataIndices.length > 0 ? dataIndices[dataIndices.length - 1]! : -1
 
     const tickCount = 4
     const ticks = Array.from({ length: tickCount + 1 }, (_, i) => Math.round((niceMax * i) / tickCount))
 
     return {
       all,
-      histLen,
       maxY: niceMax,
       ticks,
       xAt,
       yAt,
-      solidExpected: solid.expected,
-      solidPaid: solid.paid,
-      dashExpected,
-      dashPaid,
-      projLabelFrom: histLen,
+      pathExpected: pathExpected.trim(),
+      pathPaid: pathPaid.trim(),
+      lastDataIdx,
+      todayYm,
     }
   }, [points, innerW, innerH, padL, padT])
 
@@ -374,15 +359,16 @@ function FinanceChart({ points }: { points: { month: string; expectedPln: number
 
   if (!chartModel) return null
 
-  const { all, histLen, maxY, ticks, solidExpected, solidPaid, dashExpected, dashPaid, projLabelFrom, xAt, yAt } = chartModel
+  const { all, maxY, ticks, pathExpected, pathPaid, lastDataIdx, todayYm, xAt, yAt } = chartModel
 
   const hp = hoverIndex !== null && hoverIndex < all.length ? all[hoverIndex] : null
 
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white p-4">
       <p className="mb-3 text-sm text-gray-600">
-        Skumulowana należność według harmonogramu vs skumulowane wpłaty (dane przykładowe, zależne od filtrów). Przerywane odcinki to projekcja trendu do końca realizacji (
-        {formatMonthPl(REALIZATION_END_MONTH)}). Najedź kursorem na wykres, aby zobaczyć różnicę w wybranym momencie osi czasu.
+        Skumulowana należność i wpłaty — tylko dane do{' '}
+        <span className="font-medium">{formatMonthPl(todayYm)}</span> (bez prognoz). Oś czasu do końca inwestycji (
+        {formatMonthPl(REALIZATION_END_MONTH)}). Najedź na wykres, aby zobaczyć szczegóły.
       </p>
       <div className="relative">
         <svg
@@ -405,11 +391,11 @@ function FinanceChart({ points }: { points: { month: string; expectedPln: number
             </g>
           )
         })}
-        {histLen < all.length ? (
+        {lastDataIdx >= 0 && lastDataIdx < all.length - 1 ? (
           <line
-            x1={(xAt(histLen - 1) + xAt(histLen)) / 2}
+            x1={(xAt(lastDataIdx) + xAt(lastDataIdx + 1)) / 2}
             y1={padT}
-            x2={(xAt(histLen - 1) + xAt(histLen)) / 2}
+            x2={(xAt(lastDataIdx) + xAt(lastDataIdx + 1)) / 2}
             y2={padT + innerH}
             stroke="#d1d5db"
             strokeWidth="1"
@@ -417,31 +403,18 @@ function FinanceChart({ points }: { points: { month: string; expectedPln: number
             className="opacity-80"
           />
         ) : null}
-        <path d={solidExpected} fill="none" stroke="var(--color-domesta-red, #c41e3a)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-        <path d={solidPaid} fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-        {dashExpected ? (
+        {pathExpected ? (
           <path
-            d={dashExpected}
+            d={pathExpected}
             fill="none"
             stroke="var(--color-domesta-red, #c41e3a)"
             strokeWidth="2.5"
             strokeLinejoin="round"
             strokeLinecap="round"
-            strokeDasharray="6 5"
-            opacity={0.85}
           />
         ) : null}
-        {dashPaid ? (
-          <path
-            d={dashPaid}
-            fill="none"
-            stroke="#16a34a"
-            strokeWidth="2.5"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-            strokeDasharray="6 5"
-            opacity={0.85}
-          />
+        {pathPaid ? (
+          <path d={pathPaid} fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
         ) : null}
         {hoverIndex !== null ? (
           <line
@@ -456,11 +429,11 @@ function FinanceChart({ points }: { points: { month: string; expectedPln: number
           />
         ) : null}
         {all.map((p, i) => {
+          if (!p.hasData) return null
           const ye = yAt(p.expectedPln)
           const yp = yAt(p.paidPln)
-          const isProj = i >= projLabelFrom
           const hi = hoverIndex === i
-          const r = hi ? 5 : isProj ? 3 : 4
+          const r = hi ? 5 : 4
           return (
             <g key={`${p.month}-${i}`}>
               <circle
@@ -470,7 +443,6 @@ function FinanceChart({ points }: { points: { month: string; expectedPln: number
                 fill="white"
                 stroke="var(--color-domesta-red, #c41e3a)"
                 strokeWidth={hi ? 2.5 : 2}
-                opacity={isProj && !hi ? 0.75 : 1}
               />
               <circle
                 cx={xAt(i)}
@@ -479,21 +451,20 @@ function FinanceChart({ points }: { points: { month: string; expectedPln: number
                 fill="white"
                 stroke="#16a34a"
                 strokeWidth={hi ? 2.5 : 2}
-                opacity={isProj && !hi ? 0.75 : 1}
               />
             </g>
           )
         })}
         {all.map((p, i) => {
           if (!financeXLabelIndices.has(i)) return null
-          const isProj = i >= projLabelFrom
+          const isFuture = monthToComparable(p.month) > monthToComparable(todayYm)
           return (
             <text
               key={`lbl-${p.month}-${i}`}
               x={xAt(i)}
               y={h - 12}
               textAnchor="middle"
-              className={`text-[10px] ${isProj ? 'fill-gray-400' : 'fill-gray-600'}`}
+              className={`text-[10px] ${isFuture ? 'fill-gray-400' : 'fill-gray-600'}`}
             >
               {formatMonthPl(p.month)}
             </text>
@@ -508,25 +479,30 @@ function FinanceChart({ points }: { points: { month: string; expectedPln: number
             aria-live="polite"
           >
             <p className="font-semibold text-[var(--color-domesta-gray)]">{formatMonthPl(hp.month)}</p>
-            {hoverIndex !== null && hoverIndex >= projLabelFrom ? (
-              <p className="mt-0.5 text-xs text-gray-500">Prognoza (trend)</p>
-            ) : null}
-            <dl className="mt-2 space-y-1 text-xs text-gray-700">
-              <div className="flex justify-between gap-4">
-                <dt>Należność (harm.)</dt>
-                <dd className="tabular-nums font-medium">{formatPlnFull(hp.expectedPln)}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt>Wpłaty</dt>
-                <dd className="tabular-nums font-medium">{formatPlnFull(hp.paidPln)}</dd>
-              </div>
-              <div className="mt-2 border-t border-gray-100 pt-2">
+            {!hp.hasData ? (
+              <p className="mt-2 text-xs text-gray-600">
+                {monthToComparable(hp.month) > monthToComparable(todayYm)
+                  ? 'Przyszły okres — brak danych (wykres bez prognoz).'
+                  : 'Brak danych dla tego kwartału.'}
+              </p>
+            ) : (
+              <dl className="mt-2 space-y-1 text-xs text-gray-700">
                 <div className="flex justify-between gap-4">
-                  <dt className="font-medium text-gray-900">Różnica (należ. − wpł.)</dt>
-                  <dd className="tabular-nums font-semibold text-gray-900">{formatPlnFull(hp.expectedPln - hp.paidPln)}</dd>
+                  <dt>Należność (harm.)</dt>
+                  <dd className="tabular-nums font-medium">{formatPlnFull(hp.expectedPln)}</dd>
                 </div>
-              </div>
-            </dl>
+                <div className="flex justify-between gap-4">
+                  <dt>Wpłaty</dt>
+                  <dd className="tabular-nums font-medium">{formatPlnFull(hp.paidPln)}</dd>
+                </div>
+                <div className="mt-2 border-t border-gray-100 pt-2">
+                  <div className="flex justify-between gap-4">
+                    <dt className="font-medium text-gray-900">Różnica (należ. − wpł.)</dt>
+                    <dd className="tabular-nums font-semibold text-gray-900">{formatPlnFull(hp.expectedPln - hp.paidPln)}</dd>
+                  </div>
+                </div>
+              </dl>
+            )}
           </div>
         ) : null}
       </div>
@@ -538,10 +514,6 @@ function FinanceChart({ points }: { points: { month: string; expectedPln: number
         <span className="inline-flex items-center gap-2">
           <span className="h-0.5 w-8 bg-green-600" aria-hidden />
           Wpłaty (rzeczywiste)
-        </span>
-        <span className="inline-flex items-center gap-2 text-xs text-gray-500">
-          <span className="h-0.5 w-8 border-b border-dashed border-gray-400" aria-hidden />
-          Prognoza (trend do końca realizacji)
         </span>
       </div>
     </div>
@@ -563,14 +535,23 @@ function AdvancementChart({ points }: { points: AdvancementPoint[] }) {
 
   const chartModel = useMemo(() => {
     if (points.length === 0) return null
-    const maxTotal = Math.max(...points.map((p) => p.total), 1)
+    const todayYm = currentYearMonth()
+
+    let lastDataIdx = points.length - 1
+    while (lastDataIdx >= 0 && monthToComparable(points[lastDataIdx]!.month) > monthToComparable(todayYm)) {
+      lastDataIdx--
+    }
+
+    const plotPts = lastDataIdx >= 0 ? points.slice(0, lastDataIdx + 1) : []
+    const maxTotal = plotPts.length > 0 ? Math.max(...plotPts.map((p) => p.total), 1) : 1
     const niceMax = Math.max(5, Math.ceil((maxTotal * 1.06) / 5) * 5)
 
     const n = points.length
     const xAt = (i: number) => padL + innerW * (n === 1 ? 0.5 : i / (n - 1))
     const yAt = (v: number) => padT + innerH - (innerH * v) / niceMax
 
-    const cumBottom = points.map((p) => {
+    const pn = plotPts.length
+    const cumBottom = plotPts.map((p) => {
       const c: number[] = [0]
       for (let k = 0; k < APARTMENT_HANDOVER_STATUS_ORDER.length; k++) {
         const st = APARTMENT_HANDOVER_STATUS_ORDER[k]!
@@ -579,20 +560,23 @@ function AdvancementChart({ points }: { points: AdvancementPoint[] }) {
       return c
     })
 
-    const layerPaths = APARTMENT_HANDOVER_STATUS_ORDER.map((_, layerIdx) => {
-      const top = points.map((_, i) => yAt(cumBottom[i]![layerIdx + 1]!))
-      const bot = points.map((_, i) => yAt(cumBottom[i]![layerIdx]!))
-      let d = `M ${xAt(0).toFixed(1)} ${top[0]!.toFixed(1)}`
-      for (let i = 1; i < n; i++) d += ` L ${xAt(i).toFixed(1)} ${top[i]!.toFixed(1)}`
-      for (let i = n - 1; i >= 0; i--) d += ` L ${xAt(i).toFixed(1)} ${bot[i]!.toFixed(1)}`
-      d += ' Z'
-      return d
-    })
+    const layerPaths =
+      pn === 0
+        ? APARTMENT_HANDOVER_STATUS_ORDER.map(() => '')
+        : APARTMENT_HANDOVER_STATUS_ORDER.map((_, layerIdx) => {
+            const top = plotPts.map((_, i) => yAt(cumBottom[i]![layerIdx + 1]!))
+            const bot = plotPts.map((_, i) => yAt(cumBottom[i]![layerIdx]!))
+            let d = `M ${xAt(0).toFixed(1)} ${top[0]!.toFixed(1)}`
+            for (let i = 1; i < pn; i++) d += ` L ${xAt(i).toFixed(1)} ${top[i]!.toFixed(1)}`
+            for (let i = pn - 1; i >= 0; i--) d += ` L ${xAt(i).toFixed(1)} ${bot[i]!.toFixed(1)}`
+            d += ' Z'
+            return d
+          })
 
     const tickCount = 5
     const ticks = Array.from({ length: tickCount + 1 }, (_, i) => Math.round((niceMax * i) / tickCount))
 
-    return { pts: points, n, maxY: niceMax, ticks, xAt, layerPaths }
+    return { pts: points, maxY: niceMax, ticks, xAt, layerPaths, lastDataIdx, todayYm }
   }, [points, innerW, innerH, padL, padT])
 
   const svgRef = useRef<SVGSVGElement>(null)
@@ -610,7 +594,7 @@ function AdvancementChart({ points }: { points: AdvancementPoint[] }) {
         setTooltip(null)
         return
       }
-      const total = chartModel.n
+      const total = chartModel.pts.length
       const t = (xSvg - padL) / innerW
       const idx = total === 1 ? 0 : Math.round(t * (total - 1))
       setHoverIndex(Math.max(0, Math.min(total - 1, idx)))
@@ -628,7 +612,7 @@ function AdvancementChart({ points }: { points: AdvancementPoint[] }) {
     setTooltip(null)
   }
 
-  const advancementXLabelIndices = useMemo(() => xAxisLabelIndexSet(points.length, 7), [points.length])
+  const advancementXLabelIndices = useMemo(() => xAxisLabelIndexSet(chartModel?.pts.length ?? 0, 7), [chartModel])
 
   if (points.length === 0) {
     return (
@@ -640,13 +624,15 @@ function AdvancementChart({ points }: { points: AdvancementPoint[] }) {
 
   if (!chartModel) return null
 
-  const { pts, maxY, ticks, xAt, layerPaths } = chartModel
+  const { pts, maxY, ticks, xAt, layerPaths, lastDataIdx, todayYm } = chartModel
   const hp = hoverIndex !== null && hoverIndex < pts.length ? pts[hoverIndex] : null
+  const hoverIsFuture = hoverIndex !== null && lastDataIdx >= 0 && hoverIndex > lastDataIdx
 
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white p-4">
       <p className="mb-3 text-sm text-gray-600">
-        Liczba mieszkań wg statusu oddania do użytków. Oś X obejmuje od najwcześniejszego początku do najpóźniejszego końca realizacji wśród wybranych budynków (kwartały). Najedź na wykres, aby zobaczyć liczby w danym momencie.
+        Liczba mieszkań wg statusu oddania — wykres do{' '}
+        <span className="font-medium">{formatMonthPl(todayYm)}</span> (bez prognoz). Oś X do końca realizacji wybranych budynków. Najedź na wykres po danych.
       </p>
       <div className="relative">
         <svg
@@ -669,17 +655,31 @@ function AdvancementChart({ points }: { points: AdvancementPoint[] }) {
               </g>
             )
           })}
-          {APARTMENT_HANDOVER_STATUS_ORDER.map((st, li) => (
-            <path
-              key={st}
-              d={layerPaths[li]}
-              fill={STATUS_COLORS[st]}
-              fillOpacity={0.88}
-              stroke="white"
-              strokeWidth={0.5}
-              strokeOpacity={0.35}
+          {APARTMENT_HANDOVER_STATUS_ORDER.map((st, li) =>
+            layerPaths[li] ? (
+              <path
+                key={st}
+                d={layerPaths[li]}
+                fill={STATUS_COLORS[st]}
+                fillOpacity={0.88}
+                stroke="white"
+                strokeWidth={0.5}
+                strokeOpacity={0.35}
+              />
+            ) : null,
+          )}
+          {lastDataIdx >= 0 && lastDataIdx < pts.length - 1 ? (
+            <line
+              x1={(xAt(lastDataIdx) + xAt(lastDataIdx + 1)) / 2}
+              y1={padT}
+              x2={(xAt(lastDataIdx) + xAt(lastDataIdx + 1)) / 2}
+              y2={padT + innerH}
+              stroke="#d1d5db"
+              strokeWidth="1"
+              strokeDasharray="4 4"
+              className="opacity-80"
             />
-          ))}
+          ) : null}
           {hoverIndex !== null ? (
             <line
               x1={xAt(hoverIndex)}
@@ -713,20 +713,28 @@ function AdvancementChart({ points }: { points: AdvancementPoint[] }) {
             role="status"
           >
             <p className="font-semibold text-[var(--color-domesta-gray)]">{formatMonthPl(hp.month)}</p>
-            <ul className="mt-2 space-y-1 text-xs">
-              {APARTMENT_HANDOVER_STATUS_ORDER.map((st) => (
-                <li key={st} className="flex justify-between gap-6">
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span className="h-2 w-2 shrink-0 rounded-sm" style={{ background: STATUS_COLORS[st] }} />
-                    <span className="truncate">{st}</span>
-                  </span>
-                  <span className="shrink-0 tabular-nums font-medium">{formatApartmentCount(hp.counts[st])}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2 border-t border-gray-100 pt-2 text-xs text-gray-600">
-              Łącznie: <span className="font-semibold text-gray-900">{formatApartmentCount(hp.total)}</span> mieszkań
-            </p>
+            {hoverIsFuture ? (
+              <p className="mt-2 text-xs text-gray-600">
+                Przyszły okres — wykres przedstawia wyłącznie dane do {formatMonthPl(todayYm)} (bez prognoz).
+              </p>
+            ) : (
+              <>
+                <ul className="mt-2 space-y-1 text-xs">
+                  {APARTMENT_HANDOVER_STATUS_ORDER.map((st) => (
+                    <li key={st} className="flex justify-between gap-6">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="h-2 w-2 shrink-0 rounded-sm" style={{ background: STATUS_COLORS[st] }} />
+                        <span className="truncate">{st}</span>
+                      </span>
+                      <span className="shrink-0 tabular-nums font-medium">{formatApartmentCount(hp.counts[st])}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 border-t border-gray-100 pt-2 text-xs text-gray-600">
+                  Łącznie: <span className="font-semibold text-gray-900">{formatApartmentCount(hp.total)}</span> mieszkań
+                </p>
+              </>
+            )}
           </div>
         ) : null}
       </div>
