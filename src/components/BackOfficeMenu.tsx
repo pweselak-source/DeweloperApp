@@ -85,7 +85,7 @@ export function BackOfficeMenu({ activeItem, onSelectItem }: BackOfficeMenuProps
                 <path d="M3 10h18" />
                 <path d="M8 2v4M16 2v4" />
               </svg>
-              <span>Zarzadzanie Kalendarzem</span>
+              <span>Zarządzanie kalendarzem</span>
             </button>
           </li>
           <li>

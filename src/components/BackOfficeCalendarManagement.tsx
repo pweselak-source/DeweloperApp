@@ -1,0 +1,404 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
+const WEEKDAYS = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela'] as const
+
+/** Półgodzinne sloty: 00:00 … 23:30 */
+const SLOTS_PER_DAY = 48
+const SLOT_MINUTES = 30
+const SLOT_PX = 22
+
+export type CalendarManagementUser = {
+  id: string
+  name: string
+}
+
+type InvestmentLite = {
+  id: number
+  name: string
+}
+
+type BuildingLite = {
+  id: number
+  investmentId: number
+  address: string
+}
+
+export type AvailabilityBlock = {
+  id: string
+  userId: string
+  dayIndex: number
+  startSlot: number
+  endSlot: number
+  buildingId: number
+  buildingLabel: string
+}
+
+type BackOfficeCalendarManagementProps = {
+  users: CalendarManagementUser[]
+  investments: InvestmentLite[]
+  buildings: BuildingLite[]
+}
+
+function slotIndexToLabel(slot: number): string {
+  const totalMin = slot * SLOT_MINUTES
+  const h = Math.floor(totalMin / 60)
+  const m = totalMin % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
+function normalizeRange(a: number, b: number): { start: number; end: number } {
+  return a <= b ? { start: a, end: b } : { start: b, end: a }
+}
+
+function clientYToSlot(clientY: number, columnTop: number): number {
+  const y = clientY - columnTop
+  return Math.max(0, Math.min(SLOTS_PER_DAY - 1, Math.floor(y / SLOT_PX)))
+}
+
+/** Przypisuje pas poziomy (0..n-1) tak, by nakładające się przedziały były obok siebie. */
+function assignLanes(blocks: AvailabilityBlock[]): { idToLane: Map<string, number>; laneCount: number } {
+  if (blocks.length === 0) return { idToLane: new Map(), laneCount: 1 }
+  const sorted = [...blocks].sort((a, b) => a.startSlot - b.startSlot || a.endSlot - b.endSlot)
+  const laneEnds: number[] = []
+  const idToLane = new Map<string, number>()
+  for (const b of sorted) {
+    let placed = false
+    for (let i = 0; i < laneEnds.length; i++) {
+      if (b.startSlot > laneEnds[i]) {
+        laneEnds[i] = b.endSlot
+        idToLane.set(b.id, i)
+        placed = true
+        break
+      }
+    }
+    if (!placed) {
+      laneEnds.push(b.endSlot)
+      idToLane.set(b.id, laneEnds.length - 1)
+    }
+  }
+  return { idToLane, laneCount: Math.max(1, laneEnds.length) }
+}
+
+export function BackOfficeCalendarManagement({ users, investments, buildings }: BackOfficeCalendarManagementProps) {
+  const [selectedUserId, setSelectedUserId] = useState(() => users[0]?.id ?? '')
+  const [blocks, setBlocks] = useState<AvailabilityBlock[]>([])
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [pendingDay, setPendingDay] = useState<number | null>(null)
+  const [pendingStart, setPendingStart] = useState<number>(0)
+  const [pendingEnd, setPendingEnd] = useState<number>(0)
+  const [dialogInvestmentId, setDialogInvestmentId] = useState<number | ''>('')
+  const [dialogBuildingId, setDialogBuildingId] = useState<number | ''>('')
+
+  const dragRef = useRef<{
+    dayIndex: number
+    anchorSlot: number
+    active: boolean
+  } | null>(null)
+  const [dragHighlight, setDragHighlight] = useState<{ dayIndex: number; start: number; end: number } | null>(null)
+  const dragHighlightRef = useRef(dragHighlight)
+  dragHighlightRef.current = dragHighlight
+
+  const blocksForUser = useMemo(
+    () => blocks.filter((b) => b.userId === selectedUserId),
+    [blocks, selectedUserId],
+  )
+
+  const laneLayoutByDay = useMemo(() => {
+    const map = new Map<number, { idToLane: Map<string, number>; laneCount: number }>()
+    for (let d = 0; d < WEEKDAYS.length; d++) {
+      const dayBlocks = blocksForUser.filter((b) => b.dayIndex === d)
+      map.set(d, assignLanes(dayBlocks))
+    }
+    return map
+  }, [blocksForUser])
+
+  const buildingsForInvestment = useMemo(() => {
+    if (dialogInvestmentId === '') return []
+    return buildings.filter((b) => b.investmentId === dialogInvestmentId)
+  }, [buildings, dialogInvestmentId])
+
+  useEffect(() => {
+    if (users.length && !users.some((u) => u.id === selectedUserId)) {
+      setSelectedUserId(users[0].id)
+    }
+  }, [users, selectedUserId])
+
+  const openDialogForRange = useCallback((dayIndex: number, slotA: number, slotB: number) => {
+    const { start, end } = normalizeRange(slotA, slotB)
+    setPendingDay(dayIndex)
+    setPendingStart(start)
+    setPendingEnd(end)
+    const firstInv = investments[0]?.id
+    setDialogInvestmentId(firstInv !== undefined ? firstInv : '')
+    setDialogBuildingId('')
+    setDialogOpen(true)
+  }, [investments])
+
+  const handleDayColumnPointerDown = (dayIndex: number) => (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return
+    e.preventDefault()
+    const el = e.currentTarget
+    el.setPointerCapture(e.pointerId)
+    const rect = el.getBoundingClientRect()
+    const slot = clientYToSlot(e.clientY, rect.top)
+    dragRef.current = { dayIndex, anchorSlot: slot, active: true }
+    setDragHighlight({ dayIndex, start: slot, end: slot })
+  }
+
+  const handleDayColumnPointerMove = (dayIndex: number) => (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = dragRef.current
+    if (!d?.active || d.dayIndex !== dayIndex) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const slot = clientYToSlot(e.clientY, rect.top)
+    const { start, end } = normalizeRange(d.anchorSlot, slot)
+    setDragHighlight({ dayIndex, start, end })
+  }
+
+  const endDrag = useCallback(
+    (e: React.PointerEvent) => {
+      const d = dragRef.current
+      if (!d?.active) return
+      dragRef.current = null
+      const target = e.currentTarget instanceof HTMLElement ? e.currentTarget : (e.target as HTMLElement)
+      try {
+        target.releasePointerCapture(e.pointerId)
+      } catch {
+        /* ignore */
+      }
+      const h = dragHighlightRef.current
+      setDragHighlight(null)
+      if (!h || h.dayIndex !== d.dayIndex) return
+      openDialogForRange(h.dayIndex, h.start, h.end)
+    },
+    [openDialogForRange],
+  )
+
+  const handleSaveDialog = () => {
+    if (pendingDay === null || dialogInvestmentId === '' || dialogBuildingId === '') return
+    const building = buildings.find((b) => b.id === dialogBuildingId)
+    if (!building) return
+    const id =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `av-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+    setBlocks((prev) => [
+      ...prev,
+      {
+        id,
+        userId: selectedUserId,
+        dayIndex: pendingDay,
+        startSlot: pendingStart,
+        endSlot: pendingEnd,
+        buildingId: building.id,
+        buildingLabel: building.address,
+      },
+    ])
+    setDialogOpen(false)
+    setPendingDay(null)
+  }
+
+  const slotHighlighted = (dayIndex: number, slot: number) => {
+    if (!dragHighlight || dragHighlight.dayIndex !== dayIndex) return false
+    return slot >= dragHighlight.start && slot <= dragHighlight.end
+  }
+
+  const cellClasses = (dayIndex: number, slot: number) => {
+    const base =
+      'shrink-0 border-b border-gray-100 cursor-crosshair select-none hover:bg-amber-50/80 transition-colors'
+    const hi = slotHighlighted(dayIndex, slot)
+    return `${base} ${hi ? 'bg-amber-200/90 ring-1 ring-inset ring-amber-400/60' : 'bg-white'}`
+  }
+
+  return (
+    <section className="space-y-5">
+      <div className="space-y-3">
+        <h1 className="text-2xl font-bold text-[var(--color-domesta-gray)]">Zaznacz swoją dostępność</h1>
+        <label className="flex max-w-md flex-col gap-1 text-sm text-gray-600">
+          Użytkownik
+          <select
+            value={selectedUserId}
+            onChange={(e) => setSelectedUserId(e.target.value)}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-[var(--color-domesta-red)]"
+          >
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <p className="text-sm text-gray-600">
+        Przeciągnij myszą po polach jednego dnia, aby zaznaczyć przedział (bloki co 30 min). Po zwolnieniu przycisku wybierz inwestycję i budynek, potem zapisz.
+      </p>
+
+      <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
+        <div className="min-w-[720px]">
+          <div className="flex border-b border-gray-200 bg-gray-50">
+            <div className="sticky left-0 z-20 w-14 shrink-0 border-r border-gray-200 bg-gray-50" aria-hidden />
+            {WEEKDAYS.map((label) => (
+              <div
+                key={label}
+                className="min-w-0 flex-1 border-l border-gray-100 px-1 py-2 text-center text-xs font-semibold text-[var(--color-domesta-gray)]"
+              >
+                {label}
+              </div>
+            ))}
+          </div>
+          <div className="flex max-h-[min(70vh,720px)] overflow-y-auto">
+            <div className="sticky left-0 z-10 w-14 shrink-0 border-r border-gray-200 bg-gray-50 pr-1">
+              {Array.from({ length: SLOTS_PER_DAY }, (_, slot) => (
+                <div
+                  key={slot}
+                  className="flex shrink-0 items-start justify-end border-b border-gray-100/80 pr-2 pt-0 text-[10px] leading-none text-gray-400"
+                  style={{ height: SLOT_PX }}
+                >
+                  {slot % 2 === 0 ? <span>{slotIndexToLabel(slot)}</span> : null}
+                </div>
+              ))}
+            </div>
+            <div className="flex min-w-0 flex-1">
+              {WEEKDAYS.map((label, dayIndex) => (
+                <div key={label} className="relative min-w-0 flex-1 border-l border-gray-100">
+                  <div
+                    role="application"
+                    aria-label={`Kalendarz: ${label}`}
+                    className="relative touch-none"
+                    style={{ height: SLOTS_PER_DAY * SLOT_PX }}
+                    onPointerDown={handleDayColumnPointerDown(dayIndex)}
+                    onPointerMove={handleDayColumnPointerMove(dayIndex)}
+                    onPointerUp={endDrag}
+                    onPointerCancel={endDrag}
+                  >
+                    {Array.from({ length: SLOTS_PER_DAY }, (_, slot) => (
+                      <div
+                        key={slot}
+                        role="presentation"
+                        className={cellClasses(dayIndex, slot)}
+                        style={{ height: SLOT_PX }}
+                      />
+                    ))}
+                    {blocksForUser
+                      .filter((b) => b.dayIndex === dayIndex)
+                      .map((b) => {
+                        const top = b.startSlot * SLOT_PX
+                        const h = (b.endSlot - b.startSlot + 1) * SLOT_PX
+                        const { idToLane, laneCount } = laneLayoutByDay.get(dayIndex) ?? {
+                          idToLane: new Map<string, number>(),
+                          laneCount: 1,
+                        }
+                        const lane = idToLane.get(b.id) ?? 0
+                        const gapPx = 2
+                        const innerW = `calc((100% - ${(laneCount - 1) * gapPx}px) / ${laneCount})`
+                        const leftOff = `calc(${lane} * ((100% - ${(laneCount - 1) * gapPx}px) / ${laneCount} + ${gapPx}px))`
+                        return (
+                          <div
+                            key={b.id}
+                            className="group absolute z-[2] overflow-visible rounded border border-emerald-600/40 bg-emerald-100 shadow-sm"
+                            style={{
+                              top,
+                              height: Math.max(h, SLOT_PX),
+                              left: leftOff,
+                              width: innerW,
+                            }}
+                          >
+                            <div className="pointer-events-auto flex h-full w-full flex-col items-center justify-center overflow-hidden px-0.5 py-1">
+                              <span
+                                className="max-h-full text-center text-[9px] font-medium leading-none text-emerald-900 [writing-mode:vertical-rl] group-hover:invisible"
+                                style={{ textOrientation: 'mixed' }}
+                              >
+                                {b.buildingLabel}
+                              </span>
+                              <div className="pointer-events-none invisible absolute inset-1 z-10 flex items-center justify-center rounded bg-white/95 px-1.5 py-1 text-center text-[10px] font-medium leading-snug text-emerald-950 shadow-md opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100">
+                                {b.buildingLabel}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {dialogOpen && pendingDay !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="availability-dialog-title"
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+          >
+            <h2 id="availability-dialog-title" className="mb-4 text-lg font-semibold text-[var(--color-domesta-gray)]">
+              Dostępność: {WEEKDAYS[pendingDay]},{' '}
+              {slotIndexToLabel(pendingStart)} – {slotIndexToLabel(pendingEnd + 1)}
+            </h2>
+            <div className="space-y-4">
+              <label className="block text-sm text-gray-600">
+                Inwestycja
+                <select
+                  value={dialogInvestmentId === '' ? '' : String(dialogInvestmentId)}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    setDialogInvestmentId(v === '' ? '' : Number(v))
+                    setDialogBuildingId('')
+                  }}
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-domesta-red)]"
+                >
+                  {investments.map((inv) => (
+                    <option key={inv.id} value={inv.id}>
+                      {inv.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block text-sm text-gray-600">
+                Budynek
+                <select
+                  value={dialogBuildingId === '' ? '' : String(dialogBuildingId)}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    setDialogBuildingId(v === '' ? '' : Number(v))
+                  }}
+                  disabled={dialogInvestmentId === '' || buildingsForInvestment.length === 0}
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-domesta-red)] disabled:cursor-not-allowed disabled:bg-gray-100"
+                >
+                  <option value="">— wybierz budynek —</option>
+                  {buildingsForInvestment.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.address}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setDialogOpen(false)
+                  setPendingDay(null)
+                }}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Anuluj
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveDialog}
+                disabled={dialogBuildingId === ''}
+                className="rounded-lg bg-[var(--color-domesta-red)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Zapisz
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
