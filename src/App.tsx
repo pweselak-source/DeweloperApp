@@ -64,14 +64,55 @@ type Apartment = {
   assignedClient: string
 }
 
-/** Przykładowe wpisy harmonogramu (mock) — wymagane: kwota raty, termin; opcjonalne: spłata, data, notatka */
+/** Wiersz harmonogramu — wymagane: kwota raty, termin; opcjonalne: spłata, data, notatka */
 type PaymentScheduleSampleRow = {
+  id: number
   installmentPln: number
   dueDate: string
   paidPln: number | null
   paidDate: string | null
   note: string | null
 }
+
+type PaymentScheduleDraftFields = {
+  installmentPln: string
+  dueDate: string
+  paidPln: string
+  paidDate: string
+  note: string
+}
+
+const parsePaymentScheduleDraftFields = (draft: PaymentScheduleDraftFields): Omit<PaymentScheduleSampleRow, 'id'> | null => {
+  const instRaw = draft.installmentPln.trim().replace(',', '.')
+  const installment = parseFloat(instRaw)
+  if (Number.isNaN(installment) || installment <= 0) return null
+  const due = draft.dueDate.trim()
+  if (!due) return null
+
+  let paidPln: number | null = null
+  const paidRaw = draft.paidPln.trim().replace(',', '.')
+  if (paidRaw !== '') {
+    const p = parseFloat(paidRaw)
+    if (Number.isNaN(p) || p < 0) return null
+    paidPln = p
+  }
+
+  const paidDateRaw = draft.paidDate.trim()
+  const paidDate = paidDateRaw === '' ? null : paidDateRaw
+
+  const noteRaw = draft.note.trim()
+  const note = noteRaw === '' ? null : noteRaw
+
+  return { installmentPln: installment, dueDate: due, paidPln, paidDate, note }
+}
+
+const emptyPaymentScheduleDraft = (): PaymentScheduleDraftFields => ({
+  installmentPln: '',
+  dueDate: '',
+  paidPln: '',
+  paidDate: '',
+  note: '',
+})
 
 const formatPlIsoDate = (iso: string) => {
   const [y, m, d] = iso.split('-')
@@ -87,16 +128,16 @@ const formatPlnAmountPln = (value: number) =>
   `${new Intl.NumberFormat('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)} PLN`
 
 const SAMPLE_APARTMENT_PAYMENT_SCHEDULE: PaymentScheduleSampleRow[] = [
-  { installmentPln: 45_000, dueDate: '2025-03-31', paidPln: 45_000, paidDate: '2025-03-28', note: 'Wpłata przelewem, zgodnie z umową' },
-  { installmentPln: 45_000, dueDate: '2025-06-30', paidPln: 45_000, paidDate: '2025-06-27', note: null },
-  { installmentPln: 45_000, dueDate: '2025-09-30', paidPln: 45_000, paidDate: '2025-09-29', note: 'Potwierdzenie w biurze' },
-  { installmentPln: 45_000, dueDate: '2025-12-31', paidPln: null, paidDate: null, note: 'Termin zbliża się — przypomnienie wysłane' },
-  { installmentPln: 50_000, dueDate: '2026-03-31', paidPln: null, paidDate: null, note: null },
-  { installmentPln: 50_000, dueDate: '2026-06-30', paidPln: 25_000, paidDate: '2026-06-15', note: 'Częściowa wpłata, reszta do uzgodnienia' },
-  { installmentPln: 50_000, dueDate: '2026-09-30', paidPln: null, paidDate: null, note: null },
-  { installmentPln: 50_000, dueDate: '2026-12-31', paidPln: null, paidDate: null, note: 'Ostatnia rata przed odbiorem kluczy' },
-  { installmentPln: 35_000, dueDate: '2027-03-31', paidPln: null, paidDate: null, note: null },
-  { installmentPln: 35_000, dueDate: '2027-06-30', paidPln: null, paidDate: null, note: 'Rozliczenie końcowe po odbiorze' },
+  { id: 1, installmentPln: 45_000, dueDate: '2025-03-31', paidPln: 45_000, paidDate: '2025-03-28', note: 'Wpłata przelewem, zgodnie z umową' },
+  { id: 2, installmentPln: 45_000, dueDate: '2025-06-30', paidPln: 45_000, paidDate: '2025-06-27', note: null },
+  { id: 3, installmentPln: 45_000, dueDate: '2025-09-30', paidPln: 45_000, paidDate: '2025-09-29', note: 'Potwierdzenie w biurze' },
+  { id: 4, installmentPln: 45_000, dueDate: '2025-12-31', paidPln: null, paidDate: null, note: 'Termin zbliża się — przypomnienie wysłane' },
+  { id: 5, installmentPln: 50_000, dueDate: '2026-03-31', paidPln: null, paidDate: null, note: null },
+  { id: 6, installmentPln: 50_000, dueDate: '2026-06-30', paidPln: 25_000, paidDate: '2026-06-15', note: 'Częściowa wpłata, reszta do uzgodnienia' },
+  { id: 7, installmentPln: 50_000, dueDate: '2026-09-30', paidPln: null, paidDate: null, note: null },
+  { id: 8, installmentPln: 50_000, dueDate: '2026-12-31', paidPln: null, paidDate: null, note: 'Ostatnia rata przed odbiorem kluczy' },
+  { id: 9, installmentPln: 35_000, dueDate: '2027-03-31', paidPln: null, paidDate: null, note: null },
+  { id: 10, installmentPln: 35_000, dueDate: '2027-06-30', paidPln: null, paidDate: null, note: 'Rozliczenie końcowe po odbiorze' },
 ]
 
 function App() {
@@ -295,40 +336,46 @@ function App() {
   const [apartmentFileTypeForm, setApartmentFileTypeForm] = useState('')
   const [apartmentClientForm, setApartmentClientForm] = useState('')
   const [paymentScheduleRows, setPaymentScheduleRows] = useState<PaymentScheduleSampleRow[]>(() => [...SAMPLE_APARTMENT_PAYMENT_SCHEDULE])
-  const [paymentScheduleDraft, setPaymentScheduleDraft] = useState({
-    installmentPln: '',
-    dueDate: '',
-    paidPln: '',
-    paidDate: '',
-    note: '',
-  })
+  const [paymentScheduleDraft, setPaymentScheduleDraft] = useState<PaymentScheduleDraftFields>(() => emptyPaymentScheduleDraft())
+  const [editingPaymentScheduleId, setEditingPaymentScheduleId] = useState<number | null>(null)
+  const [paymentScheduleEditDraft, setPaymentScheduleEditDraft] = useState<PaymentScheduleDraftFields>(() => emptyPaymentScheduleDraft())
+
+  const beginEditPaymentScheduleRow = (row: PaymentScheduleSampleRow) => {
+    setEditingPaymentScheduleId(row.id)
+    setPaymentScheduleEditDraft({
+      installmentPln: String(row.installmentPln),
+      dueDate: row.dueDate,
+      paidPln: row.paidPln !== null ? String(row.paidPln) : '',
+      paidDate: row.paidDate ?? '',
+      note: row.note ?? '',
+    })
+  }
+
+  const cancelPaymentScheduleEdit = () => {
+    setEditingPaymentScheduleId(null)
+    setPaymentScheduleEditDraft(emptyPaymentScheduleDraft())
+  }
+
+  const savePaymentScheduleEdit = () => {
+    if (editingPaymentScheduleId === null) return
+    const parsed = parsePaymentScheduleDraftFields(paymentScheduleEditDraft)
+    if (!parsed) return
+    setPaymentScheduleRows((prev) =>
+      prev.map((r) => (r.id === editingPaymentScheduleId ? { ...r, ...parsed } : r)),
+    )
+    setEditingPaymentScheduleId(null)
+    setPaymentScheduleEditDraft(emptyPaymentScheduleDraft())
+  }
 
   const addPaymentScheduleRow = () => {
-    const instRaw = paymentScheduleDraft.installmentPln.trim().replace(',', '.')
-    const installment = parseFloat(instRaw)
-    if (Number.isNaN(installment) || installment <= 0) return
-    const due = paymentScheduleDraft.dueDate.trim()
-    if (!due) return
-
-    let paidPln: number | null = null
-    const paidRaw = paymentScheduleDraft.paidPln.trim().replace(',', '.')
-    if (paidRaw !== '') {
-      const p = parseFloat(paidRaw)
-      if (Number.isNaN(p) || p < 0) return
-      paidPln = p
-    }
-
-    const paidDateRaw = paymentScheduleDraft.paidDate.trim()
-    const paidDate = paidDateRaw === '' ? null : paidDateRaw
-
-    const noteRaw = paymentScheduleDraft.note.trim()
-    const note = noteRaw === '' ? null : noteRaw
-
-    setPaymentScheduleRows((prev) => [
-      ...prev,
-      { installmentPln: installment, dueDate: due, paidPln, paidDate, note },
-    ])
-    setPaymentScheduleDraft({ installmentPln: '', dueDate: '', paidPln: '', paidDate: '', note: '' })
+    const parsed = parsePaymentScheduleDraftFields(paymentScheduleDraft)
+    if (!parsed) return
+    setPaymentScheduleRows((prev) => {
+      const nextId = prev.length === 0 ? 1 : Math.max(...prev.map((r) => r.id)) + 1
+      return [...prev, { id: nextId, ...parsed }]
+    })
+    setPaymentScheduleDraft(emptyPaymentScheduleDraft())
+    setEditingPaymentScheduleId(null)
   }
 
   const paymentScheduleTotals = useMemo(() => {
@@ -631,6 +678,8 @@ function App() {
   const handleCancelApartmentForm = () => {
     setApartmentFormOpen(false)
     setEditingApartmentId(null)
+    setEditingPaymentScheduleId(null)
+    setPaymentScheduleEditDraft(emptyPaymentScheduleDraft())
   }
 
   const handleSaveApartment = () => {
@@ -681,6 +730,8 @@ function App() {
     }
     setApartmentFormOpen(false)
     setEditingApartmentId(null)
+    setEditingPaymentScheduleId(null)
+    setPaymentScheduleEditDraft(emptyPaymentScheduleDraft())
   }
 
   const outerBackgroundClass =
@@ -1696,20 +1747,105 @@ function App() {
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 text-gray-700">
-                                  {paymentScheduleRowsSorted.map((row, index) => (
-                                    <tr key={`${row.dueDate}-${row.installmentPln}-${index}`}>
-                                      <td className="px-3 py-3 align-middle tabular-nums text-gray-600">{index + 1}</td>
-                                      <td className="px-3 py-3 align-middle font-medium tabular-nums">{pln(row.installmentPln)}</td>
-                                      <td className="px-3 py-3 align-middle whitespace-nowrap">{formatPlIsoDate(row.dueDate)}</td>
-                                      <td className="px-3 py-3 align-middle tabular-nums">
-                                        {row.paidPln !== null ? pln(row.paidPln) : '—'}
-                                      </td>
-                                      <td className="px-3 py-3 align-middle whitespace-nowrap">
-                                        {row.paidDate ? formatPlIsoDate(row.paidDate) : '—'}
-                                      </td>
-                                      <td className="px-3 py-3 align-middle text-gray-600">{row.note ?? '—'}</td>
-                                    </tr>
-                                  ))}
+                                  {paymentScheduleRowsSorted.map((row, index) =>
+                                    editingPaymentScheduleId === row.id ? (
+                                      <tr key={row.id} className="bg-gray-50/90">
+                                        <td className="px-3 py-2 align-middle">
+                                          <div className="flex flex-col items-stretch gap-2">
+                                            <span className="text-center text-sm tabular-nums text-gray-600">{index + 1}</span>
+                                            <div className="flex flex-wrap gap-1">
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation()
+                                                  savePaymentScheduleEdit()
+                                                }}
+                                                className="rounded-md bg-[var(--color-domesta-red)] px-2 py-1 text-xs font-semibold text-white hover:opacity-90"
+                                              >
+                                                Zapisz
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation()
+                                                  cancelPaymentScheduleEdit()
+                                                }}
+                                                className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100"
+                                              >
+                                                Anuluj
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </td>
+                                        <td className="px-3 py-2 align-middle">
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            step={0.01}
+                                            inputMode="decimal"
+                                            placeholder="np. 45000"
+                                            value={paymentScheduleEditDraft.installmentPln}
+                                            onChange={(e) => setPaymentScheduleEditDraft((d) => ({ ...d, installmentPln: e.target.value }))}
+                                            className="w-full min-w-[7rem] rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm tabular-nums outline-none focus:border-[var(--color-domesta-red)]"
+                                          />
+                                        </td>
+                                        <td className="px-3 py-2 align-middle">
+                                          <input
+                                            type="date"
+                                            value={paymentScheduleEditDraft.dueDate}
+                                            onChange={(e) => setPaymentScheduleEditDraft((d) => ({ ...d, dueDate: e.target.value }))}
+                                            className="w-full min-w-[10rem] rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-[var(--color-domesta-red)]"
+                                          />
+                                        </td>
+                                        <td className="px-3 py-2 align-middle">
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            step={0.01}
+                                            inputMode="decimal"
+                                            placeholder="opcjonalnie"
+                                            value={paymentScheduleEditDraft.paidPln}
+                                            onChange={(e) => setPaymentScheduleEditDraft((d) => ({ ...d, paidPln: e.target.value }))}
+                                            className="w-full min-w-[7rem] rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm tabular-nums outline-none focus:border-[var(--color-domesta-red)]"
+                                          />
+                                        </td>
+                                        <td className="px-3 py-2 align-middle">
+                                          <input
+                                            type="date"
+                                            value={paymentScheduleEditDraft.paidDate}
+                                            onChange={(e) => setPaymentScheduleEditDraft((d) => ({ ...d, paidDate: e.target.value }))}
+                                            className="w-full min-w-[10rem] rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-[var(--color-domesta-red)]"
+                                          />
+                                        </td>
+                                        <td className="px-3 py-2 align-middle">
+                                          <input
+                                            type="text"
+                                            placeholder="opcjonalnie"
+                                            value={paymentScheduleEditDraft.note}
+                                            onChange={(e) => setPaymentScheduleEditDraft((d) => ({ ...d, note: e.target.value }))}
+                                            className="w-full min-w-[8rem] rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-[var(--color-domesta-red)]"
+                                          />
+                                        </td>
+                                      </tr>
+                                    ) : (
+                                      <tr
+                                        key={row.id}
+                                        className="cursor-pointer hover:bg-gray-50"
+                                        onClick={() => beginEditPaymentScheduleRow(row)}
+                                      >
+                                        <td className="px-3 py-3 align-middle tabular-nums text-gray-600">{index + 1}</td>
+                                        <td className="px-3 py-3 align-middle font-medium tabular-nums">{pln(row.installmentPln)}</td>
+                                        <td className="px-3 py-3 align-middle whitespace-nowrap">{formatPlIsoDate(row.dueDate)}</td>
+                                        <td className="px-3 py-3 align-middle tabular-nums">
+                                          {row.paidPln !== null ? pln(row.paidPln) : '—'}
+                                        </td>
+                                        <td className="px-3 py-3 align-middle whitespace-nowrap">
+                                          {row.paidDate ? formatPlIsoDate(row.paidDate) : '—'}
+                                        </td>
+                                        <td className="px-3 py-3 align-middle text-gray-600">{row.note ?? '—'}</td>
+                                      </tr>
+                                    ),
+                                  )}
                                   <tr className="bg-gray-50/90">
                                     <td className="px-3 py-2 align-middle">
                                       <button
