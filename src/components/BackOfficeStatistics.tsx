@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 
 type InvestmentLite = { id: number; name: string }
 type BuildingLite = { id: number; investmentId: number; address: string }
@@ -180,8 +180,6 @@ function FinanceChart({ points }: { points: { month: string; expectedPln: number
     const tickCount = 4
     const ticks = Array.from({ length: tickCount + 1 }, (_, i) => Math.round((niceMax * i) / tickCount))
 
-    const gapPln = last.expectedPln - last.paidPln
-
     return {
       all,
       histLen,
@@ -193,11 +191,43 @@ function FinanceChart({ points }: { points: { month: string; expectedPln: number
       solidPaid: solid.paid,
       dashExpected,
       dashPaid,
-      gapPln,
-      gapMonth: last.month,
       projLabelFrom: histLen,
     }
   }, [points, innerW, innerH, padL, padT])
+
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
+  const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null)
+
+  const updateHoverFromEvent = useCallback(
+    (clientX: number, clientY: number) => {
+      const el = svgRef.current
+      if (!el || !chartModel) return
+      const rect = el.getBoundingClientRect()
+      const xSvg = ((clientX - rect.left) / rect.width) * w
+      if (xSvg < padL || xSvg > w - padR) {
+        setHoverIndex(null)
+        setTooltip(null)
+        return
+      }
+      const total = chartModel.all.length
+      const t = (xSvg - padL) / innerW
+      const idx = total === 1 ? 0 : Math.round(t * (total - 1))
+      const clamped = Math.max(0, Math.min(total - 1, idx))
+      setHoverIndex(clamped)
+      setTooltip({ x: clientX, y: clientY })
+    },
+    [chartModel, innerW, padL, padR, w],
+  )
+
+  const onSvgPointerMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    updateHoverFromEvent(e.clientX, e.clientY)
+  }
+
+  const onSvgLeave = () => {
+    setHoverIndex(null)
+    setTooltip(null)
+  }
 
   if (points.length === 0) {
     return (
@@ -209,27 +239,26 @@ function FinanceChart({ points }: { points: { month: string; expectedPln: number
 
   if (!chartModel) return null
 
-  const { all, histLen, maxY, ticks, solidExpected, solidPaid, dashExpected, dashPaid, gapPln, gapMonth, projLabelFrom, xAt, yAt } = chartModel
+  const { all, histLen, maxY, ticks, solidExpected, solidPaid, dashExpected, dashPaid, projLabelFrom, xAt, yAt } = chartModel
+
+  const hp = hoverIndex !== null && hoverIndex < all.length ? all[hoverIndex] : null
 
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white p-4">
       <p className="mb-3 text-sm text-gray-600">
         Skumulowana należność według harmonogramu vs skumulowane wpłaty (dane przykładowe, zależne od filtrów). Przerywane odcinki to projekcja trendu do końca realizacji (
-        {formatMonthPl(REALIZATION_END_MONTH)}).
+        {formatMonthPl(REALIZATION_END_MONTH)}). Najedź kursorem na wykres, aby zobaczyć różnicę w wybranym momencie osi czasu.
       </p>
-      <div className="mb-4 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm">
-        <p className="font-medium text-[var(--color-domesta-gray)]">Aktualna różnica (należności − wpłaty)</p>
-        <p className="mt-1 text-lg font-semibold tabular-nums text-gray-900">{formatPlnFull(gapPln)}</p>
-        <p className="mt-1 text-xs text-gray-600">
-          Stan na ostatni dostępny okres w danych: <span className="font-medium">{formatMonthPl(gapMonth)}</span>.
-          {gapPln === 0
-            ? ' Brak różnicy między skumulowaną należnością a wpłatami.'
-            : gapPln > 0
-              ? ' Wartość dodatnia oznacza, że wpłaty są niższe niż należność według harmonogramu.'
-              : ' Wartość ujemna oznacza, że wpłaty przewyższają skumulowaną należność do tego okresu.'}
-        </p>
-      </div>
-      <svg viewBox={`0 0 ${w} ${h}`} className="w-full max-w-full" role="img" aria-label="Wykres wpłat i należności">
+      <div className="relative">
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${w} ${h}`}
+          className="w-full max-w-full cursor-crosshair touch-none"
+          role="img"
+          aria-label="Wykres wpłat i należności — najechanie pokazuje szczegóły w danym okresie"
+          onMouseMove={onSvgPointerMove}
+          onMouseLeave={onSvgLeave}
+        >
         {ticks.map((t) => {
           const y = padT + innerH - (innerH * t) / maxY
           return (
@@ -279,29 +308,43 @@ function FinanceChart({ points }: { points: { month: string; expectedPln: number
             opacity={0.85}
           />
         ) : null}
+        {hoverIndex !== null ? (
+          <line
+            x1={xAt(hoverIndex)}
+            y1={padT}
+            x2={xAt(hoverIndex)}
+            y2={padT + innerH}
+            stroke="#64748b"
+            strokeWidth="1"
+            strokeOpacity={0.55}
+            pointerEvents="none"
+          />
+        ) : null}
         {all.map((p, i) => {
           const ye = yAt(p.expectedPln)
           const yp = yAt(p.paidPln)
           const isProj = i >= projLabelFrom
+          const hi = hoverIndex === i
+          const r = hi ? 5 : isProj ? 3 : 4
           return (
             <g key={`${p.month}-${i}`}>
               <circle
                 cx={xAt(i)}
                 cy={ye}
-                r={isProj ? 3 : 4}
+                r={r}
                 fill="white"
                 stroke="var(--color-domesta-red, #c41e3a)"
-                strokeWidth="2"
-                opacity={isProj ? 0.75 : 1}
+                strokeWidth={hi ? 2.5 : 2}
+                opacity={isProj && !hi ? 0.75 : 1}
               />
               <circle
                 cx={xAt(i)}
                 cy={yp}
-                r={isProj ? 3 : 4}
+                r={r}
                 fill="white"
                 stroke="#16a34a"
-                strokeWidth="2"
-                opacity={isProj ? 0.75 : 1}
+                strokeWidth={hi ? 2.5 : 2}
+                opacity={isProj && !hi ? 0.75 : 1}
               />
             </g>
           )
@@ -321,6 +364,36 @@ function FinanceChart({ points }: { points: { month: string; expectedPln: number
           )
         })}
       </svg>
+        {tooltip && hp ? (
+          <div
+            className="pointer-events-none fixed z-[100] max-w-[min(18rem,calc(100vw-1rem))] rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm shadow-lg"
+            style={{ left: tooltip.x + 14, top: tooltip.y + 14 }}
+            role="status"
+            aria-live="polite"
+          >
+            <p className="font-semibold text-[var(--color-domesta-gray)]">{formatMonthPl(hp.month)}</p>
+            {hoverIndex !== null && hoverIndex >= projLabelFrom ? (
+              <p className="mt-0.5 text-xs text-gray-500">Prognoza (trend)</p>
+            ) : null}
+            <dl className="mt-2 space-y-1 text-xs text-gray-700">
+              <div className="flex justify-between gap-4">
+                <dt>Należność (harm.)</dt>
+                <dd className="tabular-nums font-medium">{formatPlnFull(hp.expectedPln)}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt>Wpłaty</dt>
+                <dd className="tabular-nums font-medium">{formatPlnFull(hp.paidPln)}</dd>
+              </div>
+              <div className="mt-2 border-t border-gray-100 pt-2">
+                <div className="flex justify-between gap-4">
+                  <dt className="font-medium text-gray-900">Różnica (należ. − wpł.)</dt>
+                  <dd className="tabular-nums font-semibold text-gray-900">{formatPlnFull(hp.expectedPln - hp.paidPln)}</dd>
+                </div>
+              </div>
+            </dl>
+          </div>
+        ) : null}
+      </div>
       <div className="mt-3 flex flex-wrap items-center gap-6 text-sm">
         <span className="inline-flex items-center gap-2">
           <span className="h-0.5 w-8 bg-[var(--color-domesta-red,#c41e3a)]" aria-hidden />
