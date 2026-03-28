@@ -1,7 +1,140 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 
 type InvestmentLite = { id: number; name: string }
-type BuildingLite = { id: number; investmentId: number; address: string }
+type BuildingLite = { id: number; investmentId: number; address: string; apartmentsTotal: number }
+
+const APARTMENT_HANDOVER_STATUS_ORDER = [
+  'rozpoczęto budowę',
+  'do odbioru',
+  'umówione na odbiór',
+  'reklamacja',
+  'odebrane',
+] as const
+
+type ApartmentHandoverStatusKey = (typeof APARTMENT_HANDOVER_STATUS_ORDER)[number]
+
+const STATUS_COLORS: Record<ApartmentHandoverStatusKey, string> = {
+  'rozpoczęto budowę': '#64748b',
+  'do odbioru': '#3b82f6',
+  'umówione na odbiór': '#8b5cf6',
+  'reklamacja': '#f97316',
+  'odebrane': '#22c55e',
+}
+
+/** Początek / koniec procesu oddawania — przykładowe (różne tempo per budynek) */
+const MOCK_HANDOVER_TIMELINE: Record<number, { startMonth: string; endMonth: string }> = {
+  1: { startMonth: '2024-04', endMonth: '2027-09' },
+  2: { startMonth: '2024-07', endMonth: '2027-03' },
+  3: { startMonth: '2023-02', endMonth: '2026-08' },
+  4: { startMonth: '2025-01', endMonth: '2028-12' },
+  5: { startMonth: '2022-09', endMonth: '2026-11' },
+}
+
+/** Udział w statusach w funkcji postępu u ∈ [0, 1] (suma = 1) */
+const ADVANCE_KEYFRAMES: { u: number; w: [number, number, number, number, number] }[] = [
+  { u: 0, w: [1, 0, 0, 0, 0] },
+  { u: 0.22, w: [0.62, 0.22, 0.1, 0.04, 0.02] },
+  { u: 0.45, w: [0.28, 0.26, 0.22, 0.14, 0.1] },
+  { u: 0.68, w: [0.1, 0.14, 0.18, 0.22, 0.36] },
+  { u: 0.88, w: [0.02, 0.04, 0.08, 0.16, 0.7] },
+  { u: 1, w: [0, 0, 0, 0, 1] },
+]
+
+function monthToComparable(ym: string): number {
+  const [y, m] = ym.split('-').map(Number)
+  if (!y || !m) return 0
+  return y * 12 + (m - 1)
+}
+
+function addMonthsYm(ym: string, delta: number): string {
+  const [y, m] = ym.split('-').map(Number)
+  if (!y || !m) return ym
+  const d = new Date(y, m - 1 + delta, 1)
+  const yy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  return `${yy}-${mm}`
+}
+
+function interpolateAdvanceDistribution(u: number): number[] {
+  const kf = ADVANCE_KEYFRAMES
+  if (u <= kf[0]!.u) return [...kf[0]!.w]
+  for (let i = 0; i < kf.length - 1; i++) {
+    const a = kf[i]!
+    const b = kf[i + 1]!
+    if (u <= b.u) {
+      const t = (u - a.u) / (b.u - a.u)
+      return a.w.map((v, j) => v + t * (b.w[j]! - v))
+    }
+  }
+  return [...kf[kf.length - 1]!.w]
+}
+
+function statusVectorForBuilding(m: string, Tb: number, start: string, end: string): number[] {
+  if (monthToComparable(m) < monthToComparable(start)) {
+    return [Tb, 0, 0, 0, 0]
+  }
+  if (monthToComparable(m) >= monthToComparable(end)) {
+    return [0, 0, 0, 0, Tb]
+  }
+  const num = monthToComparable(m) - monthToComparable(start)
+  const den = Math.max(1, monthToComparable(end) - monthToComparable(start))
+  const u = num / den
+  const w = interpolateAdvanceDistribution(u)
+  return w.map((x) => x * Tb)
+}
+
+function eachQuarterMonth(from: string, to: string): string[] {
+  const out: string[] = []
+  let cur = from
+  while (monthToComparable(cur) <= monthToComparable(to)) {
+    out.push(cur)
+    cur = addMonthsYm(cur, 3)
+  }
+  return out
+}
+
+type AdvancementPoint = {
+  month: string
+  counts: Record<ApartmentHandoverStatusKey, number>
+  total: number
+}
+
+function aggregateAdvancementPoints(buildingIds: number[], buildings: BuildingLite[]): AdvancementPoint[] {
+  if (buildingIds.length === 0) return []
+  const list = buildings.filter((b) => buildingIds.includes(b.id))
+  if (list.length === 0) return []
+
+  let minM = '9999-12'
+  let maxM = '0000-01'
+  for (const b of list) {
+    const t = MOCK_HANDOVER_TIMELINE[b.id] ?? { startMonth: '2024-01', endMonth: '2027-12' }
+    if (monthToComparable(t.startMonth) < monthToComparable(minM)) minM = t.startMonth
+    if (monthToComparable(t.endMonth) > monthToComparable(maxM)) maxM = t.endMonth
+  }
+
+  const months = eachQuarterMonth(minM, maxM)
+  return months.map((month) => {
+    const counts = {
+      'rozpoczęto budowę': 0,
+      'do odbioru': 0,
+      'umówione na odbiór': 0,
+      reklamacja: 0,
+      'odebrane': 0,
+    } as Record<ApartmentHandoverStatusKey, number>
+
+    for (const b of list) {
+      const Tb = b.apartmentsTotal
+      const t = MOCK_HANDOVER_TIMELINE[b.id] ?? { startMonth: '2024-01', endMonth: '2027-12' }
+      const vec = statusVectorForBuilding(month, Tb, t.startMonth, t.endMonth)
+      APARTMENT_HANDOVER_STATUS_ORDER.forEach((st, i) => {
+        counts[st] += vec[i]!
+      })
+    }
+
+    const total = Object.values(counts).reduce((a, x) => a + x, 0)
+    return { month, counts, total }
+  })
+}
 
 /** Skumulowane kwoty per budynek (przykładowe dane) — te same miesiące dla wszystkich */
 const MOCK_CUMULATIVE_BY_BUILDING: Record<number, { month: string; expectedPln: number; paidPln: number }[]> = {
@@ -53,6 +186,18 @@ function formatMonthPl(m: string) {
   return `${mo}.${y}`
 }
 
+/** Równomiernie rozłożone indeksy etykiet osi X — ogranicza liczbę wpisów, żeby etykiety się nie nakładały. */
+function xAxisLabelIndexSet(length: number, maxLabels: number): Set<number> {
+  if (length <= 0) return new Set()
+  if (length <= maxLabels) return new Set(Array.from({ length }, (_, i) => i))
+  const s = new Set<number>()
+  const segments = maxLabels - 1
+  for (let k = 0; k < maxLabels; k++) {
+    s.add(Math.round((k * (length - 1)) / segments))
+  }
+  return s
+}
+
 function formatPlnCompact(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)} mln zł`
   if (n >= 1000) return `${Math.round(n / 1000)} tys. zł`
@@ -64,21 +209,6 @@ const formatPlnFull = (value: number) =>
 
 /** Ostatni miesiąc realizacji inwestycji na wykresie (projekcja do tego momentu) */
 const REALIZATION_END_MONTH = '2027-12'
-
-function monthToComparable(ym: string): number {
-  const [y, m] = ym.split('-').map(Number)
-  if (!y || !m) return 0
-  return y * 12 + (m - 1)
-}
-
-function addMonthsYm(ym: string, delta: number): string {
-  const [y, m] = ym.split('-').map(Number)
-  if (!y || !m) return ym
-  const d = new Date(y, m - 1 + delta, 1)
-  const yy = d.getFullYear()
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  return `${yy}-${mm}`
-}
 
 /** Kolejne kwartały od `afterYm` (wyłącznie) do REALIZATION_END_MONTH włącznie */
 function projectionQuarterMonths(lastHistoricalYm: string): string[] {
@@ -229,6 +359,11 @@ function FinanceChart({ points }: { points: { month: string; expectedPln: number
     setTooltip(null)
   }
 
+  const financeXLabelIndices = useMemo(
+    () => xAxisLabelIndexSet(chartModel?.all.length ?? 0, 8),
+    [chartModel],
+  )
+
   if (points.length === 0) {
     return (
       <div className="flex h-[320px] items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-500">
@@ -350,6 +485,7 @@ function FinanceChart({ points }: { points: { month: string; expectedPln: number
           )
         })}
         {all.map((p, i) => {
+          if (!financeXLabelIndices.has(i)) return null
           const isProj = i >= projLabelFrom
           return (
             <text
@@ -412,7 +548,201 @@ function FinanceChart({ points }: { points: { month: string; expectedPln: number
   )
 }
 
-type StatisticsTab = 'advancement' | 'finance'
+const formatApartmentCount = (n: number) =>
+  new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 0 }).format(n)
+
+function AdvancementChart({ points }: { points: AdvancementPoint[] }) {
+  const w = 720
+  const h = 360
+  const padL = 52
+  const padR = 24
+  const padT = 16
+  const padB = 52
+  const innerW = w - padL - padR
+  const innerH = h - padT - padB
+
+  const chartModel = useMemo(() => {
+    if (points.length === 0) return null
+    const maxTotal = Math.max(...points.map((p) => p.total), 1)
+    const niceMax = Math.max(5, Math.ceil((maxTotal * 1.06) / 5) * 5)
+
+    const n = points.length
+    const xAt = (i: number) => padL + innerW * (n === 1 ? 0.5 : i / (n - 1))
+    const yAt = (v: number) => padT + innerH - (innerH * v) / niceMax
+
+    const cumBottom = points.map((p) => {
+      const c: number[] = [0]
+      for (let k = 0; k < APARTMENT_HANDOVER_STATUS_ORDER.length; k++) {
+        const st = APARTMENT_HANDOVER_STATUS_ORDER[k]!
+        c.push(c[k]! + p.counts[st])
+      }
+      return c
+    })
+
+    const layerPaths = APARTMENT_HANDOVER_STATUS_ORDER.map((_, layerIdx) => {
+      const top = points.map((_, i) => yAt(cumBottom[i]![layerIdx + 1]!))
+      const bot = points.map((_, i) => yAt(cumBottom[i]![layerIdx]!))
+      let d = `M ${xAt(0).toFixed(1)} ${top[0]!.toFixed(1)}`
+      for (let i = 1; i < n; i++) d += ` L ${xAt(i).toFixed(1)} ${top[i]!.toFixed(1)}`
+      for (let i = n - 1; i >= 0; i--) d += ` L ${xAt(i).toFixed(1)} ${bot[i]!.toFixed(1)}`
+      d += ' Z'
+      return d
+    })
+
+    const tickCount = 5
+    const ticks = Array.from({ length: tickCount + 1 }, (_, i) => Math.round((niceMax * i) / tickCount))
+
+    return { pts: points, n, maxY: niceMax, ticks, xAt, layerPaths }
+  }, [points, innerW, innerH, padL, padT])
+
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
+  const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null)
+
+  const updateHover = useCallback(
+    (clientX: number, clientY: number) => {
+      const el = svgRef.current
+      if (!el || !chartModel) return
+      const rect = el.getBoundingClientRect()
+      const xSvg = ((clientX - rect.left) / rect.width) * w
+      if (xSvg < padL || xSvg > w - padR) {
+        setHoverIndex(null)
+        setTooltip(null)
+        return
+      }
+      const total = chartModel.n
+      const t = (xSvg - padL) / innerW
+      const idx = total === 1 ? 0 : Math.round(t * (total - 1))
+      setHoverIndex(Math.max(0, Math.min(total - 1, idx)))
+      setTooltip({ x: clientX + 14, y: clientY + 14 })
+    },
+    [chartModel, innerW, padL, padR, w],
+  )
+
+  const onSvgMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    updateHover(e.clientX, e.clientY)
+  }
+
+  const onSvgLeave = () => {
+    setHoverIndex(null)
+    setTooltip(null)
+  }
+
+  const advancementXLabelIndices = useMemo(() => xAxisLabelIndexSet(points.length, 7), [points.length])
+
+  if (points.length === 0) {
+    return (
+      <div className="flex h-[300px] items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-500">
+        Brak danych dla wybranych filtrów.
+      </div>
+    )
+  }
+
+  if (!chartModel) return null
+
+  const { pts, maxY, ticks, xAt, layerPaths } = chartModel
+  const hp = hoverIndex !== null && hoverIndex < pts.length ? pts[hoverIndex] : null
+
+  return (
+    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white p-4">
+      <p className="mb-3 text-sm text-gray-600">
+        Liczba mieszkań wg statusu oddania do użytków. Oś X obejmuje od najwcześniejszego początku do najpóźniejszego końca realizacji wśród wybranych budynków (kwartały). Najedź na wykres, aby zobaczyć liczby w danym momencie.
+      </p>
+      <div className="relative">
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${w} ${h}`}
+          className="w-full max-w-full cursor-crosshair touch-none"
+          role="img"
+          aria-label="Wykres zaawansowania oddawania mieszkań"
+          onMouseMove={onSvgMove}
+          onMouseLeave={onSvgLeave}
+        >
+          {ticks.map((tk) => {
+            const y = padT + innerH - (innerH * tk) / maxY
+            return (
+              <g key={tk}>
+                <line x1={padL} y1={y} x2={w - padR} y2={y} stroke="#e5e7eb" strokeWidth="1" />
+                <text x={padL - 6} y={y + 4} textAnchor="end" className="fill-gray-400 text-[10px]">
+                  {tk}
+                </text>
+              </g>
+            )
+          })}
+          {APARTMENT_HANDOVER_STATUS_ORDER.map((st, li) => (
+            <path
+              key={st}
+              d={layerPaths[li]}
+              fill={STATUS_COLORS[st]}
+              fillOpacity={0.88}
+              stroke="white"
+              strokeWidth={0.5}
+              strokeOpacity={0.35}
+            />
+          ))}
+          {hoverIndex !== null ? (
+            <line
+              x1={xAt(hoverIndex)}
+              y1={padT}
+              x2={xAt(hoverIndex)}
+              y2={padT + innerH}
+              stroke="#475569"
+              strokeWidth="1"
+              strokeOpacity={0.45}
+              pointerEvents="none"
+            />
+          ) : null}
+          {pts.map((p, i) =>
+            advancementXLabelIndices.has(i) ? (
+              <text
+                key={`adv-lbl-${p.month}-${i}`}
+                x={xAt(i)}
+                y={h - 10}
+                textAnchor="middle"
+                className="fill-gray-600 text-[10px]"
+              >
+                {formatMonthPl(p.month)}
+              </text>
+            ) : null,
+          )}
+        </svg>
+        {tooltip && hp ? (
+          <div
+            className="pointer-events-none fixed z-[100] max-w-[min(20rem,calc(100vw-1rem))] rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm shadow-lg"
+            style={{ left: tooltip.x, top: tooltip.y }}
+            role="status"
+          >
+            <p className="font-semibold text-[var(--color-domesta-gray)]">{formatMonthPl(hp.month)}</p>
+            <ul className="mt-2 space-y-1 text-xs">
+              {APARTMENT_HANDOVER_STATUS_ORDER.map((st) => (
+                <li key={st} className="flex justify-between gap-6">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="h-2 w-2 shrink-0 rounded-sm" style={{ background: STATUS_COLORS[st] }} />
+                    <span className="truncate">{st}</span>
+                  </span>
+                  <span className="shrink-0 tabular-nums font-medium">{formatApartmentCount(hp.counts[st])}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 border-t border-gray-100 pt-2 text-xs text-gray-600">
+              Łącznie: <span className="font-semibold text-gray-900">{formatApartmentCount(hp.total)}</span> mieszkań
+            </p>
+          </div>
+        ) : null}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-gray-700">
+        {APARTMENT_HANDOVER_STATUS_ORDER.map((st) => (
+          <span key={st} className="inline-flex items-center gap-1.5">
+            <span className="h-2.5 w-4 shrink-0 rounded-sm" style={{ background: STATUS_COLORS[st] }} />
+            {st}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+type StatisticsTab = 'advancement' | 'finance' | 'complaints'
 
 type BackOfficeStatisticsProps = {
   investments: InvestmentLite[]
@@ -448,6 +778,11 @@ export function BackOfficeStatistics({ investments, buildings }: BackOfficeStati
   }, [buildingsInScope, selectedBuildingIds])
 
   const chartPoints = useMemo(() => aggregateFinancePoints(effectiveBuildingIds), [effectiveBuildingIds])
+
+  const advancementPoints = useMemo(
+    () => aggregateAdvancementPoints(effectiveBuildingIds, buildings),
+    [effectiveBuildingIds, buildings],
+  )
 
   const toggleInvestment = (id: number) => {
     setSelectedInvestmentIds((prev) => {
@@ -491,6 +826,7 @@ export function BackOfficeStatistics({ investments, buildings }: BackOfficeStati
           [
             ['advancement', 'Zaawansowanie'],
             ['finance', 'Finanse'],
+            ['complaints', 'Reklamacje'],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -506,8 +842,7 @@ export function BackOfficeStatistics({ investments, buildings }: BackOfficeStati
         ))}
       </div>
 
-      {tab === 'advancement' ? <div className="min-h-[240px]" aria-hidden /> : (
-        <div className="space-y-6">
+      <div className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
               <div className="mb-3 flex items-center justify-between gap-2">
@@ -595,13 +930,20 @@ export function BackOfficeStatistics({ investments, buildings }: BackOfficeStati
 
           {selectedInvestmentIds.size === 0 ? (
             <div className="flex h-[200px] items-center justify-center rounded-xl border border-dashed border-amber-200 bg-amber-50/50 text-sm text-amber-900">
-              Zaznacz co najmniej jedną inwestycję, aby zobaczyć wykres.
+              Zaznacz co najmniej jedną inwestycję, aby zobaczyć dane.
             </div>
           ) : (
-            <FinanceChart points={chartPoints} />
+            <>
+              {tab === 'advancement' ? <AdvancementChart points={advancementPoints} /> : null}
+              {tab === 'finance' ? <FinanceChart points={chartPoints} /> : null}
+              {tab === 'complaints' ? (
+                <div className="flex min-h-[240px] items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 text-center text-sm text-gray-600">
+                  Moduł reklamacji — w przygotowaniu.
+                </div>
+              ) : null}
+            </>
           )}
         </div>
-      )}
     </section>
   )
 }
