@@ -10,6 +10,7 @@ const THEME_STORAGE_KEY = 'app-theme'
 export type AppTheme = 'halfBlack' | 'allBlack' | 'domestaColors' | 'allWhite'
 type BackOfficeView = 'investments' | 'clients' | 'permissions' | 'calendar-management' | 'calendar-preview' | 'construction-schedule'
 type InvestmentTab = 'Inwestycje' | 'Budynki' | 'Mieszkania' | 'Komorki Lokatorskie' | 'Miejsca postojowe'
+type ApartmentFormSubTab = 'details' | 'paymentSchedule'
 type BuildingStatus = 'W budowie' | 'Na wykonczeniu' | 'Oddany' | 'Wyprzedany'
 type BuildingColumnKey =
   | 'lp'
@@ -62,6 +63,37 @@ type Apartment = {
   fileType: string
   assignedClient: string
 }
+
+/** Przykładowe wpisy harmonogramu (mock) — wymagane: kwota raty, termin; opcjonalne: spłata, data, notatka */
+type PaymentScheduleSampleRow = {
+  installmentPln: number
+  dueDate: string
+  paidPln: number | null
+  paidDate: string | null
+  note: string | null
+}
+
+const formatPlIsoDate = (iso: string) => {
+  const [y, m, d] = iso.split('-')
+  if (!y || !m || !d) return iso
+  return `${d}.${m}.${y}`
+}
+
+const pln = (value: number) =>
+  new Intl.NumberFormat('pl-PL', { style: 'currency', currency: 'PLN', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
+
+const SAMPLE_APARTMENT_PAYMENT_SCHEDULE: PaymentScheduleSampleRow[] = [
+  { installmentPln: 45_000, dueDate: '2025-03-31', paidPln: 45_000, paidDate: '2025-03-28', note: 'Wpłata przelewem, zgodnie z umową' },
+  { installmentPln: 45_000, dueDate: '2025-06-30', paidPln: 45_000, paidDate: '2025-06-27', note: null },
+  { installmentPln: 45_000, dueDate: '2025-09-30', paidPln: 45_000, paidDate: '2025-09-29', note: 'Potwierdzenie w biurze' },
+  { installmentPln: 45_000, dueDate: '2025-12-31', paidPln: null, paidDate: null, note: 'Termin zbliża się — przypomnienie wysłane' },
+  { installmentPln: 50_000, dueDate: '2026-03-31', paidPln: null, paidDate: null, note: null },
+  { installmentPln: 50_000, dueDate: '2026-06-30', paidPln: 25_000, paidDate: '2026-06-15', note: 'Częściowa wpłata, reszta do uzgodnienia' },
+  { installmentPln: 50_000, dueDate: '2026-09-30', paidPln: null, paidDate: null, note: null },
+  { installmentPln: 50_000, dueDate: '2026-12-31', paidPln: null, paidDate: null, note: 'Ostatnia rata przed odbiorem kluczy' },
+  { installmentPln: 35_000, dueDate: '2027-03-31', paidPln: null, paidDate: null, note: null },
+  { installmentPln: 35_000, dueDate: '2027-06-30', paidPln: null, paidDate: null, note: 'Rozliczenie końcowe po odbiorze' },
+]
 
 function App() {
   const [theme, setTheme] = useState<AppTheme>(() => {
@@ -246,6 +278,7 @@ function App() {
     },
   ])
   const [apartmentFormOpen, setApartmentFormOpen] = useState(false)
+  const [apartmentFormSubTab, setApartmentFormSubTab] = useState<ApartmentFormSubTab>('details')
   const [editingApartmentId, setEditingApartmentId] = useState<number | null>(null)
   const [apartmentBuildingIdForm, setApartmentBuildingIdForm] = useState<number>(1)
   const [apartmentNumberForm, setApartmentNumberForm] = useState('')
@@ -512,6 +545,7 @@ function App() {
   }
 
   const openApartmentDetailsForm = (apartment: Apartment) => {
+    setApartmentFormSubTab('details')
     setEditingApartmentId(apartment.id)
     setApartmentBuildingIdForm(apartment.buildingId)
     setApartmentNumberForm(apartment.unitNumber)
@@ -527,6 +561,7 @@ function App() {
   }
 
   const openNewApartmentForm = () => {
+    setApartmentFormSubTab('details')
     setEditingApartmentId(null)
     const defaultBuildingId = buildings[0]?.id ?? 1
     setApartmentBuildingIdForm(defaultBuildingId)
@@ -611,7 +646,7 @@ function App() {
         ? 'bg-[radial-gradient(circle_at_top,_#aaaaaa,_#666666,_#333333)]'
         : 'bg-[var(--color-domesta-bg)]'
 
-  const renderInvestmentsTabHeader = (title: InvestmentTab) => (
+  const renderInvestmentsTabHeader = (title: InvestmentTab, headingOverride?: string) => (
     <div className="flex items-center gap-3">
       <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-[var(--color-domesta-gray)]">
         {title === 'Budynki' ? (
@@ -640,7 +675,7 @@ function App() {
           </svg>
         )}
       </span>
-      <h2 className="text-2xl font-bold text-[var(--color-domesta-gray)]">{title}</h2>
+      <h2 className="text-2xl font-bold text-[var(--color-domesta-gray)]">{headingOverride ?? title}</h2>
     </div>
   )
 
@@ -1409,14 +1444,49 @@ function App() {
                   ) : investmentsTab === 'Mieszkania' ? (
                     <div className="space-y-4">
                       <div className="flex items-center justify-between gap-3">
-                        {renderInvestmentsTabHeader('Mieszkania')}
+                        {renderInvestmentsTabHeader(
+                          'Mieszkania',
+                          apartmentFormOpen
+                            ? `${investments.find((inv) => inv.id === buildings.find((b) => b.id === apartmentBuildingIdForm)?.investmentId)?.name ?? '—'} | ${apartmentNumberForm.trim() || '—'}`
+                            : undefined,
+                        )}
                         {investmentsTabAddButton({ onClick: openNewApartmentForm, title: 'Dodaj mieszkanie' })}
                       </div>
                       {apartmentFormOpen ? (
                         <section className="rounded-2xl border border-gray-200 bg-white p-5">
                           <h3 className="mb-4 text-lg font-semibold text-[var(--color-domesta-gray)]">
-                            {editingApartmentId === null ? 'Nowe mieszkanie' : 'Szczegoly mieszkania'}
+                            {editingApartmentId === null ? 'Nowe mieszkanie' : 'Szczegóły mieszkania'}
                           </h3>
+                          <div className="mb-4 flex flex-wrap gap-2 rounded-xl border border-gray-200 bg-gray-50 p-2">
+                            <button
+                              type="button"
+                              role="tab"
+                              aria-selected={apartmentFormSubTab === 'details'}
+                              onClick={() => setApartmentFormSubTab('details')}
+                              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                                apartmentFormSubTab === 'details'
+                                  ? 'bg-white text-[var(--color-domesta-gray)] shadow-sm'
+                                  : 'text-gray-600 hover:bg-white hover:text-[var(--color-domesta-gray)]'
+                              }`}
+                            >
+                              Szczegóły
+                            </button>
+                            <button
+                              type="button"
+                              role="tab"
+                              aria-selected={apartmentFormSubTab === 'paymentSchedule'}
+                              onClick={() => setApartmentFormSubTab('paymentSchedule')}
+                              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                                apartmentFormSubTab === 'paymentSchedule'
+                                  ? 'bg-white text-[var(--color-domesta-gray)] shadow-sm'
+                                  : 'text-gray-600 hover:bg-white hover:text-[var(--color-domesta-gray)]'
+                              }`}
+                            >
+                              Harmonogram spłaty
+                            </button>
+                          </div>
+                          {apartmentFormSubTab === 'details' ? (
+                            <>
                           <div className="grid gap-4 md:grid-cols-2">
                             <label className="text-sm text-gray-600">
                               Inwestycja
@@ -1538,6 +1608,49 @@ function App() {
                               Anuluj
                             </button>
                           </div>
+                            </>
+                          ) : (
+                            <div className="overflow-x-auto rounded-xl border border-gray-200">
+                              <table className="min-w-full bg-white text-sm">
+                                <thead className="bg-gray-50">
+                                  <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
+                                    <th className="px-3 py-3 font-semibold">LP</th>
+                                    <th className="px-3 py-3 font-semibold">
+                                      Wysokość raty (PLN){' '}
+                                      <span className="text-[var(--color-domesta-red)]" title="wymagane">
+                                        *
+                                      </span>
+                                    </th>
+                                    <th className="px-3 py-3 font-semibold">
+                                      Termin spłaty{' '}
+                                      <span className="text-[var(--color-domesta-red)]" title="wymagane">
+                                        *
+                                      </span>
+                                    </th>
+                                    <th className="px-3 py-3 font-semibold">Spłacono (PLN)</th>
+                                    <th className="px-3 py-3 font-semibold">Data wpłaty</th>
+                                    <th className="px-3 py-3 font-semibold">Notatka</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 text-gray-700">
+                                  {SAMPLE_APARTMENT_PAYMENT_SCHEDULE.map((row, index) => (
+                                    <tr key={`${row.dueDate}-${index}`}>
+                                      <td className="px-3 py-3 align-middle tabular-nums text-gray-600">{index + 1}</td>
+                                      <td className="px-3 py-3 align-middle font-medium tabular-nums">{pln(row.installmentPln)}</td>
+                                      <td className="px-3 py-3 align-middle whitespace-nowrap">{formatPlIsoDate(row.dueDate)}</td>
+                                      <td className="px-3 py-3 align-middle tabular-nums">
+                                        {row.paidPln !== null ? pln(row.paidPln) : '—'}
+                                      </td>
+                                      <td className="px-3 py-3 align-middle whitespace-nowrap">
+                                        {row.paidDate ? formatPlIsoDate(row.paidDate) : '—'}
+                                      </td>
+                                      <td className="px-3 py-3 align-middle text-gray-600">{row.note ?? '—'}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
                         </section>
                       ) : (
                         <>
