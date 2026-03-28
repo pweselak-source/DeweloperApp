@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useCallback } from 'react'
 
 export const DEFECT_TYPE_DEFINITIONS = [
   { id: 'okna', label: 'Nieszczelność okien i drzwi balkonowych' },
@@ -27,7 +27,6 @@ type DefectEvent = {
   outcome: DefectOutcome
 }
 
-/** Przykładowe zgłoszenia (deterministyczna lista) */
 const MOCK_DEFECT_EVENTS: DefectEvent[] = (() => {
   const types = DEFECT_TYPE_DEFINITIONS.map((t) => t.id)
   const buildings = [1, 2, 3, 4, 5] as const
@@ -35,7 +34,7 @@ const MOCK_DEFECT_EVENTS: DefectEvent[] = (() => {
   let id = 1
   for (let month = 0; month < 40; month++) {
     const d = new Date(2024 + Math.floor(month / 12), month % 12, 10)
-    const perMonth = 3 + (month % 5)
+    const perMonth = 4 + (month % 6)
     for (let k = 0; k < perMonth; k++) {
       const typeId = types[(month * 7 + k * 11 + id) % types.length]!
       const buildingId = buildings[(month + k + id) % 5]!
@@ -69,6 +68,10 @@ const LINE_COLORS = [
 
 function monthKeyFromIso(iso: string): string {
   return iso.slice(0, 7)
+}
+
+function formatYmLabel(ym: string) {
+  return `${ym.slice(5, 7)}.${ym.slice(0, 4)}`
 }
 
 function eachMonthInRange(fromYm: string, toYm: string): string[] {
@@ -121,14 +124,16 @@ export function DefectsStatisticsPanel({ buildingIds }: DefectsStatisticsPanelPr
     )
   }, [buildingSet, dateFrom, dateTo])
 
+  /** Zawsze dokładnie 10 wierszy — ranking po liczbie zgłoszeń wśród wszystkich typów */
   const top10 = useMemo(() => {
-    const byLabel = new Map<string, number>()
+    const counts = new Map<DefectTypeId, number>()
+    for (const t of DEFECT_TYPE_DEFINITIONS) counts.set(t.id, 0)
     for (const e of filteredEvents) {
-      const label = DEFECT_TYPE_DEFINITIONS.find((t) => t.id === e.typeId)?.label ?? e.typeId
-      byLabel.set(label, (byLabel.get(label) ?? 0) + 1)
+      counts.set(e.typeId, (counts.get(e.typeId) ?? 0) + 1)
     }
-    return [...byLabel.entries()]
-      .sort((a, b) => b[1] - a[1])
+    return [...DEFECT_TYPE_DEFINITIONS]
+      .map((t) => ({ label: t.label, count: counts.get(t.id) ?? 0 }))
+      .sort((a, b) => b.count - a.count)
       .slice(0, 10)
   }, [filteredEvents])
 
@@ -222,22 +227,18 @@ export function DefectsStatisticsPanel({ buildingIds }: DefectsStatisticsPanelPr
 
       <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-base font-semibold text-[var(--color-domesta-gray)]">Top 10 najczęstszych usterek</h2>
-        {top10.length === 0 ? (
-          <p className="text-sm text-gray-500">Brak zgłoszeń w wybranym zakresie.</p>
-        ) : (
-          <ol className="space-y-2">
-            {top10.map(([label, count], i) => (
-              <li
-                key={label}
-                className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2 text-sm"
-              >
-                <span className="text-gray-500 tabular-nums">{i + 1}.</span>
-                <span className="min-w-0 flex-1 text-gray-800">{label}</span>
-                <span className="shrink-0 font-semibold tabular-nums text-[var(--color-domesta-gray)]">{count}</span>
-              </li>
-            ))}
-          </ol>
-        )}
+        <ol className="space-y-2">
+          {top10.map((row, i) => (
+            <li
+              key={row.label}
+              className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 bg-gradient-to-r from-gray-50/90 to-white px-3 py-2 text-sm"
+            >
+              <span className="text-gray-500 tabular-nums">{i + 1}.</span>
+              <span className="min-w-0 flex-1 text-gray-800">{row.label}</span>
+              <span className="shrink-0 font-semibold tabular-nums text-[var(--color-domesta-gray)]">{row.count}</span>
+            </li>
+          ))}
+        </ol>
       </section>
 
       <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -269,7 +270,7 @@ export function DefectsStatisticsPanel({ buildingIds }: DefectsStatisticsPanelPr
         </ul>
         <p className="mt-3 text-xs text-gray-500">
           {selectedTypeIds.size === 0
-            ? 'Nie zaznaczono typów — na wykresie liczbowym widać wszystkie typy jako osobne linie. Możesz zawęzić wybór, aby pokazać tylko wybrane.'
+            ? 'Nie zaznaczono typów — na wykresie widać wszystkie typy. Możesz zawęzić wybór.'
             : 'Wykres liczbowy pokazuje tylko zaznaczone typy.'}
         </p>
       </section>
@@ -298,10 +299,10 @@ function DefectVolumeLineChart({
   noneSelected: boolean
 }) {
   const w = 720
-  const h = 300
-  const padL = 44
-  const padR = 16
-  const padT = 12
+  const h = 320
+  const padL = 48
+  const padR = 20
+  const padT = 20
   const padB = 56
   const innerW = w - padL - padR
   const innerH = h - padT - padB
@@ -316,27 +317,60 @@ function DefectVolumeLineChart({
         maxY = Math.max(maxY, row.get(tid) ?? 0)
       }
     }
-    const niceMax = Math.max(5, Math.ceil(maxY * 1.1 / 5) * 5)
+    const niceMax = Math.max(5, Math.ceil(maxY * 1.12 / 5) * 5)
     const n = months.length
     const xAt = (i: number) => padL + innerW * (n === 1 ? 0.5 : i / (n - 1))
     const yAt = (v: number) => padT + innerH - (innerH * v) / niceMax
+    const baseY = padT + innerH
 
     const series = activeTypeIds.map((typeId, si) => {
       const pts = months.map((m, i) => {
         const v = volumeByMonthAndType.get(m)?.get(typeId) ?? 0
         return { i, v, x: xAt(i), y: yAt(v) }
       })
-      let d = ''
+      let lineD = ''
       pts.forEach((p, k) => {
-        d += `${k === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)} `
+        lineD += `${k === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)} `
       })
-      return { typeId, d: d.trim(), color: LINE_COLORS[si % LINE_COLORS.length]! }
+      const first = pts[0]!
+      const last = pts[pts.length - 1]!
+      const areaD =
+        lineD.trim() +
+        ` L ${last.x.toFixed(1)} ${baseY.toFixed(1)} L ${first.x.toFixed(1)} ${baseY.toFixed(1)} Z`
+      const color = LINE_COLORS[si % LINE_COLORS.length]!
+      const dash = si % 5 === 4 ? '4 3' : undefined
+      const sw = 1.4 + (si % 4) * 0.35
+      return { typeId, lineD: lineD.trim(), areaD, color, dash, sw }
     })
 
     const ticks = Array.from({ length: 5 }, (_, i) => Math.round((niceMax * i) / 4))
     const labelIdx = xAxisLabelIndexSet(n, 8)
-    return { niceMax, xAt, series, ticks, labelIdx }
+    return { niceMax, xAt, series, ticks, labelIdx, n }
   }, [months, activeTypeIds, volumeByMonthAndType, innerW, innerH, padL, padT])
+
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
+  const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null)
+
+  const updateHover = useCallback(
+    (clientX: number, clientY: number) => {
+      const el = svgRef.current
+      if (!el || !model) return
+      const rect = el.getBoundingClientRect()
+      const xSvg = ((clientX - rect.left) / rect.width) * w
+      if (xSvg < padL || xSvg > w - padR) {
+        setHoverIndex(null)
+        setTooltip(null)
+        return
+      }
+      const total = model.n
+      const t = (xSvg - padL) / innerW
+      const idx = total === 1 ? 0 : Math.round(t * (total - 1))
+      setHoverIndex(Math.max(0, Math.min(total - 1, idx)))
+      setTooltip({ x: clientX + 12, y: clientY + 12 })
+    },
+    [model, innerW, padL, padR, w],
+  )
 
   if (!model || months.length === 0) {
     return (
@@ -348,49 +382,119 @@ function DefectVolumeLineChart({
   }
 
   const { niceMax, xAt, series, ticks, labelIdx } = model
+  const hpMonth = hoverIndex !== null ? months[hoverIndex] : null
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+    <section className="rounded-xl border border-gray-200 bg-gradient-to-b from-slate-50/80 to-white p-4 shadow-sm">
       <h2 className="mb-2 text-base font-semibold text-[var(--color-domesta-gray)]">Liczba zgłoszeń wg typu (miesięcznie)</h2>
       <p className="mb-3 text-xs text-gray-600">
-        Oś X: wybrany przedział czasu. Oś Y: liczba zgłoszeń.{' '}
-        {noneSelected ? 'Wszystkie typy jako osobne linie.' : 'Tylko zaznaczone typy.'}
+        Warstwy z cieniem + linie (część serii przerywana). Najedź myszą, aby zobaczyć wartości.{' '}
+        {noneSelected ? 'Wszystkie typy.' : 'Tylko zaznaczone typy.'}
       </p>
-      <svg viewBox={`0 0 ${w} ${h}`} className="w-full max-w-full" role="img" aria-label="Wykres liczby usterek wg typu">
-        {ticks.map((tk) => {
-          const y = padT + innerH - (innerH * tk) / niceMax
-          return (
-            <g key={tk}>
-              <line x1={padL} y1={y} x2={w - padR} y2={y} stroke="#e5e7eb" strokeWidth="1" />
-              <text x={padL - 6} y={y + 4} textAnchor="end" className="fill-gray-400 text-[10px]">
-                {tk}
+      <div className="relative">
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${w} ${h}`}
+          className="w-full max-w-full cursor-crosshair"
+          role="img"
+          aria-label="Wykres liczby usterek wg typu"
+          onMouseMove={(e) => updateHover(e.clientX, e.clientY)}
+          onMouseLeave={() => {
+            setHoverIndex(null)
+            setTooltip(null)
+          }}
+        >
+          <defs>
+            {series.map((s, si) => (
+              <linearGradient key={`g-${s.typeId}`} id={`vol-grad-${si}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={s.color} stopOpacity={0.35} />
+                <stop offset="100%" stopColor={s.color} stopOpacity={0.02} />
+              </linearGradient>
+            ))}
+          </defs>
+          <rect x={padL} y={padT} width={innerW} height={innerH} rx="6" fill="#f1f5f9" opacity={0.85} />
+          {ticks.map((tk) => {
+            const y = padT + innerH - (innerH * tk) / niceMax
+            return (
+              <g key={tk}>
+                <line x1={padL} y1={y} x2={w - padR} y2={y} stroke="#e2e8f0" strokeWidth="1" />
+                <text x={padL - 8} y={y + 4} textAnchor="end" className="fill-slate-500 text-[10px]">
+                  {tk}
+                </text>
+              </g>
+            )
+          })}
+          {[...series].reverse().map((s, ri) => {
+            const si = series.length - 1 - ri
+            return (
+              <path
+                key={`area-${s.typeId}`}
+                d={s.areaD}
+                fill={`url(#vol-grad-${si})`}
+                opacity={0.9}
+              />
+            )
+          })}
+          {series.map((s) => (
+            <path
+              key={s.typeId}
+              d={s.lineD}
+              fill="none"
+              stroke={s.color}
+              strokeWidth={s.sw}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              strokeDasharray={s.dash}
+            />
+          ))}
+          {hoverIndex !== null ? (
+            <line
+              x1={xAt(hoverIndex)}
+              y1={padT}
+              x2={xAt(hoverIndex)}
+              y2={padT + innerH}
+              stroke="#64748b"
+              strokeWidth="1"
+              strokeOpacity={0.55}
+              pointerEvents="none"
+            />
+          ) : null}
+          {months.map((m, i) =>
+            labelIdx.has(i) ? (
+              <text key={m} x={xAt(i)} y={h - 8} textAnchor="middle" className="fill-slate-600 text-[9px]">
+                {formatYmLabel(m)}
               </text>
-            </g>
-          )
-        })}
-        {series.map((s) => (
-          <path
-            key={s.typeId}
-            d={s.d}
-            fill="none"
-            stroke={s.color}
-            strokeWidth="2"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-        ))}
-        {months.map((m, i) =>
-          labelIdx.has(i) ? (
-            <text key={m} x={xAt(i)} y={h - 8} textAnchor="middle" className="fill-gray-600 text-[9px]">
-              {m.slice(5, 7)}.{m.slice(0, 4)}
-            </text>
-          ) : null,
-        )}
-      </svg>
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px]">
+            ) : null,
+          )}
+        </svg>
+        {tooltip && hpMonth !== null && hoverIndex !== null ? (
+          <div
+            className="pointer-events-none fixed z-[100] max-h-[min(70vh,420px)] max-w-[min(22rem,calc(100vw-1rem))] overflow-y-auto rounded-xl border border-slate-200 bg-white/95 px-3 py-2.5 text-sm shadow-xl backdrop-blur-sm"
+            style={{ left: tooltip.x, top: tooltip.y }}
+            role="status"
+          >
+            <p className="font-semibold text-[var(--color-domesta-gray)]">{formatYmLabel(hpMonth)}</p>
+            <ul className="mt-2 space-y-1.5 text-xs text-slate-700">
+              {activeTypeIds.map((tid, si) => {
+                const v = volumeByMonthAndType.get(hpMonth)?.get(tid) ?? 0
+                return (
+                  <li key={tid} className="flex justify-between gap-4">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: LINE_COLORS[si % LINE_COLORS.length] }} />
+                      <span className="truncate">{DEFECT_TYPE_DEFINITIONS.find((t) => t.id === tid)?.label}</span>
+                    </span>
+                    <span className="shrink-0 tabular-nums font-medium">{v}</span>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-slate-700">
         {activeTypeIds.map((tid, si) => (
           <span key={tid} className="inline-flex items-center gap-1.5">
-            <span className="h-0.5 w-6" style={{ background: LINE_COLORS[si % LINE_COLORS.length] }} />
+            <span className="h-0.5 w-6 rounded-full" style={{ background: LINE_COLORS[si % LINE_COLORS.length] }} />
             {DEFECT_TYPE_DEFINITIONS.find((t) => t.id === tid)?.label ?? tid}
           </span>
         ))}
@@ -409,11 +513,11 @@ function DefectOutcomeChart({
   odr: Map<string, number>
 }) {
   const w = 720
-  const h = 280
-  const padL = 44
-  const padR = 16
-  const padT = 12
-  const padB = 52
+  const h = 300
+  const padL = 48
+  const padR = 20
+  const padT = 20
+  const padB = 54
   const innerW = w - padL - padR
   const innerH = h - padT - padB
 
@@ -423,10 +527,46 @@ function DefectOutcomeChart({
     for (const m of months) {
       maxY = Math.max(maxY, (uzn.get(m) ?? 0) + (odr.get(m) ?? 0), uzn.get(m) ?? 0, odr.get(m) ?? 0)
     }
-    const niceMax = Math.max(3, Math.ceil(maxY * 1.1 / 5) * 5)
+    const niceMax = Math.max(3, Math.ceil(maxY * 1.12 / 5) * 5)
     const n = months.length
     const xAt = (i: number) => padL + innerW * (n === 1 ? 0.5 : i / (n - 1))
     const yAt = (v: number) => padT + innerH - (innerH * v) / niceMax
+    const baseY = padT + innerH
+    const slot = n > 0 ? innerW / n : innerW
+    const barW = Math.min(11, slot * 0.22)
+    const gap = Math.min(6, slot * 0.08)
+
+    const bars: { x: number; y: number; w: number; h: number; fill: string; key: string }[] = []
+    months.forEach((m, i) => {
+      const cx = xAt(i)
+      const vu = uzn.get(m) ?? 0
+      const vo = odr.get(m) ?? 0
+      const hu = (innerH * vu) / niceMax
+      const ho = (innerH * vo) / niceMax
+      if (vu > 0) {
+        bars.push({
+          x: cx - barW - gap / 2,
+          y: baseY - hu,
+          w: barW,
+          h: hu,
+          fill: 'url(#bar-uzn)',
+          key: `u-${m}`,
+        })
+      }
+      if (vo > 0) {
+        bars.push({
+          x: cx + gap / 2,
+          y: baseY - ho,
+          w: barW,
+          h: ho,
+          fill: 'url(#bar-odr)',
+          key: `o-${m}`,
+        })
+      }
+    })
+
+    const ticks = Array.from({ length: 5 }, (_, i) => Math.round((niceMax * i) / 4))
+    const labelIdx = xAxisLabelIndexSet(n, 8)
 
     const uPath = months
       .map((m, i) => {
@@ -443,10 +583,32 @@ function DefectOutcomeChart({
       })
       .join(' ')
 
-    const ticks = Array.from({ length: 5 }, (_, i) => Math.round((niceMax * i) / 4))
-    const labelIdx = xAxisLabelIndexSet(n, 8)
-    return { niceMax, xAt, uPath, oPath, ticks, labelIdx }
+    return { niceMax, xAt, uPath, oPath, ticks, labelIdx, n, bars, baseY }
   }, [months, uzn, odr, innerW, innerH, padL, padT])
+
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
+  const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null)
+
+  const updateHover = useCallback(
+    (clientX: number, clientY: number) => {
+      const el = svgRef.current
+      if (!el || !model) return
+      const rect = el.getBoundingClientRect()
+      const xSvg = ((clientX - rect.left) / rect.width) * w
+      if (xSvg < padL || xSvg > w - padR) {
+        setHoverIndex(null)
+        setTooltip(null)
+        return
+      }
+      const total = model.n
+      const t = (xSvg - padL) / innerW
+      const idx = total === 1 ? 0 : Math.round(t * (total - 1))
+      setHoverIndex(Math.max(0, Math.min(total - 1, idx)))
+      setTooltip({ x: clientX + 12, y: clientY + 12 })
+    },
+    [model, innerW, padL, padR, w],
+  )
 
   if (!model || months.length === 0) {
     return (
@@ -457,45 +619,135 @@ function DefectOutcomeChart({
     )
   }
 
-  const { niceMax, xAt, uPath, oPath, ticks, labelIdx } = model
+  const { niceMax, xAt, uPath, oPath, ticks, labelIdx, bars, baseY } = model
+  const hpMonth = hoverIndex !== null ? months[hoverIndex] : null
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+    <section className="rounded-xl border border-gray-200 bg-gradient-to-br from-rose-50/40 via-white to-emerald-50/40 p-4 shadow-sm">
       <h2 className="mb-2 text-base font-semibold text-[var(--color-domesta-gray)]">Wynik reklamacji w wybranych typach</h2>
       <p className="mb-3 text-xs text-gray-600">
-        <span className="font-medium text-rose-700">Uznane</span> — reklamacja uwzględniona (usterka po stronie dewelopera).{' '}
-        <span className="font-medium text-emerald-800">Odrzucone</span> — reklamacja nieuznana.
+        <span className="font-medium text-rose-700">Słupki + linie trendu</span>. Uznane — po stronie dewelopera; odrzucone — reklamacja nieuznana.
       </p>
-      <svg viewBox={`0 0 ${w} ${h}`} className="w-full max-w-full" role="img" aria-label="Wykres uznanych i odrzuconych">
-        {ticks.map((tk) => {
-          const y = padT + innerH - (innerH * tk) / niceMax
-          return (
-            <g key={tk}>
-              <line x1={padL} y1={y} x2={w - padR} y2={y} stroke="#e5e7eb" strokeWidth="1" />
-              <text x={padL - 6} y={y + 4} textAnchor="end" className="fill-gray-400 text-[10px]">
-                {tk}
+      <div className="relative">
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${w} ${h}`}
+          className="w-full max-w-full cursor-crosshair"
+          role="img"
+          aria-label="Wykres uznanych i odrzuconych"
+          onMouseMove={(e) => updateHover(e.clientX, e.clientY)}
+          onMouseLeave={() => {
+            setHoverIndex(null)
+            setTooltip(null)
+          }}
+        >
+          <defs>
+            <linearGradient id="bar-uzn" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#fb7185" />
+              <stop offset="100%" stopColor="#9f1239" />
+            </linearGradient>
+            <linearGradient id="bar-odr" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#6ee7b7" />
+              <stop offset="100%" stopColor="#047857" />
+            </linearGradient>
+            <filter id="soft-glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="1.2" result="b" />
+              <feMerge>
+                <feMergeNode in="b" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <rect x={padL} y={padT} width={innerW} height={innerH} rx="8" fill="white" opacity={0.92} />
+          {ticks.map((tk) => {
+            const y = padT + innerH - (innerH * tk) / niceMax
+            return (
+              <g key={tk}>
+                <line x1={padL} y1={y} x2={w - padR} y2={y} stroke="#f1f5f9" strokeWidth="1" />
+                <text x={padL - 8} y={y + 4} textAnchor="end" className="fill-slate-500 text-[10px]">
+                  {tk}
+                </text>
+              </g>
+            )
+          })}
+          {bars.map((b) => (
+            <rect key={b.key} x={b.x} y={b.y} width={b.w} height={Math.max(b.h, 0)} fill={b.fill} rx={3} filter="url(#soft-glow)" opacity={0.92} />
+          ))}
+          <path
+            d={uPath}
+            fill="none"
+            stroke="#be123c"
+            strokeWidth={2.2}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            strokeDasharray="6 4"
+            opacity={0.85}
+          />
+          <path
+            d={oPath}
+            fill="none"
+            stroke="#047857"
+            strokeWidth={2.2}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            opacity={0.9}
+          />
+          {hoverIndex !== null ? (
+            <line
+              x1={xAt(hoverIndex)}
+              y1={padT}
+              x2={xAt(hoverIndex)}
+              y2={baseY}
+              stroke="#94a3b8"
+              strokeWidth="1"
+              strokeDasharray="3 3"
+              pointerEvents="none"
+            />
+          ) : null}
+          {months.map((m, i) =>
+            labelIdx.has(i) ? (
+              <text key={`o-${m}`} x={xAt(i)} y={h - 8} textAnchor="middle" className="fill-slate-600 text-[9px]">
+                {formatYmLabel(m)}
               </text>
-            </g>
-          )
-        })}
-        <path d={uPath} fill="none" stroke="#be123c" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-        <path d={oPath} fill="none" stroke="#047857" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-        {months.map((m, i) =>
-          labelIdx.has(i) ? (
-            <text key={`o-${m}`} x={xAt(i)} y={h - 8} textAnchor="middle" className="fill-gray-600 text-[9px]">
-              {m.slice(5, 7)}.{m.slice(0, 4)}
-            </text>
-          ) : null,
-        )}
-      </svg>
-      <div className="mt-3 flex flex-wrap gap-6 text-xs text-gray-700">
+            ) : null,
+          )}
+        </svg>
+        {tooltip && hpMonth !== null && hoverIndex !== null ? (
+          <div
+            className="pointer-events-none fixed z-[100] rounded-xl border border-slate-200 bg-white/95 px-3 py-2.5 text-sm shadow-xl backdrop-blur-sm"
+            style={{ left: tooltip.x, top: tooltip.y }}
+            role="status"
+          >
+            <p className="font-semibold text-[var(--color-domesta-gray)]">{formatYmLabel(hpMonth)}</p>
+            <dl className="mt-2 space-y-1.5 text-xs">
+              <div className="flex justify-between gap-8">
+                <dt className="text-rose-800">Uznane</dt>
+                <dd className="tabular-nums font-semibold">{uzn.get(hpMonth) ?? 0}</dd>
+              </div>
+              <div className="flex justify-between gap-8">
+                <dt className="text-emerald-800">Odrzucone</dt>
+                <dd className="tabular-nums font-semibold">{odr.get(hpMonth) ?? 0}</dd>
+              </div>
+            </dl>
+          </div>
+        ) : null}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-6 text-xs text-slate-700">
         <span className="inline-flex items-center gap-2">
-          <span className="h-0.5 w-8 bg-rose-700" />
-          Uznane
+          <span className="h-3 w-5 rounded-sm bg-gradient-to-b from-rose-400 to-rose-900" />
+          Uznane (słupki)
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span className="h-3 w-5 rounded-sm bg-gradient-to-b from-emerald-300 to-emerald-800" />
+          Odrzucone (słupki)
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span className="h-0.5 w-8 border-b border-dashed border-rose-700" />
+          Trend uznanych
         </span>
         <span className="inline-flex items-center gap-2">
           <span className="h-0.5 w-8 bg-emerald-700" />
-          Odrzucone
+          Trend odrzuconych
         </span>
       </div>
     </section>

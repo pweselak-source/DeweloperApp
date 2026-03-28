@@ -751,7 +751,7 @@ function AdvancementChart({ points }: { points: AdvancementPoint[] }) {
   )
 }
 
-type StatisticsTab = 'advancement' | 'finance' | 'complaints' | 'defects'
+type StatisticsTab = 'advancement' | 'finance' | 'complaints'
 
 type BackOfficeStatisticsProps = {
   investments: InvestmentLite[]
@@ -836,7 +836,6 @@ export function BackOfficeStatistics({ investments, buildings }: BackOfficeStati
             ['advancement', 'Zaawansowanie'],
             ['finance', 'Finanse'],
             ['complaints', 'Reklamacje'],
-            ['defects', 'Usterki'],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -946,12 +945,7 @@ export function BackOfficeStatistics({ investments, buildings }: BackOfficeStati
             <>
               {tab === 'advancement' ? <AdvancementChart points={advancementPoints} /> : null}
               {tab === 'finance' ? <FinanceChart points={chartPoints} /> : null}
-              {tab === 'complaints' ? (
-                <div className="flex min-h-[240px] items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 text-center text-sm text-gray-600">
-                  Moduł reklamacji — w przygotowaniu.
-                </div>
-              ) : null}
-              {tab === 'defects' ? <DefectsStatisticsPanel buildingIds={effectiveBuildingIds} /> : null}
+              {tab === 'complaints' ? <DefectsStatisticsPanel buildingIds={effectiveBuildingIds} /> : null}
             </>
           )}
         </div>
