@@ -110,19 +110,25 @@ type DefectsStatisticsPanelProps = {
 export function DefectsStatisticsPanel({ buildingIds }: DefectsStatisticsPanelProps) {
   const buildingSet = useMemo(() => new Set(buildingIds), [buildingIds])
 
-  const defaultTo = new Date().toISOString().slice(0, 10)
+  const todayIso = new Date().toISOString().slice(0, 10)
+  const defaultTo = todayIso
   const defaultFrom = '2024-01-01'
 
   const [dateFrom, setDateFrom] = useState(defaultFrom)
   const [dateTo, setDateTo] = useState(defaultTo)
   const [selectedTypeIds, setSelectedTypeIds] = useState<Set<string>>(new Set())
 
+  /** Brak danych z przyszłości — wykresy i statystyki tylko do dnia dzisiejszego */
+  const effectiveDateTo = dateTo <= todayIso ? dateTo : todayIso
+
   const filteredEvents = useMemo(() => {
     return MOCK_DEFECT_EVENTS.filter(
       (e) =>
-        buildingSet.has(e.buildingId) && e.at >= dateFrom && e.at <= dateTo,
+        buildingSet.has(e.buildingId) &&
+        e.at >= dateFrom &&
+        e.at <= effectiveDateTo,
     )
-  }, [buildingSet, dateFrom, dateTo])
+  }, [buildingSet, dateFrom, effectiveDateTo])
 
   /** Zawsze dokładnie 10 wierszy — ranking po liczbie zgłoszeń wśród wszystkich typów */
   const top10 = useMemo(() => {
@@ -146,10 +152,10 @@ export function DefectsStatisticsPanel({ buildingIds }: DefectsStatisticsPanelPr
 
   const monthsAxis = useMemo(() => {
     const fromM = dateFrom.slice(0, 7)
-    const toM = dateTo.slice(0, 7)
+    const toM = effectiveDateTo.slice(0, 7)
     if (fromM > toM) return []
     return eachMonthInRange(fromM, toM)
-  }, [dateFrom, dateTo])
+  }, [dateFrom, effectiveDateTo])
 
   const volumeByMonthAndType = useMemo(() => {
     const months = monthsAxis
@@ -206,6 +212,7 @@ export function DefectsStatisticsPanel({ buildingIds }: DefectsStatisticsPanelPr
           Od
           <input
             type="date"
+            max={todayIso}
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
             className="mt-1 block rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-domesta-red)]"
@@ -215,13 +222,18 @@ export function DefectsStatisticsPanel({ buildingIds }: DefectsStatisticsPanelPr
           Do
           <input
             type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
+            max={todayIso}
+            value={dateTo <= todayIso ? dateTo : todayIso}
+            onChange={(e) => {
+              const v = e.target.value
+              setDateTo(v <= todayIso ? v : todayIso)
+            }}
             className="mt-1 block rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-domesta-red)]"
           />
         </label>
         <p className="max-w-md text-xs text-gray-500">
-          Filtrowanie wpływa na ranking, wykresy liczbowe oraz podział na uznane i odrzucone (dane przykładowe).
+          Filtrowanie wpływa na ranking, wykresy liczbowe oraz podział na uznane i odrzucone (dane przykładowe). Wyniki znane są
+          tylko do dnia dzisiejszego — przyszłe okresy nie są uwzględniane.
         </p>
       </div>
 
