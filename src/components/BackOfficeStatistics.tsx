@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
+import { DefectsStatisticsPanel } from './DefectsStatisticsPanel'
 
 type InvestmentLite = { id: number; name: string }
 type BuildingLite = { id: number; investmentId: number; address: string; apartmentsTotal: number }
@@ -750,7 +751,7 @@ function AdvancementChart({ points }: { points: AdvancementPoint[] }) {
   )
 }
 
-type StatisticsTab = 'advancement' | 'finance' | 'complaints'
+type StatisticsTab = 'advancement' | 'finance' | 'complaints' | 'defects'
 
 type BackOfficeStatisticsProps = {
   investments: InvestmentLite[]
@@ -835,6 +836,7 @@ export function BackOfficeStatistics({ investments, buildings }: BackOfficeStati
             ['advancement', 'Zaawansowanie'],
             ['finance', 'Finanse'],
             ['complaints', 'Reklamacje'],
+            ['defects', 'Usterki'],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -949,6 +951,7 @@ export function BackOfficeStatistics({ investments, buildings }: BackOfficeStati
                   Moduł reklamacji — w przygotowaniu.
                 </div>
               ) : null}
+              {tab === 'defects' ? <DefectsStatisticsPanel buildingIds={effectiveBuildingIds} /> : null}
             </>
           )}
         </div>
