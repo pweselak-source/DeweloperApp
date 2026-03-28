@@ -290,6 +290,42 @@ function App() {
   const [apartmentFileNameForm, setApartmentFileNameForm] = useState('')
   const [apartmentFileTypeForm, setApartmentFileTypeForm] = useState('')
   const [apartmentClientForm, setApartmentClientForm] = useState('')
+  const [paymentScheduleRows, setPaymentScheduleRows] = useState<PaymentScheduleSampleRow[]>(() => [...SAMPLE_APARTMENT_PAYMENT_SCHEDULE])
+  const [paymentScheduleDraft, setPaymentScheduleDraft] = useState({
+    installmentPln: '',
+    dueDate: '',
+    paidPln: '',
+    paidDate: '',
+    note: '',
+  })
+
+  const addPaymentScheduleRow = () => {
+    const instRaw = paymentScheduleDraft.installmentPln.trim().replace(',', '.')
+    const installment = parseFloat(instRaw)
+    if (Number.isNaN(installment) || installment <= 0) return
+    const due = paymentScheduleDraft.dueDate.trim()
+    if (!due) return
+
+    let paidPln: number | null = null
+    const paidRaw = paymentScheduleDraft.paidPln.trim().replace(',', '.')
+    if (paidRaw !== '') {
+      const p = parseFloat(paidRaw)
+      if (Number.isNaN(p) || p < 0) return
+      paidPln = p
+    }
+
+    const paidDateRaw = paymentScheduleDraft.paidDate.trim()
+    const paidDate = paidDateRaw === '' ? null : paidDateRaw
+
+    const noteRaw = paymentScheduleDraft.note.trim()
+    const note = noteRaw === '' ? null : noteRaw
+
+    setPaymentScheduleRows((prev) => [
+      ...prev,
+      { installmentPln: installment, dueDate: due, paidPln, paidDate, note },
+    ])
+    setPaymentScheduleDraft({ installmentPln: '', dueDate: '', paidPln: '', paidDate: '', note: '' })
+  }
 
   useEffect(() => {
     try {
@@ -1633,8 +1669,8 @@ function App() {
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 text-gray-700">
-                                  {SAMPLE_APARTMENT_PAYMENT_SCHEDULE.map((row, index) => (
-                                    <tr key={`${row.dueDate}-${index}`}>
+                                  {paymentScheduleRows.map((row, index) => (
+                                    <tr key={`${row.dueDate}-${row.installmentPln}-${index}`}>
                                       <td className="px-3 py-3 align-middle tabular-nums text-gray-600">{index + 1}</td>
                                       <td className="px-3 py-3 align-middle font-medium tabular-nums">{pln(row.installmentPln)}</td>
                                       <td className="px-3 py-3 align-middle whitespace-nowrap">{formatPlIsoDate(row.dueDate)}</td>
@@ -1647,6 +1683,70 @@ function App() {
                                       <td className="px-3 py-3 align-middle text-gray-600">{row.note ?? '—'}</td>
                                     </tr>
                                   ))}
+                                  <tr className="bg-gray-50/90">
+                                    <td className="px-3 py-2 align-middle">
+                                      <button
+                                        type="button"
+                                        onClick={addPaymentScheduleRow}
+                                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[var(--color-domesta-red)] text-white hover:opacity-90"
+                                        title="Dodaj wiersz"
+                                        aria-label="Dodaj wiersz do harmonogramu"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                          <path d="M12 5v14M5 12h14" />
+                                        </svg>
+                                      </button>
+                                    </td>
+                                    <td className="px-3 py-2 align-middle">
+                                      <input
+                                        type="number"
+                                        min={0}
+                                        step={0.01}
+                                        inputMode="decimal"
+                                        placeholder="np. 45000"
+                                        value={paymentScheduleDraft.installmentPln}
+                                        onChange={(e) => setPaymentScheduleDraft((d) => ({ ...d, installmentPln: e.target.value }))}
+                                        className="w-full min-w-[7rem] rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm tabular-nums outline-none focus:border-[var(--color-domesta-red)]"
+                                      />
+                                    </td>
+                                    <td className="px-3 py-2 align-middle">
+                                      <input
+                                        type="date"
+                                        value={paymentScheduleDraft.dueDate}
+                                        onChange={(e) => setPaymentScheduleDraft((d) => ({ ...d, dueDate: e.target.value }))}
+                                        className="w-full min-w-[10rem] rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-[var(--color-domesta-red)]"
+                                      />
+                                    </td>
+                                    <td className="px-3 py-2 align-middle">
+                                      <input
+                                        type="number"
+                                        min={0}
+                                        step={0.01}
+                                        inputMode="decimal"
+                                        placeholder="opcjonalnie"
+                                        value={paymentScheduleDraft.paidPln}
+                                        onChange={(e) => setPaymentScheduleDraft((d) => ({ ...d, paidPln: e.target.value }))}
+                                        className="w-full min-w-[7rem] rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm tabular-nums outline-none focus:border-[var(--color-domesta-red)]"
+                                      />
+                                    </td>
+                                    <td className="px-3 py-2 align-middle">
+                                      <input
+                                        type="date"
+                                        value={paymentScheduleDraft.paidDate}
+                                        onChange={(e) => setPaymentScheduleDraft((d) => ({ ...d, paidDate: e.target.value }))}
+                                        className="w-full min-w-[10rem] rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-[var(--color-domesta-red)]"
+                                      />
+                                    </td>
+                                    <td className="px-3 py-2 align-middle">
+                                      <input
+                                        type="text"
+                                        placeholder="opcjonalnie"
+                                        value={paymentScheduleDraft.note}
+                                        onChange={(e) => setPaymentScheduleDraft((d) => ({ ...d, note: e.target.value }))}
+                                        className="w-full min-w-[8rem] rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-[var(--color-domesta-red)]"
+                                      />
+                                    </td>
+                                  </tr>
                                 </tbody>
                               </table>
                             </div>
