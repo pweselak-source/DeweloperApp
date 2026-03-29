@@ -3,6 +3,7 @@ import { AppBar } from './components/AppBar'
 import { SideMenu } from './components/SideMenu'
 import { BackOfficeMenu } from './components/BackOfficeMenu'
 import { BackOfficeStatistics } from './components/BackOfficeStatistics'
+import { BackOfficeBuildingJournal } from './components/BackOfficeBuildingJournal'
 import { BackOfficeCalendarManagement } from './components/BackOfficeCalendarManagement'
 import { BackOfficeCalendarPreview } from './components/BackOfficeCalendarPreview'
 import { BackOfficeUsers } from './components/BackOfficeUsers'
@@ -2659,6 +2660,8 @@ function App() {
                   bookings={calendarBookings}
                   onBookingsChange={setCalendarBookings}
                 />
+              ) : backOfficeView === 'construction-schedule' ? (
+                <BackOfficeBuildingJournal investments={investments} buildings={buildings} />
               ) : (
                 <section className="flex h-full items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50">
                   <p className="text-sm text-gray-500">Ta sekcja jest przygotowana do dalszej rozbudowy.</p>
