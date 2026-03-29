@@ -90,6 +90,25 @@ type Building = {
   apartmentsTotal: number
   apartmentsAssigned: number
 }
+type Client = {
+  id: number
+  email: string
+  firstName: string
+  lastName: string
+}
+
+type StorageUnit = {
+  id: number
+  name: string
+  apartmentId: number | null
+}
+
+type ParkingSpot = {
+  id: number
+  name: string
+  apartmentId: number | null
+}
+
 type Apartment = {
   id: number
   buildingId: number
@@ -103,6 +122,8 @@ type Apartment = {
   fileName: string
   fileType: string
   assignedClient: string
+  clientId: number | null
+  postSaleUnlocked: boolean
 }
 
 /** Wiersz harmonogramu — wymagane: kwota raty, termin; opcjonalne: spłata, data, notatka */
@@ -238,6 +259,28 @@ const SAMPLE_APARTMENT_COMPLAINTS: ApartmentComplaint[] = [
       { id: '3c', kind: 'comment', author: 'Serwis Domesta', at: '2026-01-22T13:15:00', body: 'Zespół weryfikuje parametry instalacji.' },
     ],
   },
+]
+
+const INITIAL_CLIENTS: Client[] = [
+  { id: 1, email: 'jan.kowalski@example.com', firstName: 'Jan', lastName: 'Kowalski' },
+  { id: 2, email: 'anna.wisniewska@firma.pl', firstName: 'Anna', lastName: 'Wiśniewska' },
+  { id: 3, email: 'marek.z@mail.com', firstName: 'Marek', lastName: 'Zieliński' },
+]
+
+const INITIAL_STORAGE_UNITS: StorageUnit[] = [
+  { id: 1, name: 'Komórka piwnica — KL-12A / regał 3', apartmentId: 2 },
+  { id: 2, name: 'Komórka piwnica — KL-12B / regał 7', apartmentId: null },
+  { id: 3, name: 'Komórka piwnica — KL-12C / regał 1', apartmentId: null },
+  { id: 4, name: 'Komórka przy schodach — KS-01', apartmentId: 3 },
+  { id: 5, name: 'Komórka techniczna — KT-04', apartmentId: null },
+]
+
+const INITIAL_PARKING_SPOTS: ParkingSpot[] = [
+  { id: 1, name: 'MP-A / miejsce 12', apartmentId: 2 },
+  { id: 2, name: 'MP-A / miejsce 13', apartmentId: null },
+  { id: 3, name: 'MP-B / miejsce 04', apartmentId: null },
+  { id: 4, name: 'Garaż — box G-7', apartmentId: null },
+  { id: 5, name: 'MP-nadziemne / P-22', apartmentId: null },
 ]
 
 function App() {
@@ -384,6 +427,8 @@ function App() {
       fileName: 'rzut-a01.pdf',
       fileType: 'PDF',
       assignedClient: 'Brak (przypisanie pozniej)',
+      clientId: null,
+      postSaleUnlocked: false,
     },
     {
       id: 2,
@@ -397,7 +442,9 @@ function App() {
       floor: 3,
       fileName: 'karta-a12.pdf',
       fileType: 'PDF',
-      assignedClient: 'Brak (przypisanie pozniej)',
+      assignedClient: 'Jan Kowalski',
+      clientId: 1,
+      postSaleUnlocked: true,
     },
     {
       id: 3,
@@ -411,7 +458,9 @@ function App() {
       floor: 2,
       fileName: 'spec-b07.docx',
       fileType: 'DOCX',
-      assignedClient: 'Brak (przypisanie pozniej)',
+      assignedClient: 'Anna Wiśniewska',
+      clientId: 2,
+      postSaleUnlocked: true,
     },
     {
       id: 4,
@@ -426,6 +475,8 @@ function App() {
       fileName: 'rzut-c21.pdf',
       fileType: 'PDF',
       assignedClient: 'Brak (przypisanie pozniej)',
+      clientId: null,
+      postSaleUnlocked: false,
     },
   ])
   const [apartmentFormOpen, setApartmentFormOpen] = useState(false)
@@ -440,7 +491,19 @@ function App() {
   const [apartmentFloorForm, setApartmentFloorForm] = useState<number>(0)
   const [apartmentFileNameForm, setApartmentFileNameForm] = useState('')
   const [apartmentFileTypeForm, setApartmentFileTypeForm] = useState('')
-  const [apartmentClientForm, setApartmentClientForm] = useState('')
+  const [apartmentClientIdForm, setApartmentClientIdForm] = useState<number | ''>('')
+  const [clients, setClients] = useState<Client[]>(() => [...INITIAL_CLIENTS])
+  const [storageUnits, setStorageUnits] = useState<StorageUnit[]>(() => [...INITIAL_STORAGE_UNITS])
+  const [parkingSpots, setParkingSpots] = useState<ParkingSpot[]>(() => [...INITIAL_PARKING_SPOTS])
+  const [sellDialogOpen, setSellDialogOpen] = useState(false)
+  const [sellEmail, setSellEmail] = useState('')
+  const [sellFirstName, setSellFirstName] = useState('')
+  const [sellLastName, setSellLastName] = useState('')
+  const [sellSelectedStorageIds, setSellSelectedStorageIds] = useState<number[]>([])
+  const [sellSelectedParkingIds, setSellSelectedParkingIds] = useState<number[]>([])
+  const [sellStorageFilter, setSellStorageFilter] = useState('')
+  const [sellParkingFilter, setSellParkingFilter] = useState('')
+  const [sellEmailSuggestOpen, setSellEmailSuggestOpen] = useState(false)
   const [paymentScheduleRows, setPaymentScheduleRows] = useState<PaymentScheduleSampleRow[]>(() => [...SAMPLE_APARTMENT_PAYMENT_SCHEDULE])
   const [paymentScheduleDraft, setPaymentScheduleDraft] = useState<PaymentScheduleDraftFields>(() => emptyPaymentScheduleDraft())
   const [editingPaymentScheduleId, setEditingPaymentScheduleId] = useState<number | null>(null)
@@ -504,6 +567,22 @@ function App() {
     () => Array.from({ length: 18 }, () => Math.floor(Math.random() * 10)).join(''),
     [editingApartmentId],
   )
+
+  const editingApartmentForTabs = useMemo(
+    () => (editingApartmentId !== null ? apartments.find((a) => a.id === editingApartmentId) : undefined),
+    [apartments, editingApartmentId],
+  )
+  const postSaleTabsLocked = Boolean(editingApartmentId !== null && !editingApartmentForTabs?.postSaleUnlocked)
+
+  useEffect(() => {
+    if (
+      apartmentFormOpen &&
+      postSaleTabsLocked &&
+      (apartmentFormSubTab === 'paymentSchedule' || apartmentFormSubTab === 'tasks' || apartmentFormSubTab === 'complaints')
+    ) {
+      setApartmentFormSubTab('details')
+    }
+  }, [apartmentFormOpen, postSaleTabsLocked, apartmentFormSubTab])
 
   useEffect(() => {
     try {
@@ -770,7 +849,7 @@ function App() {
     setApartmentFloorForm(apartment.floor)
     setApartmentFileNameForm(apartment.fileName)
     setApartmentFileTypeForm(apartment.fileType)
-    setApartmentClientForm(apartment.assignedClient)
+    setApartmentClientIdForm(apartment.clientId ?? '')
     setApartmentFormOpen(true)
   }
 
@@ -787,8 +866,70 @@ function App() {
     setApartmentFloorForm(0)
     setApartmentFileNameForm('')
     setApartmentFileTypeForm('')
-    setApartmentClientForm('')
+    setApartmentClientIdForm('')
     setApartmentFormOpen(true)
+  }
+
+  const resetSellDialog = () => {
+    setSellEmail('')
+    setSellFirstName('')
+    setSellLastName('')
+    setSellSelectedStorageIds([])
+    setSellSelectedParkingIds([])
+    setSellStorageFilter('')
+    setSellParkingFilter('')
+    setSellEmailSuggestOpen(false)
+  }
+
+  const closeSellDialog = () => {
+    setSellDialogOpen(false)
+    resetSellDialog()
+  }
+
+  const openSellDialog = () => {
+    resetSellDialog()
+    setSellDialogOpen(true)
+  }
+
+  const handleSellDialogSave = () => {
+    if (editingApartmentId === null) return
+    const email = sellEmail.trim()
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return
+
+    const existing = clients.find((c) => c.email.toLowerCase() === email.toLowerCase())
+    let resolvedClient: Client
+    if (existing) {
+      resolvedClient = existing
+    } else {
+      const fn = sellFirstName.trim()
+      const ln = sellLastName.trim()
+      if (!fn || !ln) return
+      const nextId = clients.length > 0 ? Math.max(...clients.map((c) => c.id)) + 1 : 1
+      resolvedClient = { id: nextId, email, firstName: fn, lastName: ln }
+      setClients((prev) => [...prev, resolvedClient])
+    }
+
+    const label = `${resolvedClient.firstName} ${resolvedClient.lastName}`
+    const aptId = editingApartmentId
+
+    setApartments((prev) =>
+      prev.map((a) =>
+        a.id === aptId
+          ? { ...a, clientId: resolvedClient.id, assignedClient: label, postSaleUnlocked: true }
+          : a,
+      ),
+    )
+
+    setStorageUnits((prev) =>
+      prev.map((s) => (sellSelectedStorageIds.includes(s.id) ? { ...s, apartmentId: aptId } : s)),
+    )
+    setParkingSpots((prev) =>
+      prev.map((p) => (sellSelectedParkingIds.includes(p.id) ? { ...p, apartmentId: aptId } : p)),
+    )
+
+    setApartmentClientIdForm(resolvedClient.id)
+    setApartmentFormSubTab('details')
+    closeSellDialog()
   }
 
   const handleCancelApartmentForm = () => {
@@ -797,12 +938,23 @@ function App() {
     setEditingPaymentScheduleId(null)
     setPaymentScheduleEditDraft(emptyPaymentScheduleDraft())
     setApartmentComplaintsExpandedId(null)
+    setSellDialogOpen(false)
+    resetSellDialog()
   }
 
   const handleSaveApartment = () => {
     const unitNumber = apartmentNumberForm.trim()
     if (!unitNumber) return
     const buildingAddr = buildings.find((b) => b.id === apartmentBuildingIdForm)?.address ?? ''
+
+    const clientIdSaved = apartmentClientIdForm === '' ? null : apartmentClientIdForm
+    const assignedLabel =
+      clientIdSaved === null
+        ? 'Brak (przypisanie pozniej)'
+        : (() => {
+            const c = clients.find((cl) => cl.id === clientIdSaved)
+            return c ? `${c.firstName} ${c.lastName}` : 'Brak (przypisanie pozniej)'
+          })()
 
     if (editingApartmentId === null) {
       const nextId = apartments.length > 0 ? Math.max(...apartments.map((a) => a.id)) + 1 : 1
@@ -820,7 +972,9 @@ function App() {
           floor: apartmentFloorForm,
           fileName: apartmentFileNameForm.trim() || '-',
           fileType: apartmentFileTypeForm.trim() || '-',
-          assignedClient: apartmentClientForm.trim() || 'Brak (przypisanie pozniej)',
+          assignedClient: assignedLabel,
+          clientId: clientIdSaved,
+          postSaleUnlocked: false,
         },
       ])
     } else {
@@ -839,7 +993,8 @@ function App() {
                 floor: apartmentFloorForm,
                 fileName: apartmentFileNameForm.trim(),
                 fileType: apartmentFileTypeForm.trim(),
-                assignedClient: apartmentClientForm.trim(),
+                assignedClient: assignedLabel,
+                clientId: clientIdSaved,
               }
             : apartment,
         ),
@@ -850,6 +1005,8 @@ function App() {
     setEditingPaymentScheduleId(null)
     setPaymentScheduleEditDraft(emptyPaymentScheduleDraft())
     setApartmentComplaintsExpandedId(null)
+    setSellDialogOpen(false)
+    resetSellDialog()
   }
 
   const outerBackgroundClass =
@@ -1668,7 +1825,18 @@ function App() {
                             ? `${investments.find((inv) => inv.id === buildings.find((b) => b.id === apartmentBuildingIdForm)?.investmentId)?.name ?? '—'} | ${apartmentNumberForm.trim() || '—'}`
                             : undefined,
                         )}
-                        {investmentsTabAddButton({ onClick: openNewApartmentForm, title: 'Dodaj mieszkanie' })}
+                        <div className="flex shrink-0 items-center gap-2">
+                          {editingApartmentId !== null && (
+                            <button
+                              type="button"
+                              onClick={openSellDialog}
+                              className="rounded-lg border border-[var(--color-domesta-red)] bg-white px-3 py-1.5 text-sm font-semibold text-[var(--color-domesta-red)] shadow-sm hover:bg-red-50"
+                            >
+                              Sprzedaj
+                            </button>
+                          )}
+                          {investmentsTabAddButton({ onClick: openNewApartmentForm, title: 'Dodaj mieszkanie' })}
+                        </div>
                       </div>
                       {apartmentFormOpen ? (
                         <section className="rounded-2xl border border-gray-200 bg-white p-5">
@@ -1692,12 +1860,16 @@ function App() {
                             <button
                               type="button"
                               role="tab"
+                              disabled={postSaleTabsLocked}
+                              title={postSaleTabsLocked ? 'Dostępne po zapisaniu sprzedaży (przycisk Sprzedaj)' : undefined}
                               aria-selected={apartmentFormSubTab === 'paymentSchedule'}
-                              onClick={() => setApartmentFormSubTab('paymentSchedule')}
+                              onClick={() => !postSaleTabsLocked && setApartmentFormSubTab('paymentSchedule')}
                               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                                apartmentFormSubTab === 'paymentSchedule'
-                                  ? 'bg-white text-[var(--color-domesta-gray)] shadow-sm'
-                                  : 'text-gray-600 hover:bg-white hover:text-[var(--color-domesta-gray)]'
+                                postSaleTabsLocked
+                                  ? 'cursor-not-allowed opacity-40'
+                                  : apartmentFormSubTab === 'paymentSchedule'
+                                    ? 'bg-white text-[var(--color-domesta-gray)] shadow-sm'
+                                    : 'text-gray-600 hover:bg-white hover:text-[var(--color-domesta-gray)]'
                               }`}
                             >
                               Harmonogram spłaty
@@ -1705,12 +1877,16 @@ function App() {
                             <button
                               type="button"
                               role="tab"
+                              disabled={postSaleTabsLocked}
+                              title={postSaleTabsLocked ? 'Dostępne po zapisaniu sprzedaży (przycisk Sprzedaj)' : undefined}
                               aria-selected={apartmentFormSubTab === 'tasks'}
-                              onClick={() => setApartmentFormSubTab('tasks')}
+                              onClick={() => !postSaleTabsLocked && setApartmentFormSubTab('tasks')}
                               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                                apartmentFormSubTab === 'tasks'
-                                  ? 'bg-white text-[var(--color-domesta-gray)] shadow-sm'
-                                  : 'text-gray-600 hover:bg-white hover:text-[var(--color-domesta-gray)]'
+                                postSaleTabsLocked
+                                  ? 'cursor-not-allowed opacity-40'
+                                  : apartmentFormSubTab === 'tasks'
+                                    ? 'bg-white text-[var(--color-domesta-gray)] shadow-sm'
+                                    : 'text-gray-600 hover:bg-white hover:text-[var(--color-domesta-gray)]'
                               }`}
                             >
                               Zadania
@@ -1718,12 +1894,16 @@ function App() {
                             <button
                               type="button"
                               role="tab"
+                              disabled={postSaleTabsLocked}
+                              title={postSaleTabsLocked ? 'Dostępne po zapisaniu sprzedaży (przycisk Sprzedaj)' : undefined}
                               aria-selected={apartmentFormSubTab === 'complaints'}
-                              onClick={() => setApartmentFormSubTab('complaints')}
+                              onClick={() => !postSaleTabsLocked && setApartmentFormSubTab('complaints')}
                               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                                apartmentFormSubTab === 'complaints'
-                                  ? 'bg-white text-[var(--color-domesta-gray)] shadow-sm'
-                                  : 'text-gray-600 hover:bg-white hover:text-[var(--color-domesta-gray)]'
+                                postSaleTabsLocked
+                                  ? 'cursor-not-allowed opacity-40'
+                                  : apartmentFormSubTab === 'complaints'
+                                    ? 'bg-white text-[var(--color-domesta-gray)] shadow-sm'
+                                    : 'text-gray-600 hover:bg-white hover:text-[var(--color-domesta-gray)]'
                               }`}
                             >
                               Reklamacje
@@ -1829,11 +2009,21 @@ function App() {
                             </label>
                             <label className="text-sm text-gray-600 md:col-span-2">
                               Klient
-                              <input
-                                value={apartmentClientForm}
-                                onChange={(e) => setApartmentClientForm(e.target.value)}
-                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[var(--color-domesta-red)]"
-                              />
+                              <select
+                                value={apartmentClientIdForm === '' ? '' : String(apartmentClientIdForm)}
+                                onChange={(e) => {
+                                  const v = e.target.value
+                                  setApartmentClientIdForm(v === '' ? '' : Number(v))
+                                }}
+                                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-domesta-red)]"
+                              >
+                                <option value="">Brak (przypisanie później)</option>
+                                {clients.map((c) => (
+                                  <option key={c.id} value={c.id}>
+                                    {c.firstName} {c.lastName} ({c.email})
+                                  </option>
+                                ))}
+                              </select>
                             </label>
                           </div>
                           <div className="mt-5 flex items-center gap-2">
@@ -2475,6 +2665,224 @@ function App() {
                 </section>
               )}
             </main>
+            {sellDialogOpen && (
+              <div
+                className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="sell-dialog-title"
+              >
+                <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+                  <h3 id="sell-dialog-title" className="mb-4 text-lg font-semibold text-[var(--color-domesta-gray)]">
+                    Sprzedaż mieszkania
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="relative">
+                      <label className="text-sm text-gray-600">Email</label>
+                      <input
+                        type="email"
+                        autoComplete="off"
+                        value={sellEmail}
+                        onChange={(e) => {
+                          const v = e.target.value
+                          setSellEmail(v)
+                          const m = clients.find((c) => c.email.toLowerCase() === v.trim().toLowerCase())
+                          if (m) {
+                            setSellFirstName(m.firstName)
+                            setSellLastName(m.lastName)
+                          } else if (v.trim() === '') {
+                            setSellFirstName('')
+                            setSellLastName('')
+                          }
+                        }}
+                        onFocus={() => setSellEmailSuggestOpen(true)}
+                        onBlur={() => {
+                          window.setTimeout(() => setSellEmailSuggestOpen(false), 180)
+                        }}
+                        placeholder="np. klient@example.com"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[var(--color-domesta-red)]"
+                      />
+                      {sellEmailSuggestOpen && sellEmail.trim() !== '' && (
+                        <ul className="absolute z-10 mt-1 max-h-40 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 text-sm shadow-lg">
+                          {clients
+                            .filter((c) => c.email.toLowerCase().includes(sellEmail.trim().toLowerCase()))
+                            .slice(0, 10)
+                            .map((c) => (
+                              <li key={c.id}>
+                                <button
+                                  type="button"
+                                  className="w-full px-3 py-2 text-left hover:bg-gray-50"
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  onClick={() => {
+                                    setSellEmail(c.email)
+                                    setSellFirstName(c.firstName)
+                                    setSellLastName(c.lastName)
+                                    setSellEmailSuggestOpen(false)
+                                  }}
+                                >
+                                  {c.email}
+                                  <span className="block text-xs text-gray-500">
+                                    {c.firstName} {c.lastName}
+                                  </span>
+                                </button>
+                              </li>
+                            ))}
+                        </ul>
+                      )}
+                    </div>
+                    {(() => {
+                      const matched = clients.find((c) => c.email.toLowerCase() === sellEmail.trim().toLowerCase())
+                      return (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <label className="text-sm text-gray-600">
+                            Imię
+                            <input
+                              value={sellFirstName}
+                              onChange={(e) => setSellFirstName(e.target.value)}
+                              disabled={Boolean(matched)}
+                              className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-domesta-red)] disabled:bg-gray-100 disabled:text-gray-700"
+                            />
+                          </label>
+                          <label className="text-sm text-gray-600">
+                            Nazwisko
+                            <input
+                              value={sellLastName}
+                              onChange={(e) => setSellLastName(e.target.value)}
+                              disabled={Boolean(matched)}
+                              className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-domesta-red)] disabled:bg-gray-100 disabled:text-gray-700"
+                            />
+                          </label>
+                        </div>
+                      )
+                    })()}
+                    <div>
+                      <p className="mb-1 text-sm font-medium text-gray-700">Komórki lokatorskie (wolne)</p>
+                      {sellSelectedStorageIds.length > 0 && (
+                        <div className="mb-2 flex flex-wrap gap-1">
+                          {sellSelectedStorageIds.map((id) => {
+                            const s = storageUnits.find((u) => u.id === id)
+                            return s ? (
+                              <span
+                                key={id}
+                                className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-800"
+                              >
+                                {s.name}
+                                <button
+                                  type="button"
+                                  className="text-gray-500 hover:text-red-600"
+                                  aria-label="Usuń"
+                                  onClick={() =>
+                                    setSellSelectedStorageIds((prev) => prev.filter((x) => x !== id))
+                                  }
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ) : null
+                          })}
+                        </div>
+                      )}
+                      <input
+                        type="search"
+                        value={sellStorageFilter}
+                        onChange={(e) => setSellStorageFilter(e.target.value)}
+                        placeholder="Szukaj po nazwie…"
+                        className="mb-2 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                      />
+                      <div className="max-h-36 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50/80 p-2">
+                        {storageUnits
+                          .filter((s) => s.apartmentId === null && s.name.toLowerCase().includes(sellStorageFilter.toLowerCase()))
+                          .map((s) => (
+                            <label key={s.id} className="flex cursor-pointer items-start gap-2 border-b border-gray-100 py-2 last:border-0">
+                              <input
+                                type="checkbox"
+                                className="mt-0.5"
+                                checked={sellSelectedStorageIds.includes(s.id)}
+                                onChange={() =>
+                                  setSellSelectedStorageIds((prev) =>
+                                    prev.includes(s.id) ? prev.filter((x) => x !== s.id) : [...prev, s.id],
+                                  )
+                                }
+                              />
+                              <span className="text-sm text-gray-800">{s.name}</span>
+                            </label>
+                          ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="mb-1 text-sm font-medium text-gray-700">Miejsca postojowe (wolne)</p>
+                      {sellSelectedParkingIds.length > 0 && (
+                        <div className="mb-2 flex flex-wrap gap-1">
+                          {sellSelectedParkingIds.map((id) => {
+                            const p = parkingSpots.find((x) => x.id === id)
+                            return p ? (
+                              <span
+                                key={id}
+                                className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-800"
+                              >
+                                {p.name}
+                                <button
+                                  type="button"
+                                  className="text-gray-500 hover:text-red-600"
+                                  aria-label="Usuń"
+                                  onClick={() =>
+                                    setSellSelectedParkingIds((prev) => prev.filter((x) => x !== id))
+                                  }
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ) : null
+                          })}
+                        </div>
+                      )}
+                      <input
+                        type="search"
+                        value={sellParkingFilter}
+                        onChange={(e) => setSellParkingFilter(e.target.value)}
+                        placeholder="Szukaj po nazwie…"
+                        className="mb-2 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                      />
+                      <div className="max-h-36 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50/80 p-2">
+                        {parkingSpots
+                          .filter((p) => p.apartmentId === null && p.name.toLowerCase().includes(sellParkingFilter.toLowerCase()))
+                          .map((p) => (
+                            <label key={p.id} className="flex cursor-pointer items-start gap-2 border-b border-gray-100 py-2 last:border-0">
+                              <input
+                                type="checkbox"
+                                className="mt-0.5"
+                                checked={sellSelectedParkingIds.includes(p.id)}
+                                onChange={() =>
+                                  setSellSelectedParkingIds((prev) =>
+                                    prev.includes(p.id) ? prev.filter((x) => x !== p.id) : [...prev, p.id],
+                                  )
+                                }
+                              />
+                              <span className="text-sm text-gray-800">{p.name}</span>
+                            </label>
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-6 flex justify-end gap-2 border-t border-gray-100 pt-4">
+                    <button
+                      type="button"
+                      onClick={closeSellDialog}
+                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    >
+                      Anuluj
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSellDialogSave}
+                      className="rounded-lg bg-[var(--color-domesta-red)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+                    >
+                      Zapisz
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             {buildingApartmentsUploadOpen && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
                 <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl">
