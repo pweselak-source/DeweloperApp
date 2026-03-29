@@ -27,7 +27,6 @@ export type AppTheme = 'halfBlack' | 'allBlack' | 'domestaColors' | 'allWhite'
 type BackOfficeView =
   | 'investments'
   | 'clients'
-  | 'permissions'
   | 'calendar-management'
   | 'calendar-preview'
   | 'statistics'

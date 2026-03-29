@@ -3,7 +3,6 @@ import { useState, type ReactNode } from 'react'
 export type BackOfficeMenuItemId =
   | 'investments'
   | 'clients'
-  | 'permissions'
   | 'calendar-management'
   | 'calendar-preview'
   | 'statistics'
@@ -42,16 +41,6 @@ const NAV_ITEMS: NavItem[] = [
         <circle cx="17" cy="8" r="3" />
         <path d="M3 20c0-3 2-5 5-5s5 2 5 5" />
         <path d="M12 20c0-2.2 1.8-4 4-4s4 1.8 4 4" />
-      </svg>
-    ),
-  },
-  {
-    id: 'permissions',
-    label: 'Uprawnienia',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4Z" />
-        <path d="m9 12 2 2 4-4" />
       </svg>
     ),
   },
