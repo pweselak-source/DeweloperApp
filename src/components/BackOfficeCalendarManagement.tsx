@@ -9,6 +9,7 @@ import {
   SLOTS_PER_DAY,
   slotIndexToLabel,
 } from '../data/calendarShared'
+import { FilterableUserSelect } from './FilterableUserSelect'
 
 const WEEKDAYS = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela'] as const
 
@@ -235,20 +236,7 @@ export function BackOfficeCalendarManagement({
     <section className="space-y-5">
       <div className="space-y-3">
         <h1 className="text-2xl font-bold text-[var(--color-domesta-gray)]">Zaznacz swoją dostępność</h1>
-        <label className="flex max-w-md flex-col gap-1 text-sm text-gray-600">
-          Użytkownik
-          <select
-            value={selectedUserId}
-            onChange={(e) => setSelectedUserId(e.target.value)}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-[var(--color-domesta-red)]"
-          >
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <FilterableUserSelect label="Użytkownik" users={users} value={selectedUserId} onChange={setSelectedUserId} />
       </div>
 
       <p className="text-sm text-gray-600">

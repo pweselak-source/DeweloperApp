@@ -13,6 +13,7 @@ import {
   slotIndexToLabel,
 } from '../data/calendarShared'
 import type { CalendarManagementUser } from './BackOfficeCalendarManagement'
+import { FilterableUserSelect } from './FilterableUserSelect'
 
 const WEEKDAYS = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela'] as const
 const SLOT_PX = 22
@@ -241,20 +242,12 @@ export function BackOfficeCalendarPreview({
     <section className="space-y-5">
       <div className="space-y-3">
         <h1 className="text-2xl font-bold text-[var(--color-domesta-gray)]">Podgląd kalendarza</h1>
-        <label className="flex max-w-md flex-col gap-1 text-sm text-gray-600">
-          Kalendarz użytkownika
-          <select
-            value={viewedUserId}
-            onChange={(e) => setViewedUserId(e.target.value)}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-[var(--color-domesta-red)]"
-          >
-            {calendarUsers.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <FilterableUserSelect
+          label="Kalendarz użytkownika"
+          users={calendarUsers}
+          value={viewedUserId}
+          onChange={setViewedUserId}
+        />
       </div>
 
       <p className="text-sm text-gray-600">
@@ -432,20 +425,15 @@ export function BackOfficeCalendarPreview({
                   ))}
                 </select>
               </label>
-              <label className="block text-sm text-gray-600">
-                Umówiony użytkownik
-                <select
+              <div className="text-sm text-gray-600">
+                <FilterableUserSelect
+                  label="Umówiony użytkownik"
+                  users={calendarUsers}
                   value={dialogAssigneeId}
-                  onChange={(e) => setDialogAssigneeId(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-domesta-red)]"
-                >
-                  {calendarUsers.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  onChange={setDialogAssigneeId}
+                  menuZClass="z-[100]"
+                />
+              </div>
             </div>
             <div className="mt-6 flex justify-end gap-2">
               <button
