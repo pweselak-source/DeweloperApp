@@ -1,5 +1,7 @@
 /** Wspólne typy i przykładowe dane kalendarza (dostępność + umówienia). */
 
+import { getUserDisplayName } from './usersDirectory'
+
 export type AvailabilityBlock = {
   id: string
   userId: string
@@ -96,8 +98,8 @@ export function addDays(d: Date, n: number): Date {
   return x
 }
 
-export function buildSampleAvailabilityBlocks(): AvailabilityBlock[] {
-  const users = ['u1', 'u2', 'u3'] as const
+export function buildSampleAvailabilityBlocks(userIds: string[]): AvailabilityBlock[] {
+  if (userIds.length === 0) return []
   const anchorMonday = new Date(2026, 2, 23)
   const out: AvailabilityBlock[] = []
   let nid = 0
@@ -122,8 +124,8 @@ export function buildSampleAvailabilityBlocks(): AvailabilityBlock[] {
 
   for (let w = -3; w <= 3; w++) {
     const monday = addDays(anchorMonday, w * 7)
-    for (let u = 0; u < users.length; u++) {
-      const userId = users[u]
+    for (let u = 0; u < userIds.length; u++) {
+      const userId = userIds[u]!
       for (let wd = 0; wd < 5; wd++) {
         const day = addDays(monday, wd)
         const dateStr = formatDateKey(day)
@@ -184,63 +186,63 @@ export function availabilityBlocksCoveringRange(
   return dayBlocks.filter((b) => b.startSlot <= start && b.endSlot >= end)
 }
 
-/** Przykładowe umówienia — mieszczą się w slotach dostępności z próbki. */
+/** Przykładowe umówienia (właściciel kalendarza = Klient z podglądu). */
 export function buildSampleCalendarBookings(): CalendarBooking[] {
   return [
     {
       id: 'bk-1',
-      calendarOwnerUserId: 'u1',
+      calendarOwnerUserId: 'u4',
       date: '2026-03-24',
       startSlot: 22,
       endSlot: 26,
       buildingId: 2,
       buildingLabel: 'ul. Kampinowska 12B',
-      assigneeUserId: 'u3',
-      assigneeName: 'Magdalena Zielińska',
+      assigneeUserId: 'u5',
+      assigneeName: getUserDisplayName('u5'),
     },
     {
       id: 'bk-2',
-      calendarOwnerUserId: 'u1',
+      calendarOwnerUserId: 'u4',
       date: '2026-03-25',
       startSlot: 28,
       endSlot: 31,
       buildingId: 3,
       buildingLabel: 'ul. Ogrodowa 7A',
-      assigneeUserId: 'u2',
-      assigneeName: 'Piotr Wiśniewski',
+      assigneeUserId: 'u6',
+      assigneeName: getUserDisplayName('u6'),
     },
     {
       id: 'bk-3',
-      calendarOwnerUserId: 'u2',
+      calendarOwnerUserId: 'u5',
       date: '2026-03-26',
       startSlot: 20,
       endSlot: 24,
       buildingId: 4,
       buildingLabel: 'ul. Ogrodowa 7B',
-      assigneeUserId: 'u1',
-      assigneeName: 'Anna Nowak',
+      assigneeUserId: 'u3',
+      assigneeName: getUserDisplayName('u3'),
     },
     {
       id: 'bk-4',
-      calendarOwnerUserId: 'u3',
+      calendarOwnerUserId: 'u6',
       date: '2026-03-27',
       startSlot: 16,
       endSlot: 20,
       buildingId: 5,
       buildingLabel: 'ul. Morenowa 20A',
-      assigneeUserId: 'u1',
-      assigneeName: 'Anna Nowak',
+      assigneeUserId: 'u4',
+      assigneeName: getUserDisplayName('u4'),
     },
     {
       id: 'bk-5',
-      calendarOwnerUserId: 'u2',
+      calendarOwnerUserId: 'u3',
       date: '2026-03-23',
       startSlot: 26,
       endSlot: 30,
       buildingId: 3,
       buildingLabel: 'ul. Ogrodowa 7A',
-      assigneeUserId: 'u3',
-      assigneeName: 'Magdalena Zielińska',
+      assigneeUserId: 'u5',
+      assigneeName: getUserDisplayName('u5'),
     },
   ]
 }

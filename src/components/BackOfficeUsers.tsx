@@ -1,89 +1,9 @@
 import { useMemo, useState } from 'react'
+import { DIRECTORY_USERS, type DirectoryUser, type UserRole } from '../data/usersDirectory'
 
-export type BackOfficeUserRow = {
-  id: string
-  firstName: string
-  lastName: string
-  lastLogin: string | null
-  activationDate: string | null
-}
+export type BackOfficeUserRow = DirectoryUser
 
 const PAGE_SIZE = 10
-
-const FIRST_NAMES = [
-  'Anna',
-  'Piotr',
-  'Magdalena',
-  'Tomasz',
-  'Katarzyna',
-  'Marcin',
-  'Ewa',
-  'Łukasz',
-  'Joanna',
-  'Krzysztof',
-  'Agnieszka',
-  'Michał',
-  'Barbara',
-  'Paweł',
-  'Elżbieta',
-  'Adam',
-  'Monika',
-  'Jakub',
-  'Aleksandra',
-  'Wojciech',
-  'Justyna',
-  'Dariusz',
-  'Natalia',
-  'Rafał',
-  'Izabela',
-] as const
-
-const LAST_NAMES = [
-  'Nowak',
-  'Wiśniewski',
-  'Zielińska',
-  'Kowalczyk',
-  'Wójcik',
-  'Kamiński',
-  'Lewandowska',
-  'Zając',
-  'Szymański',
-  'Woźniak',
-  'Dąbrowski',
-  'Kozłowski',
-  'Jankowski',
-  'Mazur',
-  'Kwiatkowski',
-  'Krawczyk',
-  'Piotrowski',
-  'Grabowski',
-  'Pawłowski',
-  'Michalski',
-  'Król',
-  'Wieczorek',
-  'Jabłoński',
-  'Wróbel',
-  'Nowicki',
-] as const
-
-function buildSampleUsers(): BackOfficeUserRow[] {
-  const rows: BackOfficeUserRow[] = []
-  for (let i = 0; i < 25; i++) {
-    const lastLogin =
-      i % 7 === 0 ? null : new Date(2026, 2, (i % 28) + 1, 8 + (i % 9), (i * 3) % 60, 0).toISOString()
-    const activationDate = i % 5 === 0 ? null : new Date(2025, i % 12, (i % 28) + 1, 10, 0, 0).toISOString()
-    rows.push({
-      id: `u-${i + 1}`,
-      firstName: FIRST_NAMES[i]!,
-      lastName: LAST_NAMES[i]!,
-      lastLogin,
-      activationDate,
-    })
-  }
-  return rows
-}
-
-const SAMPLE_USERS = buildSampleUsers()
 
 function formatDateTime(iso: string | null): string {
   if (!iso) return '—'
@@ -98,15 +18,21 @@ function formatDateTime(iso: string | null): string {
   })
 }
 
+function roleBadgeClass(role: UserRole): string {
+  if (role === 'Admin') return 'bg-violet-100 text-violet-900 border-violet-200'
+  if (role === 'Kierownik') return 'bg-amber-100 text-amber-900 border-amber-200'
+  return 'bg-sky-100 text-sky-900 border-sky-200'
+}
+
 export function BackOfficeUsers() {
   const [page, setPage] = useState(1)
-  const total = SAMPLE_USERS.length
+  const total = DIRECTORY_USERS.length
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   const pageClamped = Math.min(page, pageCount)
   const slice = useMemo(() => {
     const start = (pageClamped - 1) * PAGE_SIZE
-    return SAMPLE_USERS.slice(start, start + PAGE_SIZE)
+    return DIRECTORY_USERS.slice(start, start + PAGE_SIZE)
   }, [pageClamped])
 
   const fromLp = (pageClamped - 1) * PAGE_SIZE + 1
@@ -115,11 +41,13 @@ export function BackOfficeUsers() {
     <section className="space-y-5">
       <div>
         <h1 className="text-2xl font-bold text-[var(--color-domesta-gray)]">Użytkownicy</h1>
-        <p className="mt-1 text-sm text-gray-600">Lista kont z możliwością przeglądania i stronnicowania.</p>
+        <p className="mt-1 text-sm text-gray-600">
+          Lista kont z rolami (wiele ról na użytkownika). Stronicowanie co {PAGE_SIZE} wierszy.
+        </p>
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
-        <table className="min-w-[720px] w-full border-collapse text-left text-sm">
+        <table className="min-w-[880px] w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
               <th className="w-14 px-4 py-3 font-semibold">LP</th>
@@ -129,6 +57,7 @@ export function BackOfficeUsers() {
               <th className="px-4 py-3 font-semibold">
                 Nazwisko <span className="text-[var(--color-domesta-red)]">*</span>
               </th>
+              <th className="min-w-[200px] px-4 py-3 font-semibold">Role</th>
               <th className="px-4 py-3 font-semibold">Ostatnie logowanie</th>
               <th className="px-4 py-3 font-semibold">Data aktywacji</th>
             </tr>
@@ -139,6 +68,18 @@ export function BackOfficeUsers() {
                 <td className="px-4 py-3 tabular-nums text-gray-600">{fromLp + i}</td>
                 <td className="px-4 py-3 font-medium">{row.firstName}</td>
                 <td className="px-4 py-3 font-medium">{row.lastName}</td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-1">
+                    {row.roles.map((role) => (
+                      <span
+                        key={role}
+                        className={`inline-block rounded-md border px-2 py-0.5 text-xs font-medium ${roleBadgeClass(role)}`}
+                      >
+                        {role}
+                      </span>
+                    ))}
+                  </div>
+                </td>
                 <td className="px-4 py-3 text-gray-700">{formatDateTime(row.lastLogin)}</td>
                 <td className="px-4 py-3 text-gray-700">{formatDateTime(row.activationDate)}</td>
               </tr>
@@ -176,7 +117,8 @@ export function BackOfficeUsers() {
       </div>
 
       <p className="text-xs text-gray-500">
-        <span className="text-[var(--color-domesta-red)]">*</span> pola wymagane przy tworzeniu / edycji użytkownika (mock).
+        <span className="text-[var(--color-domesta-red)]">*</span> pola wymagane przy tworzeniu / edycji użytkownika (mock). Role: jeden użytkownik może mieć wiele ról (
+        Admin, Kierownik, Klient).
       </p>
     </section>
   )

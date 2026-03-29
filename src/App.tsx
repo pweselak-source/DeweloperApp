@@ -12,17 +12,17 @@ import {
   type AvailabilityBlock,
   type CalendarBooking,
 } from './data/calendarShared'
+import {
+  getUserIdsWithAvailabilityData,
+  getUsersForCalendarManagement,
+  getUsersForCalendarPreview,
+} from './data/usersDirectory'
 import { MainContent } from './components/MainContent'
 import { NewsContent } from './components/NewsContent'
 import type { MenuId } from './data/menuItems'
 
 const THEME_STORAGE_KEY = 'app-theme'
 
-const CALENDAR_MANAGEMENT_USERS = [
-  { id: 'u1', name: 'Anna Nowak' },
-  { id: 'u2', name: 'Piotr Wiśniewski' },
-  { id: 'u3', name: 'Magdalena Zielińska' },
-] as const
 export type AppTheme = 'halfBlack' | 'allBlack' | 'domestaColors' | 'allWhite'
 type BackOfficeView =
   | 'investments'
@@ -256,8 +256,12 @@ function App() {
   const [showNewsOnly, setShowNewsOnly] = useState(false)
   const [showBackOffice, setShowBackOffice] = useState(false)
   const [backOfficeView, setBackOfficeView] = useState<BackOfficeView>('investments')
-  const [availabilityBlocks, setAvailabilityBlocks] = useState<AvailabilityBlock[]>(() => buildSampleAvailabilityBlocks())
+  const [availabilityBlocks, setAvailabilityBlocks] = useState<AvailabilityBlock[]>(() =>
+    buildSampleAvailabilityBlocks(getUserIdsWithAvailabilityData()),
+  )
   const [calendarBookings, setCalendarBookings] = useState<CalendarBooking[]>(() => buildSampleCalendarBookings())
+  const calendarManagementUsers = useMemo(() => getUsersForCalendarManagement(), [])
+  const calendarPreviewUsers = useMemo(() => getUsersForCalendarPreview(), [])
   const [selectedInvestment, setSelectedInvestment] = useState('Polana Kampinowska')
   const [selectedApartment, setSelectedApartment] = useState('Uranowa 21A/3')
   const [investmentsTab, setInvestmentsTab] = useState<InvestmentTab>('Inwestycje')
@@ -2453,7 +2457,7 @@ function App() {
                 <BackOfficeStatistics investments={investments} buildings={buildings} />
               ) : backOfficeView === 'calendar-management' ? (
                 <BackOfficeCalendarManagement
-                  users={[...CALENDAR_MANAGEMENT_USERS]}
+                  users={calendarManagementUsers}
                   investments={investments.map((i) => ({ id: i.id, name: i.name }))}
                   buildings={buildings.map((b) => ({ id: b.id, investmentId: b.investmentId, address: b.address }))}
                   availabilityBlocks={availabilityBlocks}
@@ -2461,7 +2465,7 @@ function App() {
                 />
               ) : backOfficeView === 'calendar-preview' ? (
                 <BackOfficeCalendarPreview
-                  calendarUsers={[...CALENDAR_MANAGEMENT_USERS]}
+                  calendarUsers={calendarPreviewUsers}
                   availabilityBlocks={availabilityBlocks}
                   bookings={calendarBookings}
                   onBookingsChange={setCalendarBookings}
