@@ -933,9 +933,7 @@ function App() {
         )}
         {showBackOffice ? (
           <div className="flex flex-1 gap-4 px-4 pt-3 md:px-6">
-            <div className="w-full max-w-[320px] shrink-0">
-              <BackOfficeMenu activeItem={backOfficeView} onSelectItem={setBackOfficeView} />
-            </div>
+            <BackOfficeMenu activeItem={backOfficeView} onSelectItem={setBackOfficeView} />
             <main className="flex-1 rounded-2xl bg-white p-6" aria-label="BackOffice content area">
               {backOfficeView === 'investments' ? (
                 <section>
