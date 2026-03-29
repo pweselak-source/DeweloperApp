@@ -68,7 +68,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     id: 'calendar-preview',
-    label: 'Podglad kalendarza',
+    label: 'Podgląd kalendarza',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M1 12s4-6 11-6 11 6 11 6-4 6-11 6S1 12 1 12Z" />

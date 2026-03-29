@@ -1,56 +1,31 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
-import type { AvailabilityBlock } from '../data/calendarShared'
+import type { AvailabilityBlock, CalendarBooking } from '../data/calendarShared'
 import {
   addDays,
+  availabilityBlocksCoveringRange,
+  clipDragToAvailableRange,
   formatDateKey,
   formatPolishDate,
   formatWeekRangeLabel,
   pad2,
   SLOTS_PER_DAY,
+  slotCoveredByAvailability,
   slotIndexToLabel,
 } from '../data/calendarShared'
+import type { CalendarManagementUser } from './BackOfficeCalendarManagement'
 
 const WEEKDAYS = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela'] as const
-
 const SLOT_PX = 22
-
-export type CalendarManagementUser = {
-  id: string
-  name: string
-}
-
-export type { AvailabilityBlock } from '../data/calendarShared'
-
-type InvestmentLite = {
-  id: number
-  name: string
-}
-
-type BuildingLite = {
-  id: number
-  investmentId: number
-  address: string
-}
-
-type BackOfficeCalendarManagementProps = {
-  users: CalendarManagementUser[]
-  investments: InvestmentLite[]
-  buildings: BuildingLite[]
-  availabilityBlocks: AvailabilityBlock[]
-  onAvailabilityBlocksChange: Dispatch<SetStateAction<AvailabilityBlock[]>>
-}
-
-function normalizeRange(a: number, b: number): { start: number; end: number } {
-  return a <= b ? { start: a, end: b } : { start: b, end: a }
-}
 
 function clientYToSlot(clientY: number, columnTop: number): number {
   const y = clientY - columnTop
   return Math.max(0, Math.min(SLOTS_PER_DAY - 1, Math.floor(y / SLOT_PX)))
 }
 
-/** Przypisuje pas poziomy (0..n-1) tak, by nakładające się przedziały były obok siebie. */
-function assignLanes(blocks: AvailabilityBlock[]): { idToLane: Map<string, number>; laneCount: number } {
+function assignLanes(blocks: { id: string; startSlot: number; endSlot: number }[]): {
+  idToLane: Map<string, number>
+  laneCount: number
+} {
   if (blocks.length === 0) return { idToLane: new Map(), laneCount: 1 }
   const sorted = [...blocks].sort((a, b) => a.startSlot - b.startSlot || a.endSlot - b.endSlot)
   const laneEnds: number[] = []
@@ -73,36 +48,41 @@ function assignLanes(blocks: AvailabilityBlock[]): { idToLane: Map<string, numbe
   return { idToLane, laneCount: Math.max(1, laneEnds.length) }
 }
 
-export function BackOfficeCalendarManagement({
-  users,
-  investments,
-  buildings,
-  availabilityBlocks: blocks,
-  onAvailabilityBlocksChange: setBlocks,
-}: BackOfficeCalendarManagementProps) {
-  const [selectedUserId, setSelectedUserId] = useState(() => users[0]?.id ?? '')
-  /** Poniedziałek wyświetlanego tygodnia (godz. 0:00 lokalnie). */
+type BackOfficeCalendarPreviewProps = {
+  calendarUsers: CalendarManagementUser[]
+  availabilityBlocks: AvailabilityBlock[]
+  bookings: CalendarBooking[]
+  onBookingsChange: Dispatch<SetStateAction<CalendarBooking[]>>
+}
+
+export function BackOfficeCalendarPreview({
+  calendarUsers,
+  availabilityBlocks,
+  bookings,
+  onBookingsChange,
+}: BackOfficeCalendarPreviewProps) {
+  const [viewedUserId, setViewedUserId] = useState(() => calendarUsers[0]?.id ?? '')
   const [weekStartMonday, setWeekStartMonday] = useState(() => new Date(2026, 2, 23))
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [blockToRemoveId, setBlockToRemoveId] = useState<string | null>(null)
   const [pendingDateStr, setPendingDateStr] = useState<string | null>(null)
-  const [pendingStart, setPendingStart] = useState<number>(0)
-  const [pendingEnd, setPendingEnd] = useState<number>(0)
-  const [dialogInvestmentId, setDialogInvestmentId] = useState<number | ''>('')
+  const [pendingStart, setPendingStart] = useState(0)
+  const [pendingEnd, setPendingEnd] = useState(0)
   const [dialogBuildingId, setDialogBuildingId] = useState<number | ''>('')
+  const [dialogAssigneeId, setDialogAssigneeId] = useState<string>('')
 
-  const dragRef = useRef<{
-    dayIndex: number
-    anchorSlot: number
-    active: boolean
-  } | null>(null)
+  const dragRef = useRef<{ dayIndex: number; anchorSlot: number; active: boolean } | null>(null)
   const [dragHighlight, setDragHighlight] = useState<{ dayIndex: number; start: number; end: number } | null>(null)
   const dragHighlightRef = useRef(dragHighlight)
   dragHighlightRef.current = dragHighlight
 
-  const blocksForUser = useMemo(
-    () => blocks.filter((b) => b.userId === selectedUserId),
-    [blocks, selectedUserId],
+  const availabilityForViewed = useMemo(
+    () => availabilityBlocks.filter((b) => b.userId === viewedUserId),
+    [availabilityBlocks, viewedUserId],
+  )
+
+  const bookingsForViewed = useMemo(
+    () => bookings.filter((b) => b.calendarOwnerUserId === viewedUserId),
+    [bookings, viewedUserId],
   )
 
   const columnDateKeys = useMemo(
@@ -110,48 +90,58 @@ export function BackOfficeCalendarManagement({
     [weekStartMonday],
   )
 
-  const laneLayoutByDay = useMemo(() => {
+  const laneLayoutAvailability = useMemo(() => {
     const map = new Map<number, { idToLane: Map<string, number>; laneCount: number }>()
     for (let d = 0; d < WEEKDAYS.length; d++) {
       const key = columnDateKeys[d]
-      const dayBlocks = blocksForUser.filter((b) => b.date === key)
+      const dayBlocks = availabilityForViewed.filter((b) => b.date === key)
       map.set(d, assignLanes(dayBlocks))
     }
     return map
-  }, [blocksForUser, columnDateKeys])
+  }, [availabilityForViewed, columnDateKeys])
 
-  const buildingsForInvestment = useMemo(() => {
-    if (dialogInvestmentId === '') return []
-    return buildings.filter((b) => b.investmentId === dialogInvestmentId)
-  }, [buildings, dialogInvestmentId])
+  const laneLayoutBookings = useMemo(() => {
+    const map = new Map<number, { idToLane: Map<string, number>; laneCount: number }>()
+    for (let d = 0; d < WEEKDAYS.length; d++) {
+      const key = columnDateKeys[d]
+      const dayBookings = bookingsForViewed.filter((b) => b.date === key)
+      map.set(d, assignLanes(dayBookings))
+    }
+    return map
+  }, [bookingsForViewed, columnDateKeys])
 
   useEffect(() => {
-    if (users.length && !users.some((u) => u.id === selectedUserId)) {
-      setSelectedUserId(users[0].id)
+    if (calendarUsers.length && !calendarUsers.some((u) => u.id === viewedUserId)) {
+      setViewedUserId(calendarUsers[0].id)
     }
-  }, [users, selectedUserId])
+  }, [calendarUsers, viewedUserId])
 
-  const openDialogForRange = useCallback(
-    (dayIndex: number, slotA: number, slotB: number) => {
-      const { start, end } = normalizeRange(slotA, slotB)
-      setPendingDateStr(formatDateKey(addDays(weekStartMonday, dayIndex)))
+  const openBookingDialog = useCallback(
+    (dayIndex: number, start: number, end: number) => {
+      const dateStr = formatDateKey(addDays(weekStartMonday, dayIndex))
+      const dayBlocks = availabilityForViewed.filter((b) => b.date === dateStr)
+      const eligible = availabilityBlocksCoveringRange(dayBlocks, start, end)
+      if (eligible.length === 0) return
+      setPendingDateStr(dateStr)
       setPendingStart(start)
       setPendingEnd(end)
-      const firstInv = investments[0]?.id
-      setDialogInvestmentId(firstInv !== undefined ? firstInv : '')
-      setDialogBuildingId('')
+      const first = eligible[0]
+      setDialogBuildingId(first ? first.buildingId : '')
+      setDialogAssigneeId(calendarUsers.find((u) => u.id !== viewedUserId)?.id ?? calendarUsers[0]?.id ?? '')
       setDialogOpen(true)
     },
-    [investments, weekStartMonday],
+    [availabilityForViewed, calendarUsers, viewedUserId, weekStartMonday],
   )
 
   const handleDayColumnPointerDown = (dayIndex: number) => (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return
-    e.preventDefault()
-    const el = e.currentTarget
-    el.setPointerCapture(e.pointerId)
-    const rect = el.getBoundingClientRect()
+    const dateStr = columnDateKeys[dayIndex]
+    const dayBlocks = availabilityForViewed.filter((b) => b.date === dateStr)
+    const rect = e.currentTarget.getBoundingClientRect()
     const slot = clientYToSlot(e.clientY, rect.top)
+    if (!slotCoveredByAvailability(slot, dayBlocks)) return
+    e.preventDefault()
+    e.currentTarget.setPointerCapture(e.pointerId)
     dragRef.current = { dayIndex, anchorSlot: slot, active: true }
     setDragHighlight({ dayIndex, start: slot, end: slot })
   }
@@ -159,10 +149,16 @@ export function BackOfficeCalendarManagement({
   const handleDayColumnPointerMove = (dayIndex: number) => (e: React.PointerEvent<HTMLDivElement>) => {
     const d = dragRef.current
     if (!d?.active || d.dayIndex !== dayIndex) return
+    const dateStr = columnDateKeys[dayIndex]
+    const dayBlocks = availabilityForViewed.filter((b) => b.date === dateStr)
     const rect = e.currentTarget.getBoundingClientRect()
     const slot = clientYToSlot(e.clientY, rect.top)
-    const { start, end } = normalizeRange(d.anchorSlot, slot)
-    setDragHighlight({ dayIndex, start, end })
+    const clipped = clipDragToAvailableRange(d.anchorSlot, slot, dayBlocks)
+    if (!clipped) {
+      setDragHighlight({ dayIndex, start: d.anchorSlot, end: d.anchorSlot })
+      return
+    }
+    setDragHighlight({ dayIndex, start: clipped.start, end: clipped.end })
   }
 
   const endDrag = useCallback(
@@ -179,40 +175,48 @@ export function BackOfficeCalendarManagement({
       const h = dragHighlightRef.current
       setDragHighlight(null)
       if (!h || h.dayIndex !== d.dayIndex) return
-      openDialogForRange(h.dayIndex, h.start, h.end)
+      openBookingDialog(h.dayIndex, h.start, h.end)
     },
-    [openDialogForRange],
+    [openBookingDialog],
   )
 
-  const blockPendingRemove = useMemo(
-    () => (blockToRemoveId ? blocks.find((b) => b.id === blockToRemoveId) : undefined),
-    [blocks, blockToRemoveId],
-  )
+  const eligibleBuildingsForDialog = useMemo(() => {
+    if (pendingDateStr === null) return []
+    const dayBlocks = availabilityForViewed.filter((b) => b.date === pendingDateStr)
+    const raw = availabilityBlocksCoveringRange(dayBlocks, pendingStart, pendingEnd)
+    const seen = new Set<number>()
+    return raw.filter((b) => {
+      if (seen.has(b.buildingId)) return false
+      seen.add(b.buildingId)
+      return true
+    })
+  }, [availabilityForViewed, pendingDateStr, pendingStart, pendingEnd])
 
-  const confirmRemoveBlock = () => {
-    if (!blockToRemoveId) return
-    setBlocks((prev) => prev.filter((b) => b.id !== blockToRemoveId))
-    setBlockToRemoveId(null)
-  }
+  const selectedBuildingLabel = useMemo(() => {
+    if (dialogBuildingId === '') return ''
+    return eligibleBuildingsForDialog.find((b) => b.buildingId === dialogBuildingId)?.buildingLabel ?? ''
+  }, [dialogBuildingId, eligibleBuildingsForDialog])
 
-  const handleSaveDialog = () => {
-    if (pendingDateStr === null || dialogInvestmentId === '' || dialogBuildingId === '') return
-    const building = buildings.find((b) => b.id === dialogBuildingId)
-    if (!building) return
+  const handleSaveBooking = () => {
+    if (pendingDateStr === null || dialogBuildingId === '' || dialogAssigneeId === '') return
+    const assignee = calendarUsers.find((u) => u.id === dialogAssigneeId)
+    if (!assignee) return
     const id =
       typeof crypto !== 'undefined' && crypto.randomUUID
         ? crypto.randomUUID()
-        : `av-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
-    setBlocks((prev) => [
+        : `bk-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+    onBookingsChange((prev) => [
       ...prev,
       {
         id,
-        userId: selectedUserId,
+        calendarOwnerUserId: viewedUserId,
         date: pendingDateStr,
         startSlot: pendingStart,
         endSlot: pendingEnd,
-        buildingId: building.id,
-        buildingLabel: building.address,
+        buildingId: Number(dialogBuildingId),
+        buildingLabel: selectedBuildingLabel || '—',
+        assigneeUserId: dialogAssigneeId,
+        assigneeName: assignee.name,
       },
     ])
     setDialogOpen(false)
@@ -225,24 +229,26 @@ export function BackOfficeCalendarManagement({
   }
 
   const cellClasses = (dayIndex: number, slot: number) => {
-    const base =
-      'shrink-0 border-b border-gray-100 cursor-crosshair select-none hover:bg-amber-50/80 transition-colors'
+    const dateStr = columnDateKeys[dayIndex]
+    const dayBlocks = availabilityForViewed.filter((b) => b.date === dateStr)
+    const avail = slotCoveredByAvailability(slot, dayBlocks)
+    const base = `shrink-0 border-b border-gray-100 select-none transition-colors ${avail ? 'cursor-crosshair hover:bg-sky-50/80' : 'cursor-not-allowed bg-gray-100/90'}`
     const hi = slotHighlighted(dayIndex, slot)
-    return `${base} ${hi ? 'bg-amber-200/90 ring-1 ring-inset ring-amber-400/60' : 'bg-white'}`
+    return `${base} ${hi ? 'bg-amber-200/90 ring-1 ring-inset ring-amber-400/60' : avail ? 'bg-white' : ''}`
   }
 
   return (
     <section className="space-y-5">
       <div className="space-y-3">
-        <h1 className="text-2xl font-bold text-[var(--color-domesta-gray)]">Zaznacz swoją dostępność</h1>
+        <h1 className="text-2xl font-bold text-[var(--color-domesta-gray)]">Podgląd kalendarza</h1>
         <label className="flex max-w-md flex-col gap-1 text-sm text-gray-600">
-          Użytkownik
+          Kalendarz użytkownika
           <select
-            value={selectedUserId}
-            onChange={(e) => setSelectedUserId(e.target.value)}
+            value={viewedUserId}
+            onChange={(e) => setViewedUserId(e.target.value)}
             className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-[var(--color-domesta-red)]"
           >
-            {users.map((u) => (
+            {calendarUsers.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.name}
               </option>
@@ -252,7 +258,8 @@ export function BackOfficeCalendarManagement({
       </div>
 
       <p className="text-sm text-gray-600">
-        Przeciągnij myszą po polach jednego dnia, aby zaznaczyć przedział (bloki co 30 min). Po zwolnieniu przycisku wybierz inwestycję i budynek, potem zapisz.
+        Zielone pola to dostępność z widoku „Zarządzanie kalendarzem”. Zaznacz przedział <strong>tylko w tych polach</strong>, wybierz budynek
+        dostępny w całym zaznaczeniu oraz użytkownika, którego umawiasz na wizytę.
       </p>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -315,7 +322,7 @@ export function BackOfficeCalendarManagement({
                 <div key={label} className="relative min-w-0 flex-1 border-l border-gray-100">
                   <div
                     role="application"
-                    aria-label={`Kalendarz: ${label}`}
+                    aria-label={`Podgląd: ${label}`}
                     className="relative touch-none"
                     style={{ height: SLOTS_PER_DAY * SLOT_PX }}
                     onPointerDown={handleDayColumnPointerDown(dayIndex)}
@@ -324,19 +331,14 @@ export function BackOfficeCalendarManagement({
                     onPointerCancel={endDrag}
                   >
                     {Array.from({ length: SLOTS_PER_DAY }, (_, slot) => (
-                      <div
-                        key={slot}
-                        role="presentation"
-                        className={cellClasses(dayIndex, slot)}
-                        style={{ height: SLOT_PX }}
-                      />
+                      <div key={slot} role="presentation" className={cellClasses(dayIndex, slot)} style={{ height: SLOT_PX }} />
                     ))}
-                    {blocksForUser
+                    {availabilityForViewed
                       .filter((b) => b.date === columnDateKeys[dayIndex])
                       .map((b) => {
                         const top = b.startSlot * SLOT_PX
                         const h = (b.endSlot - b.startSlot + 1) * SLOT_PX
-                        const { idToLane, laneCount } = laneLayoutByDay.get(dayIndex) ?? {
+                        const { idToLane, laneCount } = laneLayoutAvailability.get(dayIndex) ?? {
                           idToLane: new Map<string, number>(),
                           laneCount: 1,
                         }
@@ -347,39 +349,47 @@ export function BackOfficeCalendarManagement({
                         return (
                           <div
                             key={b.id}
-                            role="button"
-                            tabIndex={0}
-                            className="group absolute z-[2] cursor-pointer overflow-visible rounded border border-emerald-600/40 bg-emerald-100 shadow-sm outline-none ring-emerald-500/30 focus-visible:ring-2"
+                            className="pointer-events-none absolute z-[2] overflow-hidden rounded border border-emerald-600/40 bg-emerald-100/95 px-0.5 py-0.5 text-[9px] font-medium leading-tight text-emerald-900 shadow-sm"
                             style={{
                               top,
                               height: Math.max(h, SLOT_PX),
                               left: leftOff,
                               width: innerW,
                             }}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setBlockToRemoveId(b.id)
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                setBlockToRemoveId(b.id)
-                              }
-                            }}
+                            title={b.buildingLabel}
                           >
-                            <div className="pointer-events-auto flex h-full w-full flex-col items-center justify-center overflow-hidden px-0.5 py-1">
-                              <span
-                                className="max-h-full text-center text-[9px] font-medium leading-none text-emerald-900 [writing-mode:vertical-rl] group-hover:invisible"
-                                style={{ textOrientation: 'mixed' }}
-                              >
-                                {b.buildingLabel}
-                              </span>
-                              <div className="pointer-events-none invisible absolute inset-1 z-10 flex items-center justify-center rounded bg-white/95 px-1.5 py-1 text-center text-[10px] font-medium leading-snug text-emerald-950 shadow-md opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100">
-                                {b.buildingLabel}
-                              </div>
-                            </div>
+                            <span className="line-clamp-4 [writing-mode:vertical-rl]">{b.buildingLabel}</span>
+                          </div>
+                        )
+                      })}
+                    {bookingsForViewed
+                      .filter((b) => b.date === columnDateKeys[dayIndex])
+                      .map((b) => {
+                        const top = b.startSlot * SLOT_PX
+                        const h = (b.endSlot - b.startSlot + 1) * SLOT_PX
+                        const { idToLane, laneCount } = laneLayoutBookings.get(dayIndex) ?? {
+                          idToLane: new Map<string, number>(),
+                          laneCount: 1,
+                        }
+                        const lane = idToLane.get(b.id) ?? 0
+                        const gapPx = 2
+                        const innerW = `calc((100% - ${(laneCount - 1) * gapPx}px) / ${laneCount})`
+                        const leftOff = `calc(${lane} * ((100% - ${(laneCount - 1) * gapPx}px) / ${laneCount} + ${gapPx}px))`
+                        return (
+                          <div
+                            key={b.id}
+                            className="pointer-events-none absolute z-[3] overflow-hidden rounded border border-sky-600/50 bg-sky-100 px-0.5 py-0.5 text-[9px] font-medium leading-tight text-sky-950 shadow-md"
+                            style={{
+                              top,
+                              height: Math.max(h, SLOT_PX),
+                              left: leftOff,
+                              width: innerW,
+                            }}
+                            title={`${b.assigneeName} · ${b.buildingLabel}`}
+                          >
+                            <span className="line-clamp-4 [writing-mode:vertical-rl]">
+                              {b.assigneeName} · {b.buildingLabel}
+                            </span>
                           </div>
                         )
                       })}
@@ -391,95 +401,47 @@ export function BackOfficeCalendarManagement({
         </div>
       </div>
 
-      {blockPendingRemove && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4"
-          onClick={() => setBlockToRemoveId(null)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="remove-block-title"
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 id="remove-block-title" className="mb-2 text-lg font-semibold text-[var(--color-domesta-gray)]">
-              Usunąć wpis?
-            </h2>
-            <p className="mb-1 text-sm text-gray-600">
-              Czy na pewno chcesz usunąć dostępność dla{' '}
-              <span className="font-medium text-gray-800">{blockPendingRemove.buildingLabel}</span>?
-            </p>
-            <p className="mb-6 text-xs text-gray-500">
-              {formatPolishDate(blockPendingRemove.date)},{' '}
-              {slotIndexToLabel(blockPendingRemove.startSlot)} – {slotIndexToLabel(blockPendingRemove.endSlot + 1)}
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setBlockToRemoveId(null)}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Nie
-              </button>
-              <button
-                type="button"
-                onClick={confirmRemoveBlock}
-                className="rounded-lg bg-[var(--color-domesta-red)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
-              >
-                Tak, usuń
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {dialogOpen && pendingDateStr !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div
             role="dialog"
             aria-modal="true"
-            aria-labelledby="availability-dialog-title"
+            aria-labelledby="booking-dialog-title"
             className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
           >
-            <h2 id="availability-dialog-title" className="mb-4 text-lg font-semibold text-[var(--color-domesta-gray)]">
-              Dostępność: {formatPolishDate(pendingDateStr)},{' '}
-              {slotIndexToLabel(pendingStart)} – {slotIndexToLabel(pendingEnd + 1)}
+            <h2 id="booking-dialog-title" className="mb-4 text-lg font-semibold text-[var(--color-domesta-gray)]">
+              Umówienie wizyty
             </h2>
+            <p className="mb-4 text-sm text-gray-600">
+              {formatPolishDate(pendingDateStr)}, {slotIndexToLabel(pendingStart)} – {slotIndexToLabel(pendingEnd + 1)}
+              <br />
+              <span className="text-xs text-gray-500">Kalendarz: {calendarUsers.find((u) => u.id === viewedUserId)?.name}</span>
+            </p>
             <div className="space-y-4">
               <label className="block text-sm text-gray-600">
-                Inwestycja
+                Budynek (dostępny w całym zaznaczeniu)
                 <select
-                  value={dialogInvestmentId === '' ? '' : String(dialogInvestmentId)}
-                  onChange={(e) => {
-                    const v = e.target.value
-                    setDialogInvestmentId(v === '' ? '' : Number(v))
-                    setDialogBuildingId('')
-                  }}
+                  value={dialogBuildingId === '' ? '' : String(dialogBuildingId)}
+                  onChange={(e) => setDialogBuildingId(e.target.value === '' ? '' : Number(e.target.value))}
                   className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-domesta-red)]"
                 >
-                  {investments.map((inv) => (
-                    <option key={inv.id} value={inv.id}>
-                      {inv.name}
+                  {eligibleBuildingsForDialog.map((b) => (
+                    <option key={`${b.id}-${b.buildingId}`} value={b.buildingId}>
+                      {b.buildingLabel}
                     </option>
                   ))}
                 </select>
               </label>
               <label className="block text-sm text-gray-600">
-                Budynek
+                Umówiony użytkownik
                 <select
-                  value={dialogBuildingId === '' ? '' : String(dialogBuildingId)}
-                  onChange={(e) => {
-                    const v = e.target.value
-                    setDialogBuildingId(v === '' ? '' : Number(v))
-                  }}
-                  disabled={dialogInvestmentId === '' || buildingsForInvestment.length === 0}
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-domesta-red)] disabled:cursor-not-allowed disabled:bg-gray-100"
+                  value={dialogAssigneeId}
+                  onChange={(e) => setDialogAssigneeId(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-domesta-red)]"
                 >
-                  <option value="">— wybierz budynek —</option>
-                  {buildingsForInvestment.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.address}
+                  {calendarUsers.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
                     </option>
                   ))}
                 </select>
@@ -498,8 +460,8 @@ export function BackOfficeCalendarManagement({
               </button>
               <button
                 type="button"
-                onClick={handleSaveDialog}
-                disabled={dialogBuildingId === ''}
+                onClick={handleSaveBooking}
+                disabled={dialogBuildingId === '' || dialogAssigneeId === ''}
                 className="rounded-lg bg-[var(--color-domesta-red)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Zapisz

@@ -4,7 +4,14 @@ import { SideMenu } from './components/SideMenu'
 import { BackOfficeMenu } from './components/BackOfficeMenu'
 import { BackOfficeStatistics } from './components/BackOfficeStatistics'
 import { BackOfficeCalendarManagement } from './components/BackOfficeCalendarManagement'
+import { BackOfficeCalendarPreview } from './components/BackOfficeCalendarPreview'
 import { BackOfficeUsers } from './components/BackOfficeUsers'
+import {
+  buildSampleAvailabilityBlocks,
+  buildSampleCalendarBookings,
+  type AvailabilityBlock,
+  type CalendarBooking,
+} from './data/calendarShared'
 import { MainContent } from './components/MainContent'
 import { NewsContent } from './components/NewsContent'
 import type { MenuId } from './data/menuItems'
@@ -249,6 +256,8 @@ function App() {
   const [showNewsOnly, setShowNewsOnly] = useState(false)
   const [showBackOffice, setShowBackOffice] = useState(false)
   const [backOfficeView, setBackOfficeView] = useState<BackOfficeView>('investments')
+  const [availabilityBlocks, setAvailabilityBlocks] = useState<AvailabilityBlock[]>(() => buildSampleAvailabilityBlocks())
+  const [calendarBookings, setCalendarBookings] = useState<CalendarBooking[]>(() => buildSampleCalendarBookings())
   const [selectedInvestment, setSelectedInvestment] = useState('Polana Kampinowska')
   const [selectedApartment, setSelectedApartment] = useState('Uranowa 21A/3')
   const [investmentsTab, setInvestmentsTab] = useState<InvestmentTab>('Inwestycje')
@@ -2447,6 +2456,15 @@ function App() {
                   users={[...CALENDAR_MANAGEMENT_USERS]}
                   investments={investments.map((i) => ({ id: i.id, name: i.name }))}
                   buildings={buildings.map((b) => ({ id: b.id, investmentId: b.investmentId, address: b.address }))}
+                  availabilityBlocks={availabilityBlocks}
+                  onAvailabilityBlocksChange={setAvailabilityBlocks}
+                />
+              ) : backOfficeView === 'calendar-preview' ? (
+                <BackOfficeCalendarPreview
+                  calendarUsers={[...CALENDAR_MANAGEMENT_USERS]}
+                  availabilityBlocks={availabilityBlocks}
+                  bookings={calendarBookings}
+                  onBookingsChange={setCalendarBookings}
                 />
               ) : (
                 <section className="flex h-full items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50">
