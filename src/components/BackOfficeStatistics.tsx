@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { DefectsStatisticsPanel } from './DefectsStatisticsPanel'
+import { Select2MultiSelect } from './Select2MultiSelect'
 
 type InvestmentLite = { id: number; name: string }
 type BuildingLite = { id: number; investmentId: number; address: string; apartmentsTotal: number }
@@ -818,6 +819,28 @@ export function BackOfficeStatistics({ investments, buildings }: BackOfficeStati
     setSelectedBuildingIds(new Set(buildingsInScope.map((b) => b.id)))
   const clearBuildings = () => setSelectedBuildingIds(new Set())
 
+  const investmentOptions = useMemo(
+    () => investments.map((i) => ({ id: i.id, label: i.name })),
+    [investments],
+  )
+
+  const buildingOptions = useMemo(
+    () =>
+      buildingsInScope.map((b) => ({
+        id: b.id,
+        label: b.address,
+        sublabel: investments.find((i) => i.id === b.investmentId)?.name ?? '',
+      })),
+    [buildingsInScope, investments],
+  )
+
+  const buildingFilterEmptyMessage =
+    selectedInvestmentIds.size === 0
+      ? 'Wybierz co najmniej jedną inwestycję, aby filtrować budynki.'
+      : buildingsInScope.length === 0
+        ? 'Brak budynków dla zaznaczonych inwestycji.'
+        : undefined
+
   return (
     <section>
       <div className="mb-6 flex items-center gap-3">
@@ -853,88 +876,28 @@ export function BackOfficeStatistics({ investments, buildings }: BackOfficeStati
 
       <div className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-[var(--color-domesta-gray)]">Inwestycje</p>
-                <div className="flex gap-2">
-                  <button type="button" onClick={selectAllInvestments} className="text-xs text-gray-600 underline hover:text-gray-900">
-                    Zaznacz wszystkie
-                  </button>
-                  <button type="button" onClick={clearInvestments} className="text-xs text-gray-600 underline hover:text-gray-900">
-                    Wyczyść
-                  </button>
-                </div>
-              </div>
-              <ul className="max-h-48 space-y-2 overflow-y-auto pr-1">
-                {investments.map((inv) => (
-                  <li key={inv.id}>
-                    <label className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-gray-50">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-gray-300 text-[var(--color-domesta-red)] focus:ring-[var(--color-domesta-red)]"
-                        checked={selectedInvestmentIds.has(inv.id)}
-                        onChange={() => toggleInvestment(inv.id)}
-                      />
-                      <span className="text-gray-800">{inv.name}</span>
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <Select2MultiSelect
+              sectionLabel="Inwestycje"
+              options={investmentOptions}
+              selectedIds={selectedInvestmentIds}
+              onToggle={toggleInvestment}
+              onSelectAll={selectAllInvestments}
+              onClear={clearInvestments}
+              placeholder="Wybierz inwestycje…"
+            />
 
-            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-[var(--color-domesta-gray)]">Budynek</p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={selectAllBuildingsInScope}
-                    disabled={buildingsInScope.length === 0}
-                    className="text-xs text-gray-600 underline hover:text-gray-900 disabled:opacity-40"
-                  >
-                    Zaznacz wszystkie
-                  </button>
-                  <button
-                    type="button"
-                    onClick={clearBuildings}
-                    disabled={buildingsInScope.length === 0}
-                    className="text-xs text-gray-600 underline hover:text-gray-900 disabled:opacity-40"
-                  >
-                    Wyczyść
-                  </button>
-                </div>
-              </div>
-              {selectedInvestmentIds.size === 0 ? (
-                <p className="text-sm text-gray-500">Wybierz co najmniej jedną inwestycję, aby filtrować budynki.</p>
-              ) : buildingsInScope.length === 0 ? (
-                <p className="text-sm text-gray-500">Brak budynków dla zaznaczonych inwestycji.</p>
-              ) : (
-                <ul className="max-h-48 space-y-2 overflow-y-auto pr-1">
-                  {buildingsInScope.map((b) => {
-                    const invName = investments.find((i) => i.id === b.investmentId)?.name ?? ''
-                    return (
-                      <li key={b.id}>
-                        <label className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-gray-50">
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4 rounded border-gray-300 text-[var(--color-domesta-red)] focus:ring-[var(--color-domesta-red)]"
-                            checked={selectedBuildingIds.has(b.id)}
-                            onChange={() => toggleBuilding(b.id)}
-                          />
-                          <span className="min-w-0 text-gray-800">
-                            {b.address}
-                            <span className="ml-1 text-xs text-gray-500">({invName})</span>
-                          </span>
-                        </label>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-              <p className="mt-3 text-xs text-gray-500">
-                Przy pustym zaznaczeniu budynków wykres uwzględnia wszystkie budynki w wybranych inwestycjach.
-              </p>
-            </div>
+            <Select2MultiSelect
+              sectionLabel="Budynek"
+              options={buildingOptions}
+              selectedIds={selectedBuildingIds}
+              onToggle={toggleBuilding}
+              onSelectAll={selectAllBuildingsInScope}
+              onClear={clearBuildings}
+              placeholder="Wybierz budynki…"
+              disabled={selectedInvestmentIds.size === 0}
+              emptyOptionsMessage={buildingFilterEmptyMessage}
+              hint="Przy pustym zaznaczeniu budynków wykres uwzględnia wszystkie budynki w wybranych inwestycjach."
+            />
           </div>
 
           {selectedInvestmentIds.size === 0 ? (
