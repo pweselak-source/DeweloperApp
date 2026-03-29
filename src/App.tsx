@@ -4,6 +4,7 @@ import { SideMenu } from './components/SideMenu'
 import { BackOfficeMenu } from './components/BackOfficeMenu'
 import { BackOfficeStatistics } from './components/BackOfficeStatistics'
 import { BackOfficeCalendarManagement } from './components/BackOfficeCalendarManagement'
+import { BackOfficeUsers } from './components/BackOfficeUsers'
 import { MainContent } from './components/MainContent'
 import { NewsContent } from './components/NewsContent'
 import type { MenuId } from './data/menuItems'
@@ -2437,6 +2438,8 @@ function App() {
                     </div>
                   )}
                 </section>
+              ) : backOfficeView === 'clients' ? (
+                <BackOfficeUsers />
               ) : backOfficeView === 'statistics' ? (
                 <BackOfficeStatistics investments={investments} buildings={buildings} />
               ) : backOfficeView === 'calendar-management' ? (

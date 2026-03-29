@@ -35,7 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     id: 'clients',
-    label: 'Przypisanie Klientow',
+    label: 'Użytkownicy',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="8" cy="8" r="3" />
