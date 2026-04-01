@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, Fragment } from 'react'
+import { useState, useEffect, useMemo, useRef, Fragment } from 'react'
 import { AppBar } from './components/AppBar'
 import { SideMenu } from './components/SideMenu'
 import { BackOfficeMenu } from './components/BackOfficeMenu'
@@ -26,6 +26,20 @@ import type { Select2Option } from './components/Select2MultiSelect'
 import type { MenuId } from './data/menuItems'
 
 const THEME_STORAGE_KEY = 'app-theme'
+
+/** Ukryte na liście Inwestycji do czasu synchronizacji (nazwy jak w próbce danych). */
+const INVESTMENT_NAMES_HIDDEN_UNTIL_SYNC = new Set(['Żuławska Residence', 'Brzeska City'])
+
+/** Krótkie kroki początkowe; import znacznie wolniejszy — nierówne odstępy czasu i „szybki” początek paska. */
+const INVESTMENT_SYNC_STEPS: { ms: number; msg: string; progress: number }[] = [
+  { ms: 160, msg: 'Łączenie z serwerem', progress: 14 },
+  { ms: 120, msg: 'Połączono z serwerem', progress: 30 },
+  { ms: 190, msg: 'Detekcja zmian', progress: 44 },
+  { ms: 150, msg: 'Wykryto 2 nowe inwestycji', progress: 52 },
+  { ms: 1700, msg: 'Import inwestycji 1/2', progress: 74 },
+  { ms: 1900, msg: 'Import inwestycji 2/2', progress: 90 },
+  { ms: 260, msg: 'Zakończono sukcesem', progress: 100 },
+]
 
 export type AppTheme = 'halfBlack' | 'allBlack' | 'domestaColors' | 'allWhite'
 type BackOfficeView =
@@ -313,6 +327,28 @@ function App() {
   )
   const [investmentsTab, setInvestmentsTab] = useState<InvestmentTab>('Inwestycje')
   const [investments, setInvestments] = useState<Investment[]>(() => SAMPLE_BACK_OFFICE.investments)
+  const [investmentSyncRevealed, setInvestmentSyncRevealed] = useState(false)
+  const [investmentSyncModalOpen, setInvestmentSyncModalOpen] = useState(false)
+  const [investmentSyncProgress, setInvestmentSyncProgress] = useState(0)
+  const [investmentSyncLogLines, setInvestmentSyncLogLines] = useState<string[]>([])
+  const [investmentSyncRunning, setInvestmentSyncRunning] = useState(false)
+  const investmentSyncMountedRef = useRef(true)
+
+  const investmentsVisibleOnList = useMemo(
+    () =>
+      investments.filter(
+        (inv) => investmentSyncRevealed || !INVESTMENT_NAMES_HIDDEN_UNTIL_SYNC.has(inv.name),
+      ),
+    [investments, investmentSyncRevealed],
+  )
+
+  useEffect(() => {
+    investmentSyncMountedRef.current = true
+    return () => {
+      investmentSyncMountedRef.current = false
+    }
+  }, [])
+
   const [investmentFormOpen, setInvestmentFormOpen] = useState(false)
   const [editingInvestmentId, setEditingInvestmentId] = useState<number | null>(null)
   const [investmentNameForm, setInvestmentNameForm] = useState('')
@@ -648,6 +684,30 @@ function App() {
     setShowNewsOnly(false)
     setActiveSection(null)
     setMenuCollapsed(false)
+  }
+
+  const runInvestmentSync = async () => {
+    if (investmentSyncRevealed || investmentSyncRunning) return
+    setInvestmentSyncModalOpen(true)
+    setInvestmentSyncProgress(0)
+    setInvestmentSyncLogLines([])
+    setInvestmentSyncRunning(true)
+
+    for (const step of INVESTMENT_SYNC_STEPS) {
+      await new Promise<void>((resolve) => setTimeout(resolve, step.ms))
+      if (!investmentSyncMountedRef.current) return
+      setInvestmentSyncLogLines((prev) => [...prev, step.msg])
+      setInvestmentSyncProgress(step.progress)
+    }
+
+    if (!investmentSyncMountedRef.current) return
+    setInvestmentSyncRevealed(true)
+    setInvestmentSyncRunning(false)
+  }
+
+  const closeInvestmentSyncModal = () => {
+    if (investmentSyncRunning) return
+    setInvestmentSyncModalOpen(false)
   }
 
   const openNewInvestmentForm = () => {
@@ -1551,7 +1611,18 @@ function App() {
                           </span>
                           <h2 className="text-2xl font-bold text-[var(--color-domesta-gray)]">Inwestycje</h2>
                         </div>
-                        {investmentsTabAddButton({ onClick: openNewInvestmentForm, title: 'Dodaj inwestycję' })}
+                        <div className="flex shrink-0 items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={runInvestmentSync}
+                            disabled={investmentSyncRevealed || investmentSyncRunning}
+                            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-[var(--color-domesta-gray)] shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            title={investmentSyncRevealed ? 'Synchronizacja już wykonana' : 'Synchronizuj inwestycje z serwerem'}
+                          >
+                            Synchronizuj
+                          </button>
+                          {investmentsTabAddButton({ onClick: openNewInvestmentForm, title: 'Dodaj inwestycję' })}
+                        </div>
                       </div>
                       <div className="overflow-hidden rounded-2xl border border-gray-200">
                         <table className="min-w-full bg-white text-sm">
@@ -1565,7 +1636,7 @@ function App() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-100 text-gray-700">
-                            {investments.map((item) => (
+                            {investmentsVisibleOnList.map((item) => (
                               <tr
                                 key={`investment-${item.id}`}
                                 role="button"
@@ -2704,6 +2775,47 @@ function App() {
                 </section>
               )}
             </main>
+            {investmentSyncModalOpen && (
+              <div
+                className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="investment-sync-title"
+                onClick={(e) => {
+                  if (e.target === e.currentTarget && !investmentSyncRunning) closeInvestmentSyncModal()
+                }}
+              >
+                <div
+                  className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 id="investment-sync-title" className="mb-4 text-lg font-semibold text-[var(--color-domesta-gray)]">
+                    Synchronizacja inwestycji
+                  </h3>
+                  <div className="mb-4 h-2.5 w-full overflow-hidden rounded-full bg-gray-200">
+                    <div
+                      className="h-full rounded-full bg-[var(--color-domesta-red)] transition-[width] duration-700 ease-out"
+                      style={{ width: `${investmentSyncProgress}%` }}
+                    />
+                  </div>
+                  <div className="mb-6 max-h-56 min-h-[7.5rem] space-y-1.5 overflow-y-auto rounded-lg border border-gray-100 bg-gray-50 p-3 font-mono text-sm text-gray-800">
+                    {investmentSyncLogLines.map((line, i) => (
+                      <p key={i}>{line}</p>
+                    ))}
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={closeInvestmentSyncModal}
+                      disabled={investmentSyncRunning}
+                      className="rounded-lg bg-[var(--color-domesta-red)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Zamknij
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             {sellDialogOpen && (
               <div
                 className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4"
