@@ -18,6 +18,7 @@ import {
   getUsersForCalendarManagement,
   getUsersForCalendarPreview,
 } from './data/usersDirectory'
+import { createSampleBackOfficeDataset } from './data/sampleBackOfficeData'
 import { MainContent } from './components/MainContent'
 import { NewsContent } from './components/NewsContent'
 import { Select2MultiSelect } from './components/Select2MultiSelect'
@@ -283,21 +284,7 @@ const INITIAL_CLIENTS: Client[] = [
   { id: 3, email: 'marek.z@mail.com', firstName: 'Marek', lastName: 'Zieliński' },
 ]
 
-const INITIAL_STORAGE_UNITS: StorageUnit[] = [
-  { id: 1, name: 'Komórka piwnica — KL-12A / regał 3', apartmentId: 2 },
-  { id: 2, name: 'Komórka piwnica — KL-12B / regał 7', apartmentId: null },
-  { id: 3, name: 'Komórka piwnica — KL-12C / regał 1', apartmentId: null },
-  { id: 4, name: 'Komórka przy schodach — KS-01', apartmentId: 3 },
-  { id: 5, name: 'Komórka techniczna — KT-04', apartmentId: null },
-]
-
-const INITIAL_PARKING_SPOTS: ParkingSpot[] = [
-  { id: 1, name: 'MP-A / miejsce 12', apartmentId: 2 },
-  { id: 2, name: 'MP-A / miejsce 13', apartmentId: null },
-  { id: 3, name: 'MP-B / miejsce 04', apartmentId: null },
-  { id: 4, name: 'Garaż — box G-7', apartmentId: null },
-  { id: 5, name: 'MP-nadziemne / P-22', apartmentId: null },
-]
+const SAMPLE_BACK_OFFICE = createSampleBackOfficeDataset()
 
 function App() {
   const [theme, setTheme] = useState<AppTheme>(() => {
@@ -320,38 +307,12 @@ function App() {
   const [calendarBookings, setCalendarBookings] = useState<CalendarBooking[]>(() => buildSampleCalendarBookings())
   const calendarManagementUsers = useMemo(() => getUsersForCalendarManagement(), [])
   const calendarPreviewUsers = useMemo(() => getUsersForCalendarPreview(), [])
-  const [selectedInvestment, setSelectedInvestment] = useState('Polana Kampinowska')
-  const [selectedApartment, setSelectedApartment] = useState('Uranowa 21A/3')
+  const [selectedInvestment, setSelectedInvestment] = useState(() => SAMPLE_BACK_OFFICE.investments[0]?.name ?? 'Polana Kampinowska')
+  const [selectedApartment, setSelectedApartment] = useState(
+    () => SAMPLE_BACK_OFFICE.apartments[0]?.unitNumber ?? 'A/01',
+  )
   const [investmentsTab, setInvestmentsTab] = useState<InvestmentTab>('Inwestycje')
-  const [investments, setInvestments] = useState<Investment[]>([
-    {
-      id: 1,
-      name: 'Polana Kampinowska',
-      address: 'ul. Kampinowska 12, Gdansk',
-      buildings: 4,
-      apartments: 128,
-      handoverDate: '2026-11-30',
-      description: 'Nowoczesne osiedle z duza iloscia zieleni i dostepem do uslug.',
-    },
-    {
-      id: 2,
-      name: 'Zielone Ogrody',
-      address: 'ul. Ogrodowa 7, Gdynia',
-      buildings: 6,
-      apartments: 176,
-      handoverDate: '2027-04-15',
-      description: 'Inwestycja rodzinna, zaplanowana wokol zielonych dziedzincow.',
-    },
-    {
-      id: 3,
-      name: 'Nowa Morena',
-      address: 'ul. Morenowa 20, Gdansk',
-      buildings: 3,
-      apartments: 92,
-      handoverDate: '2026-09-20',
-      description: 'Kameralna zabudowa z szybkim dojazdem do centrum miasta.',
-    },
-  ])
+  const [investments, setInvestments] = useState<Investment[]>(() => SAMPLE_BACK_OFFICE.investments)
   const [investmentFormOpen, setInvestmentFormOpen] = useState(false)
   const [editingInvestmentId, setEditingInvestmentId] = useState<number | null>(null)
   const [investmentNameForm, setInvestmentNameForm] = useState('')
@@ -368,7 +329,9 @@ function App() {
   const [buildingStatusForm, setBuildingStatusForm] = useState<BuildingStatus>('W budowie')
   const [buildingApartmentsTotalForm, setBuildingApartmentsTotalForm] = useState<number>(0)
   const [buildingApartmentsAssignedForm, setBuildingApartmentsAssignedForm] = useState<number>(0)
-  const [buildingFilterInvestmentIds, setBuildingFilterInvestmentIds] = useState<Set<number>>(() => new Set([1, 2, 3]))
+  const [buildingFilterInvestmentIds, setBuildingFilterInvestmentIds] = useState<Set<number>>(
+    () => new Set(SAMPLE_BACK_OFFICE.investments.map((i) => i.id)),
+  )
   const [buildingFilterStatusIds, setBuildingFilterStatusIds] = useState<Set<number>>(() => new Set([1, 2, 3, 4]))
   const [buildingApartmentsUploadOpen, setBuildingApartmentsUploadOpen] = useState(false)
   const [buildingApartmentsUploadTargetId, setBuildingApartmentsUploadTargetId] = useState<number | null>(null)
@@ -393,8 +356,12 @@ function App() {
     actions: 150,
   })
   const [buildingResizing, setBuildingResizing] = useState<{ key: BuildingColumnKey; startX: number; startWidth: number } | null>(null)
-  const [apartmentFilterInvestmentIds, setApartmentFilterInvestmentIds] = useState<Set<number>>(() => new Set([1, 2, 3]))
-  const [apartmentFilterBuildingIds, setApartmentFilterBuildingIds] = useState<Set<number>>(() => new Set([1, 2, 3, 4, 5]))
+  const [apartmentFilterInvestmentIds, setApartmentFilterInvestmentIds] = useState<Set<number>>(
+    () => new Set(SAMPLE_BACK_OFFICE.investments.map((i) => i.id)),
+  )
+  const [apartmentFilterBuildingIds, setApartmentFilterBuildingIds] = useState<Set<number>>(
+    () => new Set(SAMPLE_BACK_OFFICE.buildings.map((b) => b.id)),
+  )
   const [apartmentColumnOrder, setApartmentColumnOrder] = useState<ApartmentColumnKey[]>([
     'investment',
     'building',
@@ -420,79 +387,8 @@ function App() {
     client: 190,
   })
   const [apartmentResizing, setApartmentResizing] = useState<{ key: ApartmentColumnKey; startX: number; startWidth: number } | null>(null)
-  const [buildings, setBuildings] = useState<Building[]>([
-    { id: 1, investmentId: 1, address: 'ul. Kampinowska 12A', status: 'W budowie', apartmentsTotal: 48, apartmentsAssigned: 18 },
-    { id: 2, investmentId: 1, address: 'ul. Kampinowska 12B', status: 'Na wykonczeniu', apartmentsTotal: 40, apartmentsAssigned: 34 },
-    { id: 3, investmentId: 2, address: 'ul. Ogrodowa 7A', status: 'Oddany', apartmentsTotal: 62, apartmentsAssigned: 62 },
-    { id: 4, investmentId: 2, address: 'ul. Ogrodowa 7B', status: 'W budowie', apartmentsTotal: 54, apartmentsAssigned: 16 },
-    { id: 5, investmentId: 3, address: 'ul. Morenowa 20A', status: 'Wyprzedany', apartmentsTotal: 30, apartmentsAssigned: 30 },
-  ])
-  const [apartments, setApartments] = useState<Apartment[]>([
-    {
-      id: 1,
-      buildingId: 1,
-      address: 'ul. Kampinowska 12A',
-      unitNumber: 'A/01',
-      area: 54.2,
-      rooms: 3,
-      hasBalcony: true,
-      orientation: 'Poludnie',
-      floor: 1,
-      fileName: 'rzut-a01.pdf',
-      fileType: 'PDF',
-      assignedClient: 'Brak (przypisanie pozniej)',
-      clientId: null,
-      postSaleUnlocked: false,
-    },
-    {
-      id: 2,
-      buildingId: 1,
-      address: 'ul. Kampinowska 12A',
-      unitNumber: 'A/12',
-      area: 63.8,
-      rooms: 4,
-      hasBalcony: true,
-      orientation: 'Polnocny-zachod',
-      floor: 3,
-      fileName: 'karta-a12.pdf',
-      fileType: 'PDF',
-      assignedClient: 'Jan Kowalski',
-      clientId: 1,
-      postSaleUnlocked: true,
-    },
-    {
-      id: 3,
-      buildingId: 2,
-      address: 'ul. Kampinowska 12B',
-      unitNumber: 'B/07',
-      area: 41.5,
-      rooms: 2,
-      hasBalcony: false,
-      orientation: 'Wschod',
-      floor: 2,
-      fileName: 'spec-b07.docx',
-      fileType: 'DOCX',
-      assignedClient: 'Anna Wiśniewska',
-      clientId: 2,
-      postSaleUnlocked: true,
-    },
-    {
-      id: 4,
-      buildingId: 3,
-      address: 'ul. Ogrodowa 7A',
-      unitNumber: 'C/21',
-      area: 72.1,
-      rooms: 4,
-      hasBalcony: true,
-      orientation: 'Zachod',
-      floor: 5,
-      fileName: 'rzut-c21.pdf',
-      fileType: 'PDF',
-      assignedClient: 'Brak (przypisanie pozniej)',
-      clientId: null,
-      postSaleUnlocked: false,
-    },
-  ])
+  const [buildings, setBuildings] = useState<Building[]>(() => SAMPLE_BACK_OFFICE.buildings)
+  const [apartments, setApartments] = useState<Apartment[]>(() => SAMPLE_BACK_OFFICE.apartments)
   const [apartmentFormOpen, setApartmentFormOpen] = useState(false)
   const [apartmentFormSubTab, setApartmentFormSubTab] = useState<ApartmentFormSubTab>('details')
   const [editingApartmentId, setEditingApartmentId] = useState<number | null>(null)
@@ -507,8 +403,8 @@ function App() {
   const [apartmentFileTypeForm, setApartmentFileTypeForm] = useState('')
   const [apartmentClientIdForm, setApartmentClientIdForm] = useState<number | ''>('')
   const [clients, setClients] = useState<Client[]>(() => [...INITIAL_CLIENTS])
-  const [storageUnits, setStorageUnits] = useState<StorageUnit[]>(() => [...INITIAL_STORAGE_UNITS])
-  const [parkingSpots, setParkingSpots] = useState<ParkingSpot[]>(() => [...INITIAL_PARKING_SPOTS])
+  const [storageUnits, setStorageUnits] = useState<StorageUnit[]>(() => SAMPLE_BACK_OFFICE.storageUnits)
+  const [parkingSpots, setParkingSpots] = useState<ParkingSpot[]>(() => SAMPLE_BACK_OFFICE.parkingSpots)
   const [sellDialogOpen, setSellDialogOpen] = useState(false)
   const [sellEmail, setSellEmail] = useState('')
   const [sellFirstName, setSellFirstName] = useState('')
@@ -2701,23 +2597,85 @@ function App() {
                         </>
                       )}
                     </div>
-                  ) : (
+                  ) : investmentsTab === 'Komorki Lokatorskie' ? (
                     <div className="space-y-4">
                       <div className="flex items-center justify-between gap-3">
-                        {renderInvestmentsTabHeader(investmentsTab)}
+                        {renderInvestmentsTabHeader('Komorki Lokatorskie')}
                         {investmentsTabAddButton({
                           disabled: true,
-                          title:
-                            investmentsTab === 'Komorki Lokatorskie'
-                              ? 'Dodawanie komorek lokatorskich — w przygotowaniu'
-                              : 'Dodawanie miejsc postojowych — w przygotowaniu',
+                          title: 'Dodawanie komorek lokatorskich — w przygotowaniu',
                         })}
                       </div>
-                      <section className="flex h-[280px] items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50">
-                        <p className="text-sm text-gray-500">Ta zakladka jest przygotowana do dalszej rozbudowy.</p>
-                      </section>
+                      <div className="overflow-hidden rounded-2xl border border-gray-200">
+                        <div className="max-h-[min(520px,70vh)] overflow-auto">
+                          <table className="min-w-full bg-white text-sm">
+                            <thead className="sticky top-0 z-10 bg-gray-50">
+                              <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
+                                <th className="px-4 py-3 font-semibold">L.p.</th>
+                                <th className="px-4 py-3 font-semibold">Nazwa</th>
+                                <th className="px-4 py-3 font-semibold">Mieszkanie</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 text-gray-700">
+                              {storageUnits.map((u, index) => (
+                                <tr key={u.id} className="hover:bg-gray-50">
+                                  <td className="px-4 py-2.5 font-medium">{index + 1}</td>
+                                  <td className="px-4 py-2.5">{u.name}</td>
+                                  <td className="px-4 py-2.5 text-gray-600">
+                                    {u.apartmentId === null
+                                      ? '—'
+                                      : (() => {
+                                          const apt = apartments.find((a) => a.id === u.apartmentId)
+                                          return apt ? `${apt.unitNumber} (${apt.address})` : `#${u.apartmentId}`
+                                        })()}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  ) : investmentsTab === 'Miejsca postojowe' ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between gap-3">
+                        {renderInvestmentsTabHeader('Miejsca postojowe')}
+                        {investmentsTabAddButton({
+                          disabled: true,
+                          title: 'Dodawanie miejsc postojowych — w przygotowaniu',
+                        })}
+                      </div>
+                      <div className="overflow-hidden rounded-2xl border border-gray-200">
+                        <div className="max-h-[min(520px,70vh)] overflow-auto">
+                          <table className="min-w-full bg-white text-sm">
+                            <thead className="sticky top-0 z-10 bg-gray-50">
+                              <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
+                                <th className="px-4 py-3 font-semibold">L.p.</th>
+                                <th className="px-4 py-3 font-semibold">Nazwa</th>
+                                <th className="px-4 py-3 font-semibold">Mieszkanie</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 text-gray-700">
+                              {parkingSpots.map((p, index) => (
+                                <tr key={p.id} className="hover:bg-gray-50">
+                                  <td className="px-4 py-2.5 font-medium">{index + 1}</td>
+                                  <td className="px-4 py-2.5">{p.name}</td>
+                                  <td className="px-4 py-2.5 text-gray-600">
+                                    {p.apartmentId === null
+                                      ? '—'
+                                      : (() => {
+                                          const apt = apartments.find((a) => a.id === p.apartmentId)
+                                          return apt ? `${apt.unitNumber} (${apt.address})` : `#${p.apartmentId}`
+                                        })()}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
                 </section>
               ) : backOfficeView === 'clients' ? (
                 <BackOfficeUsers />
