@@ -20,6 +20,8 @@ import {
 } from './data/usersDirectory'
 import { MainContent } from './components/MainContent'
 import { NewsContent } from './components/NewsContent'
+import { Select2MultiSelect } from './components/Select2MultiSelect'
+import type { Select2Option } from './components/Select2MultiSelect'
 import type { MenuId } from './data/menuItems'
 
 const THEME_STORAGE_KEY = 'app-theme'
@@ -54,6 +56,19 @@ type ApartmentFormalitiesStatus = 'zablokowane' | 'do podpisu' | 'podpisana'
 type ApartmentHandoverTaskStatus = 'zablokowane' | 'czeka na umówienie' | 'zaplanowane' | 'rozpatrywanie reklamacji' | 'odebrano'
 type ApartmentNotarialActTaskStatus = 'zablokowane' | 'czeka na umówienie' | 'zaplanowane' | 'podpisany'
 type BuildingStatus = 'W budowie' | 'Na wykonczeniu' | 'Oddany' | 'Wyprzedany'
+
+const BUILDING_STATUS_FILTER_ORDER: BuildingStatus[] = ['W budowie', 'Na wykonczeniu', 'Oddany', 'Wyprzedany']
+
+const BUILDING_STATUS_FILTER_OPTIONS: Select2Option[] = BUILDING_STATUS_FILTER_ORDER.map((status, i) => ({
+  id: i + 1,
+  label: status,
+}))
+
+function buildingStatusToFilterId(status: BuildingStatus): number {
+  const i = BUILDING_STATUS_FILTER_ORDER.indexOf(status)
+  return i >= 0 ? i + 1 : 1
+}
+
 type BuildingColumnKey =
   | 'lp'
   | 'investment'
@@ -339,8 +354,6 @@ function App() {
   ])
   const [investmentFormOpen, setInvestmentFormOpen] = useState(false)
   const [editingInvestmentId, setEditingInvestmentId] = useState<number | null>(null)
-  const [expandedInvestmentIds, setExpandedInvestmentIds] = useState<number[]>([])
-  const [expandedBuildingIds, setExpandedBuildingIds] = useState<number[]>([])
   const [investmentNameForm, setInvestmentNameForm] = useState('')
   const [investmentAddressForm, setInvestmentAddressForm] = useState('')
   const [investmentDateForm, setInvestmentDateForm] = useState('')
@@ -355,8 +368,8 @@ function App() {
   const [buildingStatusForm, setBuildingStatusForm] = useState<BuildingStatus>('W budowie')
   const [buildingApartmentsTotalForm, setBuildingApartmentsTotalForm] = useState<number>(0)
   const [buildingApartmentsAssignedForm, setBuildingApartmentsAssignedForm] = useState<number>(0)
-  const [buildingFilterInvestmentId, setBuildingFilterInvestmentId] = useState<'all' | number>('all')
-  const [buildingFilterStatus, setBuildingFilterStatus] = useState<'all' | BuildingStatus>('all')
+  const [buildingFilterInvestmentIds, setBuildingFilterInvestmentIds] = useState<Set<number>>(() => new Set([1, 2, 3]))
+  const [buildingFilterStatusIds, setBuildingFilterStatusIds] = useState<Set<number>>(() => new Set([1, 2, 3, 4]))
   const [buildingApartmentsUploadOpen, setBuildingApartmentsUploadOpen] = useState(false)
   const [buildingApartmentsUploadTargetId, setBuildingApartmentsUploadTargetId] = useState<number | null>(null)
   const [buildingColumnOrder, setBuildingColumnOrder] = useState<BuildingColumnKey[]>([
@@ -380,8 +393,8 @@ function App() {
     actions: 150,
   })
   const [buildingResizing, setBuildingResizing] = useState<{ key: BuildingColumnKey; startX: number; startWidth: number } | null>(null)
-  const [apartmentFilterInvestmentId, setApartmentFilterInvestmentId] = useState<'all' | number>('all')
-  const [apartmentFilterBuildingId, setApartmentFilterBuildingId] = useState<'all' | number>('all')
+  const [apartmentFilterInvestmentIds, setApartmentFilterInvestmentIds] = useState<Set<number>>(() => new Set([1, 2, 3]))
+  const [apartmentFilterBuildingIds, setApartmentFilterBuildingIds] = useState<Set<number>>(() => new Set([1, 2, 3, 4, 5]))
   const [apartmentColumnOrder, setApartmentColumnOrder] = useState<ApartmentColumnKey[]>([
     'investment',
     'building',
@@ -573,6 +586,69 @@ function App() {
     () => (editingApartmentId !== null ? apartments.find((a) => a.id === editingApartmentId) : undefined),
     [apartments, editingApartmentId],
   )
+
+  const buildingInvestmentFilterOptions = useMemo<Select2Option[]>(
+    () => investments.map((inv) => ({ id: inv.id, label: inv.name, sublabel: inv.address })),
+    [investments],
+  )
+
+  useEffect(() => {
+    setBuildingFilterInvestmentIds((prev) => {
+      const valid = new Set(investments.map((i) => i.id))
+      const next = new Set<number>()
+      for (const id of prev) {
+        if (valid.has(id)) next.add(id)
+      }
+      if (next.size === 0 && valid.size > 0) {
+        return new Set(valid)
+      }
+      return next
+    })
+  }, [investments])
+
+  useEffect(() => {
+    setApartmentFilterInvestmentIds((prev) => {
+      const valid = new Set(investments.map((i) => i.id))
+      const next = new Set<number>()
+      for (const id of prev) {
+        if (valid.has(id)) next.add(id)
+      }
+      if (next.size === 0 && valid.size > 0) {
+        return new Set(valid)
+      }
+      return next
+    })
+  }, [investments])
+
+  const apartmentsBuildingsInScope = useMemo(
+    () => buildings.filter((b) => apartmentFilterInvestmentIds.has(b.investmentId)),
+    [buildings, apartmentFilterInvestmentIds],
+  )
+
+  useEffect(() => {
+    setApartmentFilterBuildingIds((prev) => {
+      const allowed = new Set(apartmentsBuildingsInScope.map((b) => b.id))
+      const next = new Set<number>()
+      for (const id of prev) {
+        if (allowed.has(id)) next.add(id)
+      }
+      if (next.size === 0 && allowed.size > 0) {
+        return new Set(allowed)
+      }
+      return next
+    })
+  }, [apartmentsBuildingsInScope])
+
+  const apartmentBuildingFilterOptions = useMemo<Select2Option[]>(
+    () =>
+      apartmentsBuildingsInScope.map((b) => ({
+        id: b.id,
+        label: b.address,
+        sublabel: investments.find((i) => i.id === b.investmentId)?.name ?? '',
+      })),
+    [apartmentsBuildingsInScope, investments],
+  )
+
   const postSaleTabsLocked = Boolean(editingApartmentId !== null && !editingApartmentForTabs?.postSaleUnlocked)
 
   useEffect(() => {
@@ -820,11 +896,71 @@ function App() {
     setEditingBuildingId(null)
   }
 
+  const toggleBuildingFilterInvestment = (id: number) => {
+    setBuildingFilterInvestmentIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+  const selectAllBuildingFilterInvestments = () => {
+    setBuildingFilterInvestmentIds(new Set(investments.map((i) => i.id)))
+  }
+  const clearBuildingFilterInvestments = () => {
+    setBuildingFilterInvestmentIds(new Set())
+  }
+
+  const toggleBuildingFilterStatus = (id: number) => {
+    setBuildingFilterStatusIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+  const selectAllBuildingFilterStatuses = () => {
+    setBuildingFilterStatusIds(new Set(BUILDING_STATUS_FILTER_OPTIONS.map((o) => o.id)))
+  }
+  const clearBuildingFilterStatuses = () => {
+    setBuildingFilterStatusIds(new Set())
+  }
+
+  const toggleApartmentFilterInvestment = (id: number) => {
+    setApartmentFilterInvestmentIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+  const selectAllApartmentFilterInvestments = () => {
+    setApartmentFilterInvestmentIds(new Set(investments.map((i) => i.id)))
+  }
+  const clearApartmentFilterInvestments = () => {
+    setApartmentFilterInvestmentIds(new Set())
+  }
+
+  const toggleApartmentFilterBuilding = (id: number) => {
+    setApartmentFilterBuildingIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+  const selectAllApartmentFilterBuildingsInScope = () => {
+    setApartmentFilterBuildingIds(new Set(apartmentsBuildingsInScope.map((b) => b.id)))
+  }
+  const clearApartmentFilterBuildings = () => {
+    setApartmentFilterBuildingIds(new Set())
+  }
+
   const openBuildingFormFromBuildingsTab = () => {
     const preferredInvestmentId =
-      buildingFilterInvestmentId === 'all'
+      buildingFilterInvestmentIds.size === 0
         ? investments[0]?.id ?? 1
-        : buildingFilterInvestmentId
+        : investments.find((inv) => buildingFilterInvestmentIds.has(inv.id))?.id ?? investments[0]?.id ?? 1
     setEditingInvestmentId(preferredInvestmentId)
     const linkedInvestment = investments.find((inv) => inv.id === preferredInvestmentId)
     if (linkedInvestment) {
@@ -1533,125 +1669,50 @@ function App() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-100 text-gray-700">
-                            {investments.map((item) => {
-                              const investmentExpanded = expandedInvestmentIds.includes(item.id)
-                              const investmentBuildings = buildings.filter((b) => b.investmentId === item.id)
-                              return (
-                                <Fragment key={`investment-group-${item.id}`}>
-                                  <tr key={`investment-${item.id}`} className="hover:bg-gray-50">
-                                  <td className="px-4 py-3 font-medium">
+                            {investments.map((item) => (
+                              <tr
+                                key={`investment-${item.id}`}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => {
+                                  setBuildingFilterInvestmentIds(new Set([item.id]))
+                                  setBuildingFilterStatusIds(new Set(BUILDING_STATUS_FILTER_OPTIONS.map((o) => o.id)))
+                                  setInvestmentsTab('Budynki')
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault()
+                                    setBuildingFilterInvestmentIds(new Set([item.id]))
+                                    setBuildingFilterStatusIds(new Set(BUILDING_STATUS_FILTER_OPTIONS.map((o) => o.id)))
+                                    setInvestmentsTab('Budynki')
+                                  }
+                                }}
+                                className="cursor-pointer hover:bg-gray-50"
+                              >
+                                <td className="px-4 py-3 font-medium">{item.name}</td>
+                                <td className="px-4 py-3">{item.address}</td>
+                                <td className="px-4 py-3">{item.buildings}</td>
+                                <td className="px-4 py-3">{item.apartments}</td>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                                     <button
                                       type="button"
-                                      onClick={() =>
-                                        setExpandedInvestmentIds((prev) =>
-                                          prev.includes(item.id) ? prev.filter((id) => id !== item.id) : [...prev, item.id],
-                                        )
-                                      }
-                                      className="inline-flex items-center gap-2 text-left"
+                                      onClick={() => openInvestmentDetails(item)}
+                                      className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
                                     >
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 24 24"
-                                        className={`h-4 w-4 text-gray-500 transition-transform ${investmentExpanded ? 'rotate-180' : ''}`}
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      >
-                                        <polyline points="6 9 12 15 18 9" />
-                                      </svg>
-                                      <span>{item.name}</span>
+                                      Szczegoly
                                     </button>
-                                  </td>
-                                  <td className="px-4 py-3">{item.address}</td>
-                                  <td className="px-4 py-3">{item.buildings}</td>
-                                  <td className="px-4 py-3">{item.apartments}</td>
-                                  <td className="px-4 py-3">
-                                    <div className="flex items-center gap-2">
-                                      <button
-                                        type="button"
-                                        onClick={() => openInvestmentDetails(item)}
-                                        className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
-                                      >
-                                        Szczegoly
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => setInvestments((prev) => prev.filter((inv) => inv.id !== item.id))}
-                                        className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
-                                      >
-                                        Usun
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                                  {investmentExpanded && (
-                                    <tr key={`investment-expanded-${item.id}`} className="bg-gray-50/50">
-                                    <td colSpan={5} className="px-6 py-4">
-                                      <div className="space-y-2">
-                                        {investmentBuildings.length === 0 ? (
-                                          <div className="rounded-lg border border-dashed border-gray-200 bg-white px-3 py-2 text-xs text-gray-500">
-                                            Brak budynkow dla tej inwestycji.
-                                          </div>
-                                        ) : (
-                                          investmentBuildings.map((building) => {
-                                            const buildingExpanded = expandedBuildingIds.includes(building.id)
-                                            const buildingApartments = apartments.filter((a) => a.buildingId === building.id)
-                                            return (
-                                              <div key={`building-${building.id}`} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-                                                <button
-                                                  type="button"
-                                                  onClick={() =>
-                                                    setExpandedBuildingIds((prev) =>
-                                                      prev.includes(building.id) ? prev.filter((id) => id !== building.id) : [...prev, building.id],
-                                                    )
-                                                  }
-                                                  className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-gray-50"
-                                                >
-                                                  <div className="inline-flex items-center gap-2">
-                                                    <svg
-                                                      xmlns="http://www.w3.org/2000/svg"
-                                                      viewBox="0 0 24 24"
-                                                      className={`h-4 w-4 text-gray-500 transition-transform ${buildingExpanded ? 'rotate-180' : ''}`}
-                                                      fill="none"
-                                                      stroke="currentColor"
-                                                      strokeWidth="2"
-                                                      strokeLinecap="round"
-                                                      strokeLinejoin="round"
-                                                    >
-                                                      <polyline points="6 9 12 15 18 9" />
-                                                    </svg>
-                                                    <span className="text-sm font-medium text-gray-700">{building.address}</span>
-                                                  </div>
-                                                  <span className="text-xs text-gray-500">{buildingApartments.length} mieszkan</span>
-                                                </button>
-                                                {buildingExpanded && (
-                                                  <div className="border-t border-gray-100 px-4 py-2">
-                                                    {buildingApartments.length === 0 ? (
-                                                      <p className="text-xs text-gray-500">Brak mieszkan.</p>
-                                                    ) : (
-                                                      <ul className="space-y-1">
-                                                        {buildingApartments.map((apartment) => (
-                                                          <li key={`apartment-${apartment.id}`} className="text-sm text-gray-700">
-                                                            {apartment.unitNumber} - {apartment.area.toFixed(1)} m2, pietro {apartment.floor}
-                                                          </li>
-                                                        ))}
-                                                      </ul>
-                                                    )}
-                                                  </div>
-                                                )}
-                                              </div>
-                                            )
-                                          })
-                                        )}
-                                      </div>
-                                    </td>
-                                    </tr>
-                                  )}
-                                </Fragment>
-                              )
-                            })}
+                                    <button
+                                      type="button"
+                                      onClick={() => setInvestments((prev) => prev.filter((inv) => inv.id !== item.id))}
+                                      className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                                    >
+                                      Usun
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
                           </tbody>
                         </table>
                       </div>
@@ -1662,37 +1723,34 @@ function App() {
                         {renderInvestmentsTabHeader('Budynki')}
                         {investmentsTabAddButton({ onClick: openBuildingFormFromBuildingsTab, title: 'Dodaj budynek' })}
                       </div>
-                      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
-                        <label className="text-sm text-gray-600">
-                          Inwestycja
-                          <select
-                            value={buildingFilterInvestmentId}
-                            onChange={(e) => setBuildingFilterInvestmentId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                            className="mt-1 block rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-[var(--color-domesta-red)]"
-                          >
-                            <option value="all">Wszystkie</option>
-                            {investments.map((inv) => (
-                              <option key={inv.id} value={inv.id}>
-                                {inv.name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <label className="text-sm text-gray-600">
-                          Status
-                          <select
-                            value={buildingFilterStatus}
-                            onChange={(e) => setBuildingFilterStatus(e.target.value as 'all' | BuildingStatus)}
-                            className="mt-1 block rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-[var(--color-domesta-red)]"
-                          >
-                            <option value="all">Wszystkie</option>
-                            <option value="W budowie">W budowie</option>
-                            <option value="Na wykonczeniu">Na wykonczeniu</option>
-                            <option value="Oddany">Oddany</option>
-                            <option value="Wyprzedany">Wyprzedany</option>
-                          </select>
-                        </label>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <Select2MultiSelect
+                          sectionLabel="Inwestycje"
+                          options={buildingInvestmentFilterOptions}
+                          selectedIds={buildingFilterInvestmentIds}
+                          onToggle={toggleBuildingFilterInvestment}
+                          onSelectAll={selectAllBuildingFilterInvestments}
+                          onClear={clearBuildingFilterInvestments}
+                          placeholder="Wybierz inwestycje…"
+                          emptyOptionsMessage={investments.length === 0 ? 'Brak inwestycji.' : undefined}
+                          hint="Przy pustym zaznaczeniu lista budynków jest pusta."
+                        />
+                        <Select2MultiSelect
+                          sectionLabel="Status"
+                          options={BUILDING_STATUS_FILTER_OPTIONS}
+                          selectedIds={buildingFilterStatusIds}
+                          onToggle={toggleBuildingFilterStatus}
+                          onSelectAll={selectAllBuildingFilterStatuses}
+                          onClear={clearBuildingFilterStatuses}
+                          placeholder="Wybierz statusy…"
+                          hint="Przy pustym zaznaczeniu lista budynków jest pusta."
+                        />
                       </div>
+                      {buildingFilterInvestmentIds.size === 0 || buildingFilterStatusIds.size === 0 ? (
+                        <div className="flex min-h-[200px] items-center justify-center rounded-xl border border-dashed border-amber-200 bg-amber-50/50 px-4 text-center text-sm text-amber-900">
+                          Zaznacz co najmniej jedną inwestycję i jeden status, aby zobaczyć listę budynków.
+                        </div>
+                      ) : (
                       <div className="overflow-hidden rounded-2xl border border-gray-200">
                         <table className="min-w-full bg-white text-sm table-fixed">
                         <thead className="bg-gray-50">
@@ -1740,40 +1798,60 @@ function App() {
                         </thead>
                         <tbody className="divide-y divide-gray-100 text-gray-700">
                           {buildings
-                            .filter((building) => (buildingFilterInvestmentId === 'all' ? true : building.investmentId === buildingFilterInvestmentId))
-                            .filter((building) => (buildingFilterStatus === 'all' ? true : building.status === buildingFilterStatus))
+                            .filter((building) => buildingFilterInvestmentIds.has(building.investmentId))
+                            .filter((building) => buildingFilterStatusIds.has(buildingStatusToFilterId(building.status)))
                             .map((building, index) => {
                             const investmentName = investments.find((inv) => inv.id === building.investmentId)?.name ?? 'Brak inwestycji'
                             return (
-                              <tr key={building.id} className="hover:bg-gray-50">
+                              <tr
+                                key={building.id}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => {
+                                  setApartmentFilterInvestmentIds(new Set([building.investmentId]))
+                                  setApartmentFilterBuildingIds(new Set([building.id]))
+                                  setInvestmentsTab('Mieszkania')
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault()
+                                    setApartmentFilterInvestmentIds(new Set([building.investmentId]))
+                                    setApartmentFilterBuildingIds(new Set([building.id]))
+                                    setInvestmentsTab('Mieszkania')
+                                  }
+                                }}
+                                className="cursor-pointer hover:bg-gray-50"
+                              >
                                 {buildingColumnOrder.map((col) => (
                                   <td key={`${building.id}-${col}`} className="px-4 py-3 align-middle">
                                     {col === 'lp' && <span className="font-medium">{index + 1}</span>}
                                     {col === 'investment' && investmentName}
                                     {col === 'address' && building.address}
                                     {col === 'status' && (
-                                      <select
-                                        value={building.status}
-                                        onChange={(e) =>
-                                          setBuildings((prev) =>
-                                            prev.map((item) =>
-                                              item.id === building.id ? { ...item, status: e.target.value as BuildingStatus } : item,
-                                            ),
-                                          )
-                                        }
-                                        className="rounded-md border border-gray-300 px-2 py-1 text-xs outline-none focus:border-[var(--color-domesta-red)]"
-                                      >
-                                        <option value="W budowie">W budowie</option>
-                                        <option value="Na wykonczeniu">Na wykonczeniu</option>
-                                        <option value="Oddany">Oddany</option>
-                                        <option value="Wyprzedany">Wyprzedany</option>
-                                      </select>
+                                      <div onClick={(e) => e.stopPropagation()}>
+                                        <select
+                                          value={building.status}
+                                          onChange={(e) =>
+                                            setBuildings((prev) =>
+                                              prev.map((item) =>
+                                                item.id === building.id ? { ...item, status: e.target.value as BuildingStatus } : item,
+                                              ),
+                                            )
+                                          }
+                                          className="rounded-md border border-gray-300 px-2 py-1 text-xs outline-none focus:border-[var(--color-domesta-red)]"
+                                        >
+                                          <option value="W budowie">W budowie</option>
+                                          <option value="Na wykonczeniu">Na wykonczeniu</option>
+                                          <option value="Oddany">Oddany</option>
+                                          <option value="Wyprzedany">Wyprzedany</option>
+                                        </select>
+                                      </div>
                                     )}
                                     {col === 'apartmentsTotal' && building.apartmentsTotal}
                                     {col === 'apartmentsAssigned' && building.apartmentsAssigned}
                                     {col === 'apartmentsUnassigned' && Math.max(building.apartmentsTotal - building.apartmentsAssigned, 0)}
                                     {col === 'actions' && (
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                                         <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100" title="Edytuj">
                                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M12 20h9" />
@@ -1816,6 +1894,7 @@ function App() {
                         </tbody>
                       </table>
                       </div>
+                      )}
                     </div>
                   ) : investmentsTab === 'Mieszkania' ? (
                     <div className="space-y-4">
@@ -2494,44 +2573,42 @@ function App() {
                         </section>
                       ) : (
                         <>
-                          <div className="flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
-                            <label className="text-sm text-gray-600">
-                              Inwestycja
-                              <select
-                                value={apartmentFilterInvestmentId}
-                                onChange={(e) => {
-                                  const value = e.target.value === 'all' ? 'all' : Number(e.target.value)
-                                  setApartmentFilterInvestmentId(value)
-                                  setApartmentFilterBuildingId('all')
-                                }}
-                                className="mt-1 block rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-[var(--color-domesta-red)]"
-                              >
-                                <option value="all">Wszystkie</option>
-                                {investments.map((inv) => (
-                                  <option key={inv.id} value={inv.id}>
-                                    {inv.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                            <label className="text-sm text-gray-600">
-                              Budynek
-                              <select
-                                value={apartmentFilterBuildingId}
-                                onChange={(e) => setApartmentFilterBuildingId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                                className="mt-1 block rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-[var(--color-domesta-red)]"
-                              >
-                                <option value="all">Wszystkie</option>
-                                {buildings
-                                  .filter((b) => (apartmentFilterInvestmentId === 'all' ? true : b.investmentId === apartmentFilterInvestmentId))
-                                  .map((b) => (
-                                    <option key={b.id} value={b.id}>
-                                      {b.address}
-                                    </option>
-                                  ))}
-                              </select>
-                            </label>
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <Select2MultiSelect
+                              sectionLabel="Inwestycje"
+                              options={buildingInvestmentFilterOptions}
+                              selectedIds={apartmentFilterInvestmentIds}
+                              onToggle={toggleApartmentFilterInvestment}
+                              onSelectAll={selectAllApartmentFilterInvestments}
+                              onClear={clearApartmentFilterInvestments}
+                              placeholder="Wybierz inwestycje…"
+                              emptyOptionsMessage={investments.length === 0 ? 'Brak inwestycji.' : undefined}
+                              hint="Przy pustym zaznaczeniu lista mieszkań jest pusta."
+                            />
+                            <Select2MultiSelect
+                              sectionLabel="Budynek"
+                              options={apartmentBuildingFilterOptions}
+                              selectedIds={apartmentFilterBuildingIds}
+                              onToggle={toggleApartmentFilterBuilding}
+                              onSelectAll={selectAllApartmentFilterBuildingsInScope}
+                              onClear={clearApartmentFilterBuildings}
+                              placeholder="Wybierz budynki…"
+                              disabled={apartmentFilterInvestmentIds.size === 0}
+                              emptyOptionsMessage={
+                                apartmentFilterInvestmentIds.size === 0
+                                  ? 'Wybierz co najmniej jedną inwestycję, aby filtrować budynki.'
+                                  : apartmentsBuildingsInScope.length === 0
+                                    ? 'Brak budynków dla zaznaczonych inwestycji.'
+                                    : undefined
+                              }
+                              hint="Przy pustym zaznaczeniu lista mieszkań jest pusta. Widoczne są tylko budynki z wybranych inwestycji."
+                            />
                           </div>
+                          {apartmentFilterInvestmentIds.size === 0 || apartmentFilterBuildingIds.size === 0 ? (
+                            <div className="flex min-h-[200px] items-center justify-center rounded-xl border border-dashed border-amber-200 bg-amber-50/50 px-4 text-center text-sm text-amber-900">
+                              Zaznacz co najmniej jedną inwestycję i jeden budynek, aby zobaczyć listę mieszkań.
+                            </div>
+                          ) : (
                           <div className="overflow-hidden rounded-2xl border border-gray-200">
                             <table className="min-w-full bg-white text-sm table-fixed">
                               <thead className="bg-gray-50">
@@ -2584,8 +2661,8 @@ function App() {
                                   .filter((apartment) => {
                                     const building = buildings.find((b) => b.id === apartment.buildingId)
                                     if (!building) return false
-                                    if (apartmentFilterInvestmentId !== 'all' && building.investmentId !== apartmentFilterInvestmentId) return false
-                                    if (apartmentFilterBuildingId !== 'all' && apartment.buildingId !== apartmentFilterBuildingId) return false
+                                    if (!apartmentFilterInvestmentIds.has(building.investmentId)) return false
+                                    if (!apartmentFilterBuildingIds.has(apartment.buildingId)) return false
                                     return true
                                   })
                                   .map((apartment) => {
@@ -2620,6 +2697,7 @@ function App() {
                               </tbody>
                             </table>
                           </div>
+                          )}
                         </>
                       )}
                     </div>
