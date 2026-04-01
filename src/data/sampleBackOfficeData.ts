@@ -1,5 +1,5 @@
 /**
- * Generowane dane demonstracyjne: min. 10 inwestycji, 3–20 budynków na inwestycję,
+ * Generowane dane demonstracyjne: 6 inwestycji, 1–5 budynków na osiedle,
  * mieszkania, komórki i miejsca postojowe (spójne id mieszkań).
  */
 
@@ -70,8 +70,8 @@ const CLIENT_LABELS = [
   'Michał Zieliński',
 ]
 
-/** Liczba budynków na inwestycję (12 inwestycji, wartości 3–20) */
-const BUILDINGS_PER_INVESTMENT = [5, 8, 3, 12, 20, 7, 15, 4, 10, 6, 18, 9]
+/** Liczba budynków na inwestycję (6 osiedli, wartości 1–5) */
+const BUILDINGS_PER_INVESTMENT = [3, 5, 1, 4, 2, 5]
 
 const INVESTMENT_DEFS: { name: string; address: string; handoverDate: string; description: string; street: string; city: string }[] = [
   {
@@ -121,54 +121,6 @@ const INVESTMENT_DEFS: { name: string; address: string; handoverDate: string; de
     description: 'Mieszkania w ścisłym centrum, idealne pod wynajem i dla rodzin.',
     street: 'Brzeska',
     city: 'Gdynia',
-  },
-  {
-    name: 'Leśna Polana',
-    address: 'ul. Leśna 2, Rumia',
-    handoverDate: '2027-08-30',
-    description: 'Spokojna lokalizacja przy lesie, niska zabudowa.',
-    street: 'Leśna',
-    city: 'Rumia',
-  },
-  {
-    name: 'Portowa Marina',
-    address: 'ul. Portowa 15, Gdańsk',
-    handoverDate: '2026-12-05',
-    description: 'Apartamenty przy marinie jachtowej i bulwarze spacerowym.',
-    street: 'Portowa',
-    city: 'Gdańsk',
-  },
-  {
-    name: 'Bursztynowe Zacisze',
-    address: 'ul. Bursztynowa 6, Gdynia',
-    handoverDate: '2027-11-22',
-    description: 'Rodzinne osiedle z placami zabaw i monitoringiem.',
-    street: 'Bursztynowa',
-    city: 'Gdynia',
-  },
-  {
-    name: 'Stogi Waves',
-    address: 'ul. Falowa 88, Gdańsk',
-    handoverDate: '2028-02-14',
-    description: 'Nowa zabudowa na Stogach z widokiem na Zatokę Gdańską.',
-    street: 'Falowa',
-    city: 'Gdańsk',
-  },
-  {
-    name: 'Orłowska Klif',
-    address: 'ul. Klifowa 3, Gdynia',
-    handoverDate: '2026-10-01',
-    description: 'Prestiżowa lokalizacja Orłowo, krótki spacer do plaży.',
-    street: 'Klifowa',
-    city: 'Gdynia',
-  },
-  {
-    name: 'Matarnia Park',
-    address: 'ul. Matarnia 120, Gdańsk',
-    handoverDate: '2027-07-20',
-    description: 'Osiedle przy obwodnicy z dobrym dojazdem do lotniska.',
-    street: 'Matarnia',
-    city: 'Gdańsk',
   },
 ]
 
