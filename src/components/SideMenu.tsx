@@ -36,7 +36,7 @@ export function SideMenu({
   const [pendingInvestment, setPendingInvestment] = useState(investmentName)
   return (
     <>
-      <aside className={`relative w-full overflow-hidden rounded-2xl shadow-md ${
+      <aside className={`relative w-full overflow-hidden rounded-2xl shadow-md lg:sticky lg:top-20 lg:z-20 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto lg:overflow-x-hidden ${
           theme === 'domestaColors' ? 'bg-white theme-domesta-colors-menu' :
           theme === 'allWhite' ? 'bg-[#F0F0F0] theme-all-white-menu' :
           'bg-[var(--color-domesta-gray)] text-white'

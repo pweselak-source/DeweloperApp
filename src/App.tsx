@@ -27,6 +27,14 @@ import type { MenuId } from './data/menuItems'
 
 const THEME_STORAGE_KEY = 'app-theme'
 
+/** Zgodnie z Tailwind `lg`: duży ekran = rozwinięte „szczegóły podróży”, mobilny = tryb ze zdjęciem. */
+const MENU_VIEWPORT_LG_QUERY = '(min-width: 1024px)'
+
+function getMenuCollapsedForViewport(): boolean {
+  if (typeof window === 'undefined') return true
+  return !window.matchMedia(MENU_VIEWPORT_LG_QUERY).matches
+}
+
 /** Ukryte na liście Inwestycji do czasu synchronizacji (nazwy jak w próbce danych). */
 const INVESTMENT_NAMES_HIDDEN_UNTIL_SYNC = new Set(['Żuławska Residence', 'Brzeska City'])
 
@@ -310,7 +318,7 @@ function App() {
       return 'halfBlack'
     }
   })
-  const [menuCollapsed, setMenuCollapsed] = useState(true)
+  const [menuCollapsed, setMenuCollapsed] = useState(getMenuCollapsedForViewport)
   const [activeSection, setActiveSection] = useState<MenuId | null>(null)
   const [showNewsOnly, setShowNewsOnly] = useState(false)
   const [showBackOffice, setShowBackOffice] = useState(false)
@@ -347,6 +355,14 @@ function App() {
     return () => {
       investmentSyncMountedRef.current = false
     }
+  }, [])
+
+  useEffect(() => {
+    const mq = window.matchMedia(MENU_VIEWPORT_LG_QUERY)
+    const syncMenuMode = () => setMenuCollapsed(!mq.matches)
+    syncMenuMode()
+    mq.addEventListener('change', syncMenuMode)
+    return () => mq.removeEventListener('change', syncMenuMode)
   }, [])
 
   const [investmentFormOpen, setInvestmentFormOpen] = useState(false)
@@ -674,7 +690,7 @@ function App() {
     setShowBackOffice(false)
     setShowNewsOnly(false)
     setActiveSection(null)
-    setMenuCollapsed(true)
+    setMenuCollapsed(getMenuCollapsedForViewport())
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -1179,21 +1195,6 @@ function App() {
           onOpenBackOffice={handleOpenBackOffice}
           variant={showBackOffice ? 'backoffice' : 'default'}
         />
-        {!showNewsOnly && !showBackOffice && (
-          <div className="px-4 pt-3 md:px-6">
-            <SideMenu
-              collapsed={menuCollapsed}
-              activeId={activeSection}
-              onSelect={handleSelectSection}
-              onToggleCollapse={handleToggleCollapse}
-              investmentName={selectedInvestment}
-              apartmentLabel={selectedApartment}
-              onInvestmentChange={setSelectedInvestment}
-              onApartmentChange={setSelectedApartment}
-              theme={theme}
-            />
-          </div>
-        )}
         {showBackOffice ? (
           <div className="flex flex-1 gap-4 px-4 pt-3 md:px-6">
             <BackOfficeMenu activeItem={backOfficeView} onSelectItem={setBackOfficeView} />
@@ -3081,7 +3082,24 @@ function App() {
         ) : showNewsOnly ? (
           <NewsContent sidebarCollapsed={menuCollapsed} />
         ) : (
-          <MainContent activeSectionId={activeSection} />
+          <div className="flex flex-1 flex-col gap-4 px-4 pt-3 md:px-6 lg:flex-row lg:items-start lg:gap-6">
+            <div className="w-full shrink-0 lg:w-80 xl:w-96">
+              <SideMenu
+                collapsed={menuCollapsed}
+                activeId={activeSection}
+                onSelect={handleSelectSection}
+                onToggleCollapse={handleToggleCollapse}
+                investmentName={selectedInvestment}
+                apartmentLabel={selectedApartment}
+                onInvestmentChange={setSelectedInvestment}
+                onApartmentChange={setSelectedApartment}
+                theme={theme}
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <MainContent activeSectionId={activeSection} />
+            </div>
+          </div>
         )}
       </div>
     </div>
