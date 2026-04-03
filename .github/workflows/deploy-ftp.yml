@@ -6,6 +6,12 @@
 #   FTP_PASSWORD — hasło FTP
 #
 # Katalog na serwerze ustaw poniżej w server-dir (np. public_html, www, htdocs).
+#
+# Ważne: wiele hostingów po zalogowaniu FTP już otwiera katalog public_html (document root).
+# Wtedy server-dir: public_html/ wgrywa pliki do public_html/public_html/ — strona w root
+# domeny tego nie widzi. Sprawdź w panelu hostingu / FileZilla „katalog startowy” FTP i
+# ustaw server-dir na ./ (root konta) albo usuń zagnieżdżenie — musi odpowiadać temu,
+# co serwuje HTTP (np. public_html lub www).
 
 name: Build and deploy (FTP)
 
@@ -33,6 +39,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: List build output (debug)
+        run: ls -la dist/ && du -sh dist/
+
       - name: Deploy to FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
@@ -41,3 +50,4 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
           server-dir: public_html/
+          log-level: verbose
