@@ -21,6 +21,7 @@ import {
 import { createSampleBackOfficeDataset } from './data/sampleBackOfficeData'
 import { MainContent } from './components/MainContent'
 import { NewsContent } from './components/NewsContent'
+import { WebAppPrivateLayout } from './components/webapp/WebAppPrivateLayout'
 import { Select2MultiSelect } from './components/Select2MultiSelect'
 import type { Select2Option } from './components/Select2MultiSelect'
 import type { MenuId } from './data/menuItems'
@@ -308,6 +309,51 @@ const INITIAL_CLIENTS: Client[] = [
 
 const SAMPLE_BACK_OFFICE = createSampleBackOfficeDataset()
 
+type ResidentAppBarHeading = {
+  primaryBold: string
+  primaryMuted: string
+  metaLine: string
+}
+
+function buildResidentAppBarHeading(
+  investmentName: string,
+  unitNumber: string,
+  investments: Investment[],
+  buildings: Building[],
+  apartments: Apartment[],
+): ResidentAppBarHeading {
+  const inv = investments.find((i) => i.name === investmentName)
+  const cands = apartments.filter((a) => a.unitNumber === unitNumber)
+  const apt =
+    cands.find((a) => {
+      const b = buildings.find((x) => x.id === a.buildingId)
+      return Boolean(b && inv && b.investmentId === inv.id)
+    }) ?? cands[0]
+
+  const building = apt ? buildings.find((b) => b.id === apt.buildingId) : undefined
+  const invLabel = inv?.name ?? investmentName
+
+  const buildingTag =
+    building != null
+      ? (building.address
+          .replace(/^ul\.\s*/i, '')
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean)
+          .pop() ?? '')
+      : ''
+
+  const primaryBold = buildingTag ? `${invLabel} ${buildingTag}` : invLabel
+  const unitDisp = unitNumber.includes('/') ? unitNumber.replace('/', '\u00a0/\u00a0') : unitNumber
+  const primaryMuted = `Apartament ${unitDisp}`
+
+  const metaLine = apt
+    ? [apt.assignedClient, `${apt.area} m²`, `Piętro ${apt.floor}`].join(' \u2022 ')
+    : ''
+
+  return { primaryBold, primaryMuted, metaLine }
+}
+
 function App() {
   const [theme, setTheme] = useState<AppTheme>(() => {
     try {
@@ -322,6 +368,7 @@ function App() {
   const [activeSection, setActiveSection] = useState<MenuId | null>(null)
   const [showNewsOnly, setShowNewsOnly] = useState(false)
   const [showBackOffice, setShowBackOffice] = useState(false)
+  const [showWebApp, setShowWebApp] = useState(false)
   const [backOfficeView, setBackOfficeView] = useState<BackOfficeView>('investments')
   const [availabilityBlocks, setAvailabilityBlocks] = useState<AvailabilityBlock[]>(() =>
     buildSampleAvailabilityBlocks(getUserIdsWithAvailabilityData()),
@@ -331,6 +378,16 @@ function App() {
   const calendarPreviewUsers = useMemo(() => getUsersForCalendarPreview(), [])
   const [selectedInvestment, setSelectedInvestment] = useState(() => SAMPLE_BACK_OFFICE.investments[0]?.name ?? 'Polana Kampinowska')
   const [selectedApartment, setSelectedApartment] = useState(
+    () => SAMPLE_BACK_OFFICE.apartments[0]?.unitNumber ?? 'A/01',
+  )
+  /** Osobna kopia stanu widoku mieszkańca dla WebApp (niezależna od pierwowzoru). */
+  const [webappMenuCollapsed, setWebappMenuCollapsed] = useState(getMenuCollapsedForViewport)
+  const [webappActiveSection, setWebappActiveSection] = useState<MenuId | null>(null)
+  const [webappShowNewsOnly, setWebappShowNewsOnly] = useState(false)
+  const [webappSelectedInvestment, setWebappSelectedInvestment] = useState(
+    () => SAMPLE_BACK_OFFICE.investments[0]?.name ?? 'Polana Kampinowska',
+  )
+  const [webappSelectedApartment, setWebappSelectedApartment] = useState(
     () => SAMPLE_BACK_OFFICE.apartments[0]?.unitNumber ?? 'A/01',
   )
   const [investmentsTab, setInvestmentsTab] = useState<InvestmentTab>('Inwestycje')
@@ -359,7 +416,11 @@ function App() {
 
   useEffect(() => {
     const mq = window.matchMedia(MENU_VIEWPORT_LG_QUERY)
-    const syncMenuMode = () => setMenuCollapsed(!mq.matches)
+    const syncMenuMode = () => {
+      const collapsed = !mq.matches
+      setMenuCollapsed(collapsed)
+      setWebappMenuCollapsed(collapsed)
+    }
     syncMenuMode()
     mq.addEventListener('change', syncMenuMode)
     return () => mq.removeEventListener('change', syncMenuMode)
@@ -665,29 +726,45 @@ function App() {
 
   const handleSelectSection = (id: MenuId) => {
     setShowBackOffice(false)
+    const inWebApp = showWebApp
     if (id === 'news') {
-      setActiveSection('news')
-      setShowNewsOnly(true)
+      if (inWebApp) {
+        setWebappActiveSection('news')
+        setWebappShowNewsOnly(true)
+      } else {
+        setActiveSection('news')
+        setShowNewsOnly(true)
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
 
-    setShowNewsOnly(false)
-    setActiveSection(id)
-    setMenuCollapsed(false)
-    // Przewiń do odpowiedniej sekcji na stronie (tylko dla ekranu głównego)
-    const target = document.getElementById(`section-${id}`)
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    if (inWebApp) {
+      setWebappShowNewsOnly(false)
+      setWebappActiveSection(id)
+      setWebappMenuCollapsed(false)
+    } else {
+      setShowNewsOnly(false)
+      setActiveSection(id)
+      setMenuCollapsed(false)
     }
+    window.requestAnimationFrame(() => {
+      const target = document.getElementById(`section-${id}`)
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
   }
 
   const handleToggleCollapse = () => {
-    setMenuCollapsed((prev) => !prev)
+    if (showWebApp) {
+      setWebappMenuCollapsed((prev) => !prev)
+    } else {
+      setMenuCollapsed((prev) => !prev)
+    }
   }
 
   const handleGoHome = () => {
     setShowBackOffice(false)
+    setShowWebApp(false)
     setShowNewsOnly(false)
     setActiveSection(null)
     setMenuCollapsed(getMenuCollapsedForViewport())
@@ -695,11 +772,20 @@ function App() {
   }
 
   const handleOpenBackOffice = () => {
+    setShowWebApp(false)
     setShowBackOffice(true)
     setBackOfficeView('investments')
     setShowNewsOnly(false)
     setActiveSection(null)
     setMenuCollapsed(false)
+  }
+
+  const handleOpenWebApp = () => {
+    setShowBackOffice(false)
+    setShowWebApp(true)
+    setWebappShowNewsOnly(false)
+    setWebappActiveSection(null)
+    setWebappMenuCollapsed(false)
   }
 
   const runInvestmentSync = async () => {
@@ -1184,6 +1270,83 @@ function App() {
     </button>
   )
 
+  const renderResidentShell = (variant: 'resident' | 'webapp') => {
+    const isWebApp = variant === 'webapp'
+    const collapsed = isWebApp ? webappMenuCollapsed : menuCollapsed
+    const active = isWebApp ? webappActiveSection : activeSection
+    const newsOnly = isWebApp ? webappShowNewsOnly : showNewsOnly
+    const invName = isWebApp ? webappSelectedInvestment : selectedInvestment
+    const aptLabel = isWebApp ? webappSelectedApartment : selectedApartment
+    const setInv = isWebApp ? setWebappSelectedInvestment : setSelectedInvestment
+    const setApt = isWebApp ? setWebappSelectedApartment : setSelectedApartment
+
+    if (newsOnly && isWebApp) {
+      return (
+        <WebAppPrivateLayout activeSectionId={active} onSelectSection={handleSelectSection}>
+          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
+            <NewsContent key={`news-${variant}`} sidebarCollapsed={false} webAppLayout />
+          </div>
+        </WebAppPrivateLayout>
+      )
+    }
+    if (newsOnly) {
+      return <NewsContent key={`news-${variant}`} sidebarCollapsed={collapsed} />
+    }
+    if (isWebApp) {
+      return (
+        <WebAppPrivateLayout activeSectionId={active} onSelectSection={handleSelectSection}>
+          <MainContent key={`main-${variant}`} activeSectionId={active} singlePageDockNav />
+        </WebAppPrivateLayout>
+      )
+    }
+    return (
+      <div className="mx-auto flex min-h-0 min-w-0 w-[70%] max-w-full flex-1 flex-col gap-4 pt-4 md:gap-6 md:pt-5 lg:pt-6">
+        <div className="min-w-0 w-full shrink-0">
+          <SideMenu
+            key={`side-${variant}`}
+            collapsed={collapsed}
+            webappFixedBand="none"
+            activeId={active}
+            onSelect={handleSelectSection}
+            onToggleCollapse={handleToggleCollapse}
+            investmentName={invName}
+            apartmentLabel={aptLabel}
+            onInvestmentChange={setInv}
+            onApartmentChange={setApt}
+            theme={theme}
+          />
+        </div>
+        <div className="min-h-0 min-w-0 w-full flex-1">
+          <MainContent key={`main-${variant}`} activeSectionId={active} />
+        </div>
+      </div>
+    )
+  }
+
+  const residentAppBarHeading: ResidentAppBarHeading | undefined = useMemo(
+    () =>
+      showBackOffice
+        ? undefined
+        : buildResidentAppBarHeading(
+            showWebApp ? webappSelectedInvestment : selectedInvestment,
+            showWebApp ? webappSelectedApartment : selectedApartment,
+            investments,
+            buildings,
+            apartments,
+          ),
+    [
+      showBackOffice,
+      showWebApp,
+      webappSelectedInvestment,
+      selectedInvestment,
+      webappSelectedApartment,
+      selectedApartment,
+      investments,
+      buildings,
+      apartments,
+    ],
+  )
+
   return (
     <div className={`min-h-screen ${outerBackgroundClass}`}>
       <div className={`flex min-h-screen flex-col ${innerBackgroundClass}`}>
@@ -1193,7 +1356,10 @@ function App() {
           theme={theme}
           onGoHome={handleGoHome}
           onOpenBackOffice={handleOpenBackOffice}
+          onOpenWebApp={handleOpenWebApp}
           variant={showBackOffice ? 'backoffice' : 'default'}
+          hideNewsShortcut={showWebApp}
+          residentHeading={residentAppBarHeading}
         />
         {showBackOffice ? (
           <div className="flex flex-1 gap-4 px-4 pt-3 md:px-6">
@@ -3079,27 +3245,16 @@ function App() {
               </div>
             )}
           </div>
-        ) : showNewsOnly ? (
-          <NewsContent sidebarCollapsed={menuCollapsed} />
-        ) : (
-          <div className="flex flex-1 flex-col gap-4 px-4 pt-3 md:px-6 lg:flex-row lg:items-start lg:gap-6">
-            <div className="w-full shrink-0 lg:w-80 xl:w-96">
-              <SideMenu
-                collapsed={menuCollapsed}
-                activeId={activeSection}
-                onSelect={handleSelectSection}
-                onToggleCollapse={handleToggleCollapse}
-                investmentName={selectedInvestment}
-                apartmentLabel={selectedApartment}
-                onInvestmentChange={setSelectedInvestment}
-                onApartmentChange={setSelectedApartment}
-                theme={theme}
-              />
-            </div>
-            <div className="min-w-0 flex-1">
-              <MainContent activeSectionId={activeSection} />
-            </div>
+        ) : showWebApp ? (
+          <div
+            className="webapp-shell flex min-h-0 flex-1 flex-col overflow-hidden"
+            data-resident-variant="webapp"
+            aria-label="WebApp — kopia widoku mieszkańca"
+          >
+            {renderResidentShell('webapp')}
           </div>
+        ) : (
+          renderResidentShell('resident')
         )}
       </div>
     </div>

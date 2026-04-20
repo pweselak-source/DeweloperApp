@@ -9,8 +9,17 @@ interface AppBarProps {
   theme?: AppTheme
   onGoHome?: () => void
   onOpenBackOffice?: () => void
+  onOpenWebApp?: () => void
   /** W Back Office: bez Aktualności i bez panelu Bieżące zadania – tylko logo + menu użytkownika */
   variant?: 'default' | 'backoffice'
+  /** Ukryj skrót do Aktualności (np. WebApp – wejście z lewego menu) */
+  hideNewsShortcut?: boolean
+  /** Inwestycja + mieszkanie + meta (widok mieszkańca / WebApp, nie Back Office) */
+  residentHeading?: {
+    primaryBold: string
+    primaryMuted: string
+    metaLine: string
+  }
 }
 
 export function AppBar({
@@ -19,7 +28,10 @@ export function AppBar({
   theme = 'halfBlack',
   onGoHome,
   onOpenBackOffice,
+  onOpenWebApp,
   variant = 'default',
+  hideNewsShortcut = false,
+  residentHeading,
 }: AppBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [tasksOpen, setTasksOpen] = useState(false)
@@ -45,35 +57,66 @@ export function AppBar({
 
   return (
     <div className="sticky top-0 z-30">
-      <header className={`flex h-14 items-center border-b px-4 shadow-sm ${theme === 'allBlack' ? 'border-gray-700 bg-[#252525]' : 'border-gray-200 bg-white'}`}>
+      <header
+        className={`flex min-h-[4.667rem] items-center border-b px-4 shadow-sm ${theme === 'allBlack' ? 'border-gray-700 bg-[#252525]' : 'border-gray-200 bg-white'}`}
+      >
         <button
           type="button"
           onClick={() => onGoHome?.()}
-          className="flex items-center justify-center rounded-lg p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-domesta-coral)]"
+          className="flex shrink-0 items-center justify-center rounded-lg p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-domesta-coral)]"
           aria-label="Strona główna"
         >
-          <img src={domestaLogo} alt="Domesta" className="h-8 w-auto shrink-0 object-contain" />
+          <img src={domestaLogo} alt="Domesta" className="h-[2.667rem] w-auto shrink-0 object-contain" />
         </button>
-        {variant === 'default' && (
+        {residentHeading && variant === 'default' && (
           <>
-            {/* Aktualności – tylko ikona */}
-            <button
-              type="button"
-              onClick={() => onNavigateTo('news')}
-              className={`ml-7 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${theme === 'allBlack' ? 'text-gray-400 hover:bg-[#333333] hover:text-gray-200' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-600'}`}
-              aria-label="Aktualności"
-              title="Aktualności"
-            >
-              <span className="relative flex h-5 w-5 items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 8v6M12 16h.01" />
-                </svg>
-                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-domesta-coral)] px-1 text-[10px] font-semibold text-white animate-[coral-pulse_1.2s_ease-in-out_infinite]">2</span>
-              </span>
-            </button>
-            {/* Bieżące zadania – tylko ikona + dropdown */}
-            <div className="relative ml-2" ref={tasksRef}>
+            <div
+              className={`ml-4 h-[2.667rem] w-px shrink-0 ${theme === 'allBlack' ? 'bg-gray-600' : 'bg-gray-200'}`}
+              aria-hidden
+            />
+            <div className="ml-4 min-w-0 flex-1 pr-2">
+              <p className="truncate text-[0.9375rem] leading-snug md:text-base">
+                <span className={`font-semibold tracking-tight ${theme === 'allBlack' ? 'text-gray-100' : 'text-gray-900'}`}>
+                  {residentHeading.primaryBold}
+                </span>
+                <span className={`mx-1.5 font-light ${theme === 'allBlack' ? 'text-gray-500' : 'text-gray-400'}`}>—</span>
+                <span className={`font-normal ${theme === 'allBlack' ? 'text-slate-400' : 'text-slate-500'}`}>
+                  {residentHeading.primaryMuted}
+                </span>
+              </p>
+              {residentHeading.metaLine ? (
+                <p
+                  className={`mt-0.5 truncate text-[11px] leading-snug ${theme === 'allBlack' ? 'text-slate-500' : 'text-slate-500'}`}
+                >
+                  {residentHeading.metaLine}
+                </p>
+              ) : null}
+            </div>
+          </>
+        )}
+        {variant === 'default' && (
+          <div
+            className={`flex shrink-0 items-center gap-2 ${residentHeading ? 'ml-1' : ''} ${!residentHeading && hideNewsShortcut ? 'ml-7' : ''}`}
+          >
+            {!hideNewsShortcut && (
+              <button
+                type="button"
+                onClick={() => onNavigateTo('news')}
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${!residentHeading ? 'ml-7' : ''} ${theme === 'allBlack' ? 'text-gray-400 hover:bg-[#333333] hover:text-gray-200' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-600'}`}
+                aria-label="Aktualności"
+                title="Aktualności"
+              >
+                <span className="relative flex h-5 w-5 items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 8v6M12 16h.01" />
+                  </svg>
+                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-domesta-coral)] px-1 text-[10px] font-semibold text-white animate-[coral-pulse_1.2s_ease-in-out_infinite]">2</span>
+                </span>
+              </button>
+            )}
+            {/* Bieżące zadania – ukryte (ikona + dropdown) */}
+            <div className={`relative hidden ${hideNewsShortcut ? 'ml-0' : 'ml-0'}`} ref={tasksRef}>
               <button
                 type="button"
                 onClick={() => setTasksOpen((open) => !open)}
@@ -139,11 +182,11 @@ export function AppBar({
                 </div>
               )}
             </div>
-          </>
+          </div>
         )}
 
-      {/* Menu użytkownika – dopchnięte do prawej (bez lupki i czatu) */}
-      <div className="ml-auto flex items-center gap-2">
+      {/* Menu użytkownika – prawa strona paska */}
+      <div className="ml-auto flex min-w-0 shrink-0 items-center gap-2 md:gap-3">
         <div className="relative">
           <button
             type="button"
@@ -213,6 +256,13 @@ export function AppBar({
                 className={`flex w-full items-center px-3 py-2 text-left ${theme === 'allBlack' ? 'text-gray-200 hover:bg-[#333333]' : 'text-gray-700 hover:bg-gray-50'}`}
               >
                 BackOffice
+              </button>
+              <button
+                type="button"
+                onClick={() => { onOpenWebApp?.(); setMenuOpen(false) }}
+                className={`flex w-full items-center px-3 py-2 text-left ${theme === 'allBlack' ? 'text-gray-200 hover:bg-[#333333]' : 'text-gray-700 hover:bg-gray-50'}`}
+              >
+                WebApp
               </button>
               <div className={`my-1 border-t ${theme === 'allBlack' ? 'border-gray-600' : 'border-gray-100'}`} />
               <div className="flex items-center gap-2 px-3 py-2">

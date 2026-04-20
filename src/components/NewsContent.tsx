@@ -179,9 +179,14 @@ const newsItems = ALL_NEWS_ITEMS.filter((item) => item.id === 'news1' || item.id
 
 interface NewsContentProps {
   sidebarCollapsed?: boolean
+  /** WebApp: ta sama kolumna treści i rytm co główny panel (bez „karty mobilnej”) */
+  webAppLayout?: boolean
 }
 
-export function NewsContent({ sidebarCollapsed = false }: NewsContentProps) {
+const webAppNewsShell =
+  'scroll-mt-[5.75rem] border-b border-stone-200/80 bg-transparent pb-12 pt-2 last:border-b-0 md:pb-16 md:pt-4'
+
+export function NewsContent({ sidebarCollapsed = false, webAppLayout = false }: NewsContentProps) {
   const newsItem = MENU_ITEMS.find((m) => m.id === 'news')
   const [modalImage, setModalImage] = useState<{ src: string; alt: string } | null>(null)
 
@@ -197,11 +202,17 @@ export function NewsContent({ sidebarCollapsed = false }: NewsContentProps) {
 
   return (
     <main
-      className={`flex flex-1 flex-col gap-0 py-4 md:py-6 ${sidebarCollapsed ? 'px-2 md:px-4' : 'px-4 md:px-6'}`}
+      className={`flex flex-1 flex-col gap-0 ${webAppLayout ? 'py-0' : 'py-4 md:py-6'} ${webAppLayout ? 'px-0' : sidebarCollapsed ? 'px-2 md:px-4' : 'px-4 md:px-6'}`}
     >
       {/* Jasna sekcja – tylko nagłówek „Aktualności” */}
-      <section className={sectionBlockClass}>
-        <div className="flex items-center gap-4 border-b border-gray-100 bg-gray-50/80 px-5 py-3">
+      <section className={webAppLayout ? webAppNewsShell : sectionBlockClass}>
+        <div
+          className={
+            webAppLayout
+              ? 'flex items-center gap-4 border-b border-stone-100 pb-6'
+              : 'flex items-center gap-4 border-b border-gray-100 bg-gray-50/80 px-5 py-3'
+          }
+        >
           <span className="shrink-0 [&_svg]:h-12 [&_svg]:w-12 text-slate-600">
             {newsItem?.icon}
           </span>
@@ -217,7 +228,7 @@ export function NewsContent({ sidebarCollapsed = false }: NewsContentProps) {
       </section>
 
       {/* Kafle – przycisk ma ten sam rozmiar co zdjęcie (obrazek określa wymiary) */}
-      <div className="mt-3 flex gap-1.5">
+      <div className={`flex gap-1.5 ${webAppLayout ? 'mt-8' : 'mt-3'}`}>
         {newsItems.map((item) => (
           <button
             key={item.id}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useLayoutEffect } from 'react'
 import { MENU_ITEMS } from '../data/menuItems'
 import type { MenuId } from '../data/menuItems'
 import type { AppTheme } from '../App'
@@ -14,6 +14,10 @@ interface SideMenuProps {
   investmentName: string
    apartmentLabel: string
   theme?: AppTheme
+  /** WebApp (lg+): pas zdjęć + intro na pełną szerokość viewportu, szyna ikon przy lewej krawędzi */
+  monitorIntroFullBleed?: boolean
+  /** WebApp: stały wariant bez przełączania — slideshow (jak zwinięte) albo menu rozwinięte (jak po „Szczegóły podróży”) */
+  webappFixedBand?: 'none' | 'slideshow' | 'expanded'
 }
 
 export function SideMenu({
@@ -26,28 +30,84 @@ export function SideMenu({
   theme = 'halfBlack',
   onInvestmentChange,
   onApartmentChange,
+  monitorIntroFullBleed = false,
+  webappFixedBand = 'none',
 }: SideMenuProps & { onInvestmentChange: (name: string) => void; onApartmentChange: (apartment: string) => void }) {
+  const effectiveCollapsed =
+    webappFixedBand === 'slideshow' ? true : webappFixedBand === 'expanded' ? false : collapsed
+  const hideSlideshowExpandBtn = webappFixedBand === 'slideshow'
+  const hideExpandedCollapseBtn = webappFixedBand === 'expanded'
+  const slideshowBandHeightClass =
+    webappFixedBand === 'slideshow'
+      ? 'h-[min(42vh,400px)] min-h-[200px] max-h-[400px]'
+      : 'h-[50vh] min-h-[50vh] max-h-[50vh]'
+
   const slideshowImages = [dom1, dom2, dom3]
+  const introHeroRef = useRef<HTMLElement | null>(null)
+  const [introHeroBleed, setIntroHeroBleed] = useState<{ marginLeft: number; width: number } | null>(null)
   const parts = investmentName.split(/\s+/)
   const firstWord = parts[0] ?? ''
   const restWords = parts.slice(1).join(' ')
   const [unitPopupOpen, setUnitPopupOpen] = useState(false)
   const [popupStep, setPopupStep] = useState<'investment' | 'apartment'>('investment')
   const [pendingInvestment, setPendingInvestment] = useState(investmentName)
+
+  const introRailSolidBg =
+    theme === 'domestaColors'
+      ? 'bg-white'
+      : theme === 'allWhite'
+        ? 'bg-[#F0F0F0]'
+        : 'bg-[var(--color-domesta-gray)]'
+
+  useLayoutEffect(() => {
+    if (!monitorIntroFullBleed || !effectiveCollapsed) {
+      setIntroHeroBleed(null)
+      return
+    }
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const measure = () => {
+      if (!mq.matches) {
+        setIntroHeroBleed(null)
+        return
+      }
+      const el = introHeroRef.current
+      if (!el) return
+      const { left } = el.getBoundingClientRect()
+      const w = document.documentElement.clientWidth
+      setIntroHeroBleed({ marginLeft: -left, width: w })
+    }
+    measure()
+    const raf = requestAnimationFrame(measure)
+    window.addEventListener('resize', measure)
+    mq.addEventListener('change', measure)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('resize', measure)
+      mq.removeEventListener('change', measure)
+    }
+  }, [monitorIntroFullBleed, effectiveCollapsed, investmentName, apartmentLabel, webappFixedBand])
+
   return (
     <>
-      <aside className={`relative w-full overflow-hidden rounded-2xl shadow-md lg:sticky lg:top-20 lg:z-20 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto lg:overflow-x-hidden ${
+      <aside
+        className={`relative w-full rounded-2xl shadow-md ${
+          webappFixedBand !== 'none'
+            ? 'lg:static lg:z-20 lg:max-h-none lg:overflow-y-visible'
+            : 'lg:sticky lg:top-20 lg:z-20 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto'
+        } ${
+          monitorIntroFullBleed ? 'overflow-hidden lg:overflow-x-visible lg:overflow-y-auto' : 'overflow-hidden lg:overflow-x-hidden'
+        } ${
           theme === 'domestaColors' ? 'bg-white theme-domesta-colors-menu' :
           theme === 'allWhite' ? 'bg-[#F0F0F0] theme-all-white-menu' :
           'bg-[var(--color-domesta-gray)] text-white'
         }`}>
-        {/* Header: nazwa inwestycji + collapse/expand control – wysokość jak górny pasek (h-14) */}
-        <div className={`flex h-14 items-center border-b px-3 ${
+        {/* Header: nazwa inwestycji + collapse/expand control – wysokość jak górny pasek AppBar */}
+        <div className={`flex min-h-[4.667rem] h-[4.667rem] items-center border-b px-3 ${
           theme === 'allBlack' ? 'border-gray-600 bg-[#252525]' :
           theme === 'allWhite' ? 'border-gray-300 bg-[#F0F0F0]' :
           'border-gray-200 bg-white'
         }`}>
-          {collapsed ? (
+          {effectiveCollapsed ? (
             <div className="flex w-full items-center gap-3">
               <button
                 type="button"
@@ -64,30 +124,32 @@ export function SideMenu({
                 </span>
                 <span className={`min-w-0 truncate text-[0.583rem] ${theme === 'allBlack' ? 'text-white' : 'text-gray-600'}`}>Mieszkanie: {apartmentLabel}</span>
               </button>
-              <button
-                type="button"
-                onClick={onToggleCollapse}
-                className={`ml-auto mr-3 flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px] shadow-sm ${
-                  theme === 'allBlack' ? 'border-gray-500 bg-[#333333] text-gray-200 hover:bg-[#404040]' :
-                  theme === 'allWhite' ? 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100' :
-                  'border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-100'
-                }`}
-                aria-label="Szczegóły podróży"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  className={`h-4 w-4 ${theme === 'allBlack' ? 'text-gray-400' : theme === 'allWhite' ? 'text-gray-600' : 'text-gray-500'}`}
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              {!hideSlideshowExpandBtn && (
+                <button
+                  type="button"
+                  onClick={onToggleCollapse}
+                  className={`ml-auto mr-3 flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px] shadow-sm ${
+                    theme === 'allBlack' ? 'border-gray-500 bg-[#333333] text-gray-200 hover:bg-[#404040]' :
+                    theme === 'allWhite' ? 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100' :
+                    'border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-100'
+                  }`}
+                  aria-label="Szczegóły podróży"
                 >
-                  <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
-                <span>Szczegóły podróży!</span>
-              </button>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    className={`h-4 w-4 ${theme === 'allBlack' ? 'text-gray-400' : theme === 'allWhite' ? 'text-gray-600' : 'text-gray-500'}`}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  </svg>
+                  <span>Szczegóły podróży!</span>
+                </button>
+              )}
             </div>
           ) : (
             <div className="flex w-full items-center gap-3">
@@ -106,20 +168,22 @@ export function SideMenu({
                 </span>
                 <span className={`min-w-0 truncate text-[0.583rem] ${theme === 'allBlack' ? 'text-white' : 'text-gray-600'}`}>Mieszkanie: {apartmentLabel}</span>
               </button>
-              <button
-                type="button"
-                onClick={onToggleCollapse}
-                className={`ml-auto flex h-8 w-8 items-center justify-center rounded-lg ${
-                  theme === 'allBlack' ? 'text-gray-300 hover:bg-[#404040]' :
-                  theme === 'allWhite' ? 'text-gray-600 hover:bg-gray-200' :
-                  'text-[var(--color-domesta-gray)] hover:bg-gray-200'
-                }`}
-                aria-label="Zwiń menu"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-              </button>
+              {!hideExpandedCollapseBtn && (
+                <button
+                  type="button"
+                  onClick={onToggleCollapse}
+                  className={`ml-auto flex h-8 w-8 items-center justify-center rounded-lg ${
+                    theme === 'allBlack' ? 'text-gray-300 hover:bg-[#404040]' :
+                    theme === 'allWhite' ? 'text-gray-600 hover:bg-gray-200' :
+                    'text-[var(--color-domesta-gray)] hover:bg-gray-200'
+                  }`}
+                  aria-label="Zwiń menu"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -227,14 +291,28 @@ export function SideMenu({
           </div>
         )}
 
-        <div className="relative overflow-hidden">
+        <div className={monitorIntroFullBleed ? 'relative overflow-hidden lg:overflow-x-visible' : 'relative overflow-hidden'}>
           {/* Zwinięty: animowane pojawianie/znikanie */}
           <div
-            className={`flex flex-col overflow-hidden transition-[max-height,opacity,transform] duration-300 ease-out ${
-              collapsed ? 'h-[50vh] min-h-[50vh] max-h-[50vh] opacity-100 translate-y-0' : 'max-h-0 min-h-0 opacity-0 translate-y-[-6px] pointer-events-none'
+            className={`flex flex-col transition-[max-height,opacity,transform] duration-300 ease-out ${
+              monitorIntroFullBleed ? 'overflow-hidden lg:overflow-x-visible' : 'overflow-hidden'
+            } ${
+              effectiveCollapsed
+                ? `${slideshowBandHeightClass} opacity-100 translate-y-0`
+                : 'max-h-0 min-h-0 opacity-0 translate-y-[-6px] pointer-events-none'
             }`}
           >
-          <div className="flex min-h-0 flex-1 items-stretch gap-1 py-0 animate-[menu-content-in_0.3s_ease-out_0.08s_both]">
+          <div
+            className={`flex min-h-0 flex-1 items-stretch gap-1 py-0 animate-[menu-content-in_0.3s_ease-out_0.08s_both] ${
+              monitorIntroFullBleed && effectiveCollapsed ? 'overflow-visible' : ''
+            }`}
+          >
+            {/* Szyna ikon + strzałka: przyklejona do lewej, nad pełnoekranowym pasem zdjęć (WebApp lg+) */}
+            <div
+              className={`flex shrink-0 items-stretch gap-1 ${
+                monitorIntroFullBleed && effectiveCollapsed ? `relative z-30 lg:rounded-l-xl lg:pr-1 ${introRailSolidBg}` : ''
+              }`}
+            >
             {/* Pionowa, grubsza strzałka po lewej stronie ikon (jeden spójny kształt) */}
             <div className="relative flex w-4 justify-center">
               <svg
@@ -310,7 +388,20 @@ export function SideMenu({
                 </li>
               </ul>
             </nav>
-            <section className="relative ml-2 mr-0 flex min-h-0 flex-1 flex-col justify-end overflow-hidden rounded-xl rounded-r-none rounded-b-none border border-white/40 border-r-0 border-b-0 px-4 pt-3 pb-4 text-left self-stretch">
+            </div>
+            <section
+              ref={introHeroRef}
+              style={
+                introHeroBleed
+                  ? { marginLeft: introHeroBleed.marginLeft, width: introHeroBleed.width, maxWidth: introHeroBleed.width }
+                  : undefined
+              }
+              className={`relative mr-0 flex min-h-0 flex-col justify-end overflow-hidden self-stretch border border-white/40 border-b-0 px-4 pt-3 pb-4 text-left ${
+                introHeroBleed
+                  ? 'z-0 ml-0 flex-shrink-0 rounded-none border-r-0 lg:rounded-r-xl'
+                  : 'ml-2 flex-1 rounded-xl rounded-r-none rounded-b-none border-r-0'
+              }`}
+            >
               {/* Tło: przyciemnione zdjęcia z Dziennika budowy – wypełnia całą ramkę */}
               <div className="pointer-events-none absolute inset-0">
                 <div className="absolute inset-0">
@@ -348,7 +439,11 @@ export function SideMenu({
           {/* Rozwinięty: animowane pojawianie/znikanie + wejście elementów */}
           <div
             className={`overflow-hidden transition-[max-height,opacity,transform] duration-300 ease-out ${
-              !collapsed ? 'max-h-[75vh] opacity-100 translate-y-0' : 'max-h-0 opacity-0 translate-y-[-6px] pointer-events-none'
+              webappFixedBand === 'expanded'
+                ? 'max-h-[min(60vh,640px)] opacity-100 translate-y-0 lg:overflow-y-auto'
+                : !effectiveCollapsed
+                  ? 'max-h-[75vh] opacity-100 translate-y-0'
+                  : 'max-h-0 opacity-0 translate-y-[-6px] pointer-events-none'
             }`}
           >
         {/* Title above menu */}
@@ -465,14 +560,14 @@ export function SideMenu({
                         ? 'bg-white/10 text-white'
                         : 'text-white/70 hover:bg-white/5'
                       }
-                      ${collapsed ? 'justify-center px-0' : ''}
+                      ${effectiveCollapsed ? 'justify-center px-0' : ''}
                     `}
-                    title={collapsed ? item.label : undefined}
+                    title={effectiveCollapsed ? item.label : undefined}
                   >
-                    {isActive && !collapsed && (
+                    {isActive && !effectiveCollapsed && (
                       <span className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r bg-[var(--color-domesta-red)]" aria-hidden />
                     )}
-                    {!collapsed && (
+                    {!effectiveCollapsed && (
                       <>
                         {/* Pozioma przerywana kreska zakończona strzałką prowadząca do ikony etapu */}
                         <span className="flex items-center gap-1">
@@ -501,7 +596,7 @@ export function SideMenu({
                         <span className="ml-auto shrink-0">{statusIcon}</span>
                       </>
                     )}
-                    {collapsed && (
+                    {effectiveCollapsed && (
                       <span className="relative flex h-8 w-8 items-center justify-center">
                         <span className={`[&_svg]:h-5 [&_svg]:w-5 transition-colors ${statusIconClass}`}>
                           {item.icon}
@@ -529,14 +624,14 @@ export function SideMenu({
                     ? 'bg-white/10 text-white'
                     : 'text-white/70 hover:bg-white/5'
                   }
-                  ${collapsed ? 'justify-center px-0' : ''}
+                  ${effectiveCollapsed ? 'justify-center px-0' : ''}
                 `}
-                title={collapsed ? 'Dziennik budowy' : undefined}
+                title={effectiveCollapsed ? 'Dziennik budowy' : undefined}
               >
-                {activeId === 'siteLog' && !collapsed && (
+                {activeId === 'siteLog' && !effectiveCollapsed && (
                   <span className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r bg-[var(--color-domesta-red)]" aria-hidden />
                 )}
-                {!collapsed ? (
+                {!effectiveCollapsed ? (
                   <>
                     <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${theme === 'allWhite' ? 'theme-all-white-site-log-icon' : 'text-amber-300'}`}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

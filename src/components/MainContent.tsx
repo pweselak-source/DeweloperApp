@@ -121,11 +121,51 @@ function getSectionStatusIcon(sectionId: SectionId): React.ReactNode {
   )
 }
 
-interface MainContentProps {
-  activeSectionId?: MenuId | null
+const FORMALITIES_NAVY = '#1a2b38'
+const DOCS_LIST_GOLD = '#d4a017'
+const DOCS_LIST_GOLD_BORDER = 'border-amber-700/45'
+
+function DocumentsTimelineCheckBullet({ done }: { done: boolean }) {
+  if (done) {
+    return (
+      <span
+        className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 ${DOCS_LIST_GOLD_BORDER} text-white shadow-sm`}
+        style={{ backgroundColor: DOCS_LIST_GOLD }}
+        aria-hidden
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      </span>
+    )
+  }
+  return (
+    <span
+      className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-gray-200 bg-white"
+      aria-hidden
+    />
+  )
 }
 
-export function MainContent({ activeSectionId = null }: MainContentProps) {
+function DocumentsTimelineInfoIcon() {
+  return (
+    <span
+      className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-sm"
+      style={{ backgroundColor: DOCS_LIST_GOLD }}
+      aria-hidden
+    >
+      i
+    </span>
+  )
+}
+
+interface MainContentProps {
+  activeSectionId?: MenuId | null
+  /** WebApp: jedna długa strona — wszystkie sekcje widoczne; lewe menu tylko przewija do kotwic */
+  singlePageDockNav?: boolean
+}
+
+export function MainContent({ activeSectionId = null, singlePageDockNav = false }: MainContentProps) {
   const [expandedSections, setExpandedSections] = useState<Record<SectionId, boolean>>({
     formalities: false,
     schedule: false,
@@ -238,10 +278,10 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
   useEffect(() => {
     if (!activeSectionId) return
     const sectionIds: SectionId[] = ['formalities', 'schedule', 'documents', 'complaints', 'handover', 'meter', 'notary', 'siteLog', 'news']
-    if (sectionIds.includes(activeSectionId as SectionId)) {
-      setExpandedSections((prev) => ({ ...prev, [activeSectionId]: true }))
-    }
-  }, [activeSectionId])
+    if (!sectionIds.includes(activeSectionId as SectionId)) return
+    if (singlePageDockNav) return
+    setExpandedSections((prev) => ({ ...prev, [activeSectionId]: true }))
+  }, [activeSectionId, singlePageDockNav])
 
   const installments = [
     {
@@ -310,18 +350,15 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
     },
   ]
 
-  const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string; dot: string }> = {
-  green: {
-    badge: 'bg-emerald-50 text-emerald-700',
-    dot: 'bg-emerald-500',
-  },
-  amber: {
-    badge: 'bg-amber-50 text-amber-700',
-    dot: 'bg-amber-500',
-  },
+  const toneClasses: Record<'green' | 'amber' | 'slate', { badge: string }> = {
+    green: {
+      badge: 'bg-emerald-50 text-emerald-700',
+    },
+    amber: {
+      badge: 'bg-amber-50 text-amber-700',
+    },
     slate: {
       badge: 'bg-slate-100 text-slate-700',
-      dot: 'bg-slate-500',
     },
   }
 
@@ -432,74 +469,146 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
     `${MONTH_NAMES[notaryMonthView.getMonth()]} ${notaryMonthView.getFullYear()}`
 
   const sectionBlockClass =
-    'scroll-mt-28 rounded-2xl border border-gray-200 bg-white shadow-md overflow-hidden'
+    'scroll-mt-[5.75rem] rounded-2xl border border-gray-200 bg-white shadow-md overflow-hidden'
+
+  /** WebApp — jedna strona: układ jak serwis www (kolumna treści, delikatne separatory) */
+  const webDockSectionClass =
+    'scroll-mt-[5.75rem] border-b border-stone-200/80 bg-transparent pb-14 pt-10 last:border-b-0 md:pb-20 md:pt-14'
+  const webDockProse = 'mx-auto w-full max-w-5xl px-4 md:px-6'
+  const webDockCard =
+    'mt-10 rounded-xl border border-stone-200/90 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.05)] md:p-8 md:p-10'
+  const webDockInset = 'rounded-lg border border-stone-100 bg-[#f8f7f5] p-4 md:p-5'
 
   return (
-    <main className="flex flex-1 flex-col gap-3 p-4 md:p-6">
+    <main
+      className={`flex flex-1 flex-col ${
+        singlePageDockNav
+          ? 'w-full max-w-none gap-0 p-0'
+          : 'gap-3 px-0 pb-4 pt-3 md:pb-6 md:pt-4 lg:pb-6 lg:pt-0'
+      }`}
+    >
       {/* Formalności początkowe */}
-      <section id="section-formalities" className={sectionBlockClass}>
-        <button
-          type="button"
-          className="flex w-full items-stretch border-b border-gray-100 text-left"
-          onClick={() => toggleSection('formalities')}
-        >
-          <div className="flex items-center gap-3 bg-gray-100 px-5 py-3">
-            <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
-              <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('formalities').colorClass}`}>
-                {getSectionIcon('formalities').icon}
+      <section
+        id="section-formalities"
+        className={singlePageDockNav ? webDockSectionClass : sectionBlockClass}
+      >
+        {!singlePageDockNav && (
+          <button
+            type="button"
+            className="flex w-full items-stretch border-b border-gray-100 text-left transition-colors hover:bg-gray-50/80"
+            onClick={() => toggleSection('formalities')}
+          >
+            <div className="flex items-center gap-3 bg-gray-100 px-5 py-3">
+              <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
+                <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('formalities').colorClass}`}>
+                  {getSectionIcon('formalities').icon}
+                </span>
+                <span className="absolute -bottom-1 -right-1">{getSectionStatusIcon('formalities')}</span>
               </span>
-              <span className="absolute -bottom-1 -right-1">
-                {getSectionStatusIcon('formalities')}
-              </span>
-            </span>
-            <span className="h-8 w-px rounded-full bg-gray-200" />
-          </div>
-          <div className="flex flex-1 items-center gap-3 bg-emerald-50/70 px-5 py-3">
-            <div className="flex-1">
-              <h1 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">
-                Formalności początkowe
-              </h1>
-              <p className="mt-1 text-[11px] text-emerald-600">
-                Status: <span className="font-medium">zakończone</span>
-              </p>
+              <span className="h-8 w-px rounded-full bg-gray-200" />
             </div>
-            <span className="ml-3 text-xs text-gray-500">
-              {expandedSections.formalities ? 'Zwiń' : 'Rozwiń'}
-            </span>
-          </div>
-        </button>
-        {expandedSections.formalities && (
-        <div className="p-5 md:p-6 bg-emerald-50/40 animate-[section-expand_0.25s_ease-out]">
-        <div className="mb-4 rounded-xl bg-white p-4 shadow-sm">
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <h2 className="text-sm font-medium text-[var(--color-domesta-gray)]">
-              Podpisanie umowy rezerwacyjnej
-            </h2>
-            <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-              Status: zakończona
-            </span>
-          </div>
-          <p className="text-xs text-gray-500">
-            Umowa została podpisana. W razie pytań dotyczących warunków rezerwacji możesz skontaktować się z
-            opiekunem klienta.
-          </p>
-        </div>
+            <div className="flex flex-1 items-center gap-3 bg-emerald-50/70 px-5 py-3">
+              <div className="flex-1">
+                <h2 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">Formalności początkowe</h2>
+                <p className="mt-1 text-[11px] text-emerald-600">
+                  Status: <span className="font-medium">zakończone</span>
+                </p>
+              </div>
+              <span className="ml-3 text-xs text-gray-500">{expandedSections.formalities ? 'Zwiń' : 'Rozwiń'}</span>
+            </div>
+          </button>
+        )}
+        {(singlePageDockNav || expandedSections.formalities) && (
+          <div
+            className={
+              singlePageDockNav
+                ? `animate-[section-expand_0.25s_ease-out] ${webDockProse}`
+                : 'animate-[section-expand_0.25s_ease-out] border-t border-gray-100 bg-[#f4f3ef]/70 p-5 md:p-8'
+            }
+          >
+            <div
+              className={`flex flex-wrap items-center gap-x-4 gap-y-2 ${singlePageDockNav ? 'mb-8 gap-x-5' : 'mb-5'}`}
+            >
+              <span className="inline-flex items-center rounded-full bg-emerald-600 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white">
+                Zakończone
+              </span>
+              <span className="inline-flex items-center gap-2 text-sm text-gray-500">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4 shrink-0 text-emerald-500"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+                Etap formalności został domknięty — umowy rezerwacyjna i przedwstępna są na bieżąco.
+              </span>
+            </div>
 
-        <div className="rounded-xl bg-white p-4 shadow-sm">
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <h2 className="text-sm font-medium text-[var(--color-domesta-gray)]">
-              Podpisanie umowy przedwstępnej
-            </h2>
-            <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
-              Status: w przygotowaniu
-            </span>
+            <h1
+              className={`font-serif leading-tight tracking-tight md:leading-snug ${
+                singlePageDockNav
+                  ? 'text-[1.875rem] font-semibold md:text-[2rem]'
+                  : 'text-3xl font-bold md:text-[2.125rem]'
+              }`}
+              style={{ color: FORMALITIES_NAVY }}
+            >
+              Formalności początkowe
+            </h1>
+            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-gray-600 md:text-[15px]">
+              Na tym etapie dopracowujemy dokumenty od momentu rezerwacji po umowę przedwstępną: potwierdzamy dane
+              kupujących, warunki finansowe oraz terminy. Statusy poniżej pokazują, które kroki są już zamknięte, a
+              które czekają na finalizację po stronie dewelopera lub biura prawnego.
+            </p>
+
+            <div className={singlePageDockNav ? webDockCard : 'mt-8 rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.06)] md:p-7'}>
+              <div className="space-y-4">
+                <div
+                  className={
+                    singlePageDockNav
+                      ? webDockInset
+                      : 'rounded-xl border border-gray-100 bg-gray-50/70 p-4 shadow-sm md:p-5'
+                  }
+                >
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+                    <h3 className="text-sm font-medium text-[var(--color-domesta-gray)]">Podpisanie umowy rezerwacyjnej</h3>
+                    <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                      Status: zakończona
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Umowa została podpisana. W razie pytań dotyczących warunków rezerwacji możesz skontaktować się z
+                    opiekunem klienta.
+                  </p>
+                </div>
+
+                <div
+                  className={
+                    singlePageDockNav
+                      ? webDockInset
+                      : 'rounded-xl border border-gray-100 bg-gray-50/70 p-4 shadow-sm md:p-5'
+                  }
+                >
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+                    <h3 className="text-sm font-medium text-[var(--color-domesta-gray)]">Podpisanie umowy przedwstępnej</h3>
+                    <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                      Status: w przygotowaniu
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Otrzymasz powiadomienie, gdy dokumenty będą gotowe do podpisu. Sprawdź, czy Twoje dane kontaktowe są
+                    aktualne.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-gray-500">
-            Otrzymasz powiadomienie, gdy dokumenty będą gotowe do podpisu. Sprawdź, czy Twoje dane kontaktowe
-            są aktualne.
-          </p>
-        </div>
-        </div>
         )}
       </section>
 
@@ -616,118 +725,148 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
       {/* Harmonogram spłaty */}
       <section
         id="section-schedule"
-        className={`${sectionBlockClass} ${
-          !expandedSections.schedule ? 'animate-[gold-pulse_2.4s_ease-in-out_infinite]' : ''
+        className={`${
+          singlePageDockNav ? webDockSectionClass : sectionBlockClass
+        } ${
+          !singlePageDockNav && !expandedSections.schedule ? 'animate-[gold-pulse_2.4s_ease-in-out_infinite]' : ''
         }`}
       >
-        <button
-          type="button"
-          className="flex w-full items-stretch border-b border-amber-100 text-left"
-          onClick={() => toggleSection('schedule')}
-        >
-          <div className="flex items-center gap-3 bg-gray-100 px-5 py-3">
-            <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
-              <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('schedule').colorClass}`}>
-                {getSectionIcon('schedule').icon}
-              </span>
-              {!expandedSections.schedule && (
-                <span className="absolute -bottom-1 -right-1 animate-[gold-pulse_2.4s_ease-in-out_infinite]">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    className="h-4 w-4 text-amber-400"
-                  >
-                    <polyline
-                      points="15 18 9 12 15 6"
+        {!singlePageDockNav && (
+          <button
+            type="button"
+            className="flex w-full items-stretch border-b border-gray-100 text-left transition-colors hover:bg-gray-50/80"
+            onClick={() => toggleSection('schedule')}
+          >
+            <div className="flex items-center gap-3 bg-gray-100 px-5 py-3">
+              <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
+                <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('schedule').colorClass}`}>
+                  {getSectionIcon('schedule').icon}
+                </span>
+                {!expandedSections.schedule && (
+                  <span className="absolute -bottom-1 -right-1 animate-[gold-pulse_2.4s_ease-in-out_infinite]">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      className="h-4 w-4 text-amber-400"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
-              )}
-            </span>
-            <span className="h-8 w-px rounded-full bg-gray-200" />
-          </div>
-          <div className="flex flex-1 items-center gap-3 bg-amber-50/80 px-5 py-3">
-            <div className="flex-1">
-              <h1 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">
-                Harmonogram spłaty
-              </h1>
-              <p className="mt-1 text-[11px] text-amber-500">
-                Status: <span className="font-medium">aktualnie</span>
-              </p>
+                    >
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                  </span>
+                )}
+              </span>
+              <span className="h-8 w-px rounded-full bg-gray-200" />
             </div>
-            <span className="ml-3 text-xs text-gray-500">
-              {expandedSections.schedule ? 'Zwiń' : 'Rozwiń'}
-            </span>
-          </div>
-        </button>
-        {expandedSections.schedule && (
-        <div className="p-5 md:p-6 bg-amber-50/40 animate-[section-expand_0.25s_ease-out]">
-        <div className="space-y-3">
-          {installments.map((item) => {
-            const tone = toneClasses[item.tone]
-            const isPending = item.id === 'installment5'
-            return (
-              <section
-                key={item.id}
-                className={`flex items-center justify-between rounded-xl bg-white p-4 shadow-sm ${
-                  isPending ? 'animate-[coral-pulse_1.2s_ease-in-out_infinite]' : ''
-                }`}
+            <div className="flex flex-1 items-center gap-3 bg-amber-50/70 px-5 py-3">
+              <div className="flex-1">
+                <h2 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">Harmonogram spłaty</h2>
+                <p className="mt-1 text-[11px] text-amber-600">
+                  Status: <span className="font-medium">aktualnie</span>
+                </p>
+              </div>
+              <span className="ml-3 text-xs text-gray-500">{expandedSections.schedule ? 'Zwiń' : 'Rozwiń'}</span>
+            </div>
+          </button>
+        )}
+        {(singlePageDockNav || expandedSections.schedule) && (
+          <div
+            className={
+              singlePageDockNav
+                ? `animate-[section-expand_0.25s_ease-out] ${webDockProse}`
+                : 'animate-[section-expand_0.25s_ease-out] border-t border-gray-100 bg-[#f4f3ef]/70 p-5 md:p-8'
+            }
+          >
+            <div
+              className={`flex flex-wrap items-center gap-x-4 gap-y-2 ${singlePageDockNav ? 'mb-8 gap-x-5' : 'mb-5'}`}
+            >
+              <span
+                className="inline-flex items-center rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white"
+                style={{ backgroundColor: FORMALITIES_NAVY }}
               >
-                <div className="flex items-center gap-3">
-                  {item.tone === 'green' ? (
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </span>
-                  ) : (
-                    <span className={`h-2.5 w-2.5 rounded-full ${tone.dot}`} />
-                  )}
-                  <div className="flex flex-col">
-                    <span className="text-sm text-[var(--color-domesta-gray)]">
-                      {item.label}
-                    </span>
-                    <span className="text-[11px] text-gray-400">
-                      Termin płatności: <span className="font-medium text-gray-500">{item.dueDate}</span>
-                    </span>
-                    <span className="text-[11px] text-gray-400">
-                      Kwota do zapłaty:{' '}
-                      <span className="font-semibold text-[var(--color-domesta-gray)]">
-                        {item.amount}
-                      </span>
-                    </span>
-                  </div>
-                </div>
-                <span
-                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${tone.badge}`}
+                W trakcie
+              </span>
+              <span className="inline-flex items-center gap-2 text-sm text-gray-500">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4 shrink-0 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
                 >
-                  {item.status}
-                </span>
-              </section>
-            )
-          })}
-        </div>
-        </div>
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 6v6l4 2" />
+                </svg>
+                Najbliższa wpłata: 15 listopada 2026
+              </span>
+            </div>
+
+            <h1
+              className={`font-serif leading-tight tracking-tight md:leading-snug ${
+                singlePageDockNav
+                  ? 'text-[1.875rem] font-semibold md:text-[2rem]'
+                  : 'text-3xl font-bold md:text-[2.125rem]'
+              }`}
+              style={{ color: FORMALITIES_NAVY }}
+            >
+              Harmonogram spłaty
+            </h1>
+            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-gray-600 md:text-[15px]">
+              Ten harmonogram obowiązuje po domknięciu formalności początkowych. Pierwsza pozycja to opłata rezerwacyjna
+              z etapu umów; kolejne wiersze to raty zgodnie z harmonogramem — widać tu już dokonane wpłaty oraz bieżącą
+              ratę oczekującą na zapłatę.
+            </p>
+
+            <div
+              className={
+                singlePageDockNav
+                  ? webDockCard
+                  : 'mt-8 rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.06)] md:p-7'
+              }
+            >
+              <div className="space-y-4">
+                {installments.map((item) => {
+                  const tone = toneClasses[item.tone]
+                  const isPending = item.id === 'installment5'
+                  return (
+                    <div
+                      key={item.id}
+                      className={`${singlePageDockNav ? webDockInset : 'rounded-xl border border-gray-100 bg-gray-50/70 p-4 shadow-sm md:p-5'} ${
+                        isPending ? 'animate-[coral-pulse_1.2s_ease-in-out_infinite]' : ''
+                      }`}
+                    >
+                      <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+                        <h3 className="text-sm font-medium text-[var(--color-domesta-gray)]">{item.label}</h3>
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${tone.badge}`}>
+                          {item.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Termin płatności:{' '}
+                        <span className="font-medium text-gray-700">{item.dueDate}</span>
+                        <span className="mx-1.5 text-gray-300">·</span>
+                        Kwota:{' '}
+                        <span className="font-semibold text-[var(--color-domesta-gray)]">{item.amount}</span>
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
         )}
       </section>
 
       {/* Dokumenty do odbioru mieszkania */}
-      <section id="section-documents" className={sectionBlockClass}>
+      <section id="section-documents" className={singlePageDockNav ? webDockSectionClass : sectionBlockClass}>
+        {!singlePageDockNav && (
         <button
           type="button"
           className="flex w-full items-stretch border-b border-slate-200 text-left"
@@ -765,59 +904,65 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
             </span>
           </div>
         </button>
-        {expandedSections.documents && (
-        <div className="p-5 md:p-6 bg-slate-100/60 animate-[section-expand_0.25s_ease-out]">
-          <div className="rounded-xl bg-white p-4 shadow-sm">
-            <h2 className="mb-3 text-sm font-medium text-[var(--color-domesta-gray)]">
-              Lista dokumentów do odbioru
-            </h2>
-            <p className="mb-3 text-[11px] text-gray-500">
+        )}
+        {(singlePageDockNav || expandedSections.documents) && (
+          <div
+            className={
+              singlePageDockNav
+                ? `animate-[section-expand_0.25s_ease-out] ${webDockProse}`
+                : 'animate-[section-expand_0.25s_ease-out] border-t border-gray-100 bg-[#f4f3ef]/70 p-5 md:p-8'
+            }
+          >
+            <h2 className="mb-2 text-sm font-semibold text-[var(--color-domesta-gray)]">Lista dokumentów do odbioru</h2>
+            <p className="mb-6 max-w-3xl text-[11px] leading-relaxed text-gray-600 md:text-xs">
               Zaznacz przy każdym dokumencie checkbox <span className="font-semibold">„Odebrane”</span>, gdy otrzymasz komplet
               materiałów od dewelopera.
             </p>
-            <ul className="space-y-2 text-xs">
-              {documentsChecklist.map((doc) => (
-                <li
-                  key={doc.id}
-                  className="flex items-start justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50/40 px-3 py-2"
-                >
-                  <label className="flex flex-1 cursor-pointer items-start gap-2">
-                    <input
-                      type="checkbox"
-                      className="mt-0.5 h-3.5 w-3.5 rounded border-gray-300 text-[var(--color-domesta-red)] focus:ring-[var(--color-domesta-red)]"
-                      checked={doc.received}
-                      onChange={() => toggleDocumentReceived(doc.id)}
-                    />
-                    <span>
-                      <span className="block text-[11px] font-medium text-[var(--color-domesta-gray)]">
-                        {doc.label}
-                      </span>
-                      {doc.description && (
-                        <span className="mt-0.5 block text-[10px] text-gray-500">
-                          {doc.description}
-                        </span>
-                      )}
-                    </span>
-                  </label>
-                  <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                      doc.received
-                        ? 'bg-emerald-50 text-emerald-700'
-                        : 'bg-amber-50 text-amber-700'
-                    }`}
-                  >
-                    {doc.received ? 'odebrane' : 'nieodebrane'}
-                  </span>
-                </li>
-              ))}
-            </ul>
+
+            <div
+              className={
+                singlePageDockNav
+                  ? 'rounded-xl border border-stone-200/90 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.06)] md:p-7'
+                  : 'rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.06)] md:p-7'
+              }
+            >
+              <ul className="divide-y divide-gray-100">
+                {documentsChecklist.map((doc) => (
+                  <li key={doc.id} className="flex gap-4 py-5 first:pt-2 last:pb-2">
+                    <DocumentsTimelineCheckBullet done={doc.received} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <h3 className="text-sm font-semibold text-gray-900">{doc.label}</h3>
+                        <input
+                          type="checkbox"
+                          checked={doc.received}
+                          onChange={() => toggleDocumentReceived(doc.id)}
+                          className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-[var(--color-domesta-red)] focus:ring-[var(--color-domesta-red)]"
+                          aria-label={`Odebrane: ${doc.label}`}
+                        />
+                      </div>
+                      <div className="mt-2.5 flex gap-2.5 rounded-xl border border-gray-100/90 bg-stone-50/90 px-3 py-2.5 md:px-3.5 md:py-3">
+                        <DocumentsTimelineInfoIcon />
+                        <div className="min-w-0 text-xs leading-relaxed text-gray-600">
+                          {doc.description ? <p>{doc.description}</p> : null}
+                          <p className="mt-1 text-[11px] text-gray-500">
+                            <span className="font-medium text-gray-700">Status:</span> {doc.received ? 'odebrane' : 'nieodebrane'}.
+                            {!doc.received ? ' Zaznacz pole powyżej po fizycznym odbiorze.' : null}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-        </div>
         )}
       </section>
 
       {/* Reklamacje */}
-      <section id="section-complaints" className={sectionBlockClass}>
+      <section id="section-complaints" className={singlePageDockNav ? webDockSectionClass : sectionBlockClass}>
+        {!singlePageDockNav && (
         <button
           type="button"
           className="flex w-full items-stretch border-b border-slate-200 text-left"
@@ -846,8 +991,15 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
             </span>
           </div>
         </button>
-        {expandedSections.complaints && (
-        <div className="p-5 md:p-6 bg-slate-100/60 animate-[section-expand_0.25s_ease-out]">
+        )}
+        {(singlePageDockNav || expandedSections.complaints) && (
+        <div
+          className={
+            singlePageDockNav
+              ? `animate-[section-expand_0.25s_ease-out] ${webDockProse}`
+              : 'animate-[section-expand_0.25s_ease-out] bg-slate-100/60 p-5 md:p-6'
+          }
+        >
         {(() => {
           const complaintTypes = [
             'Krzywizna ścian',
@@ -951,7 +1103,13 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
           }
 
           return (
-            <section className="mt-2 rounded-xl bg-white p-4 shadow-sm">
+            <section
+              className={
+                singlePageDockNav
+                  ? 'mt-2 rounded-xl border border-stone-200/90 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)] md:p-6'
+                  : 'mt-2 rounded-xl bg-white p-4 shadow-sm'
+              }
+            >
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-[18px] font-bold text-[var(--color-domesta-gray)]">
                   Lista reklamacji{' '}
@@ -1565,7 +1723,8 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
       </section>
 
       {/* Odbiór mieszkania */}
-      <section id="section-handover" className={sectionBlockClass}>
+      <section id="section-handover" className={singlePageDockNav ? webDockSectionClass : sectionBlockClass}>
+        {!singlePageDockNav && (
         <button
           type="button"
           className="flex w-full items-stretch border-b border-slate-200 text-left"
@@ -1594,9 +1753,22 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
             </span>
           </div>
         </button>
-        {expandedSections.handover && (
-        <div className="p-5 md:p-6 bg-slate-100/60 animate-[section-expand_0.25s_ease-out]">
-        <section className="rounded-xl bg-white p-4 shadow-sm">
+        )}
+        {(singlePageDockNav || expandedSections.handover) && (
+        <div
+          className={
+            singlePageDockNav
+              ? `animate-[section-expand_0.25s_ease-out] ${webDockProse}`
+              : 'animate-[section-expand_0.25s_ease-out] bg-slate-100/60 p-5 md:p-6'
+          }
+        >
+        <section
+          className={
+            singlePageDockNav
+              ? 'rounded-xl border border-stone-200/90 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)] md:p-6'
+              : 'rounded-xl bg-white p-4 shadow-sm'
+          }
+        >
           <h2 className="text-lg font-semibold text-[var(--color-domesta-gray)]">
             Umów spotkanie – odbiór mieszkania
           </h2>
@@ -1838,7 +2010,8 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
       )}
 
       {/* Zgłoszenia licznika do energii */}
-      <section id="section-meter" className={sectionBlockClass}>
+      <section id="section-meter" className={singlePageDockNav ? webDockSectionClass : sectionBlockClass}>
+        {!singlePageDockNav && (
         <button
           type="button"
           className="flex w-full items-stretch border-b border-slate-200 text-left"
@@ -1869,12 +2042,21 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
             </span>
           </div>
         </button>
-        {expandedSections.meter && (
-        <div className="p-5 md:p-6 bg-slate-100/60 animate-[section-expand_0.25s_ease-out]">
+        )}
+        {(singlePageDockNav || expandedSections.meter) && (
+        <div
+          className={
+            singlePageDockNav
+              ? `animate-[section-expand_0.25s_ease-out] ${webDockProse}`
+              : 'animate-[section-expand_0.25s_ease-out] bg-slate-100/60 p-5 md:p-6'
+          }
+        >
         <section
-          className={`rounded-xl bg-white p-4 shadow-sm transition-shadow ${
-            !meterSubmitted ? 'cursor-pointer' : ''
-          }`}
+          className={`transition-shadow ${
+            singlePageDockNav
+              ? 'rounded-xl border border-stone-200/90 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)] md:p-6'
+              : 'rounded-xl bg-white p-4 shadow-sm'
+          } ${!meterSubmitted ? 'cursor-pointer' : ''}`}
           onClick={() => {
             if (!meterSubmitted) setMeterOpen(true)
           }}
@@ -1981,7 +2163,8 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
       </section>
 
       {/* Podpisanie aktu notarialnego */}
-      <section id="section-notary" className={sectionBlockClass}>
+      <section id="section-notary" className={singlePageDockNav ? webDockSectionClass : sectionBlockClass}>
+        {!singlePageDockNav && (
         <button
           type="button"
           className="flex w-full items-stretch border-b border-slate-200 text-left"
@@ -2015,9 +2198,22 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
             </span>
           </div>
         </button>
-        {expandedSections.notary && (
-        <div className="p-5 md:p-6 bg-slate-100/60 animate-[section-expand_0.25s_ease-out]">
-        <section className="rounded-xl bg-white p-4 shadow-sm">
+        )}
+        {(singlePageDockNav || expandedSections.notary) && (
+        <div
+          className={
+            singlePageDockNav
+              ? `animate-[section-expand_0.25s_ease-out] ${webDockProse}`
+              : 'animate-[section-expand_0.25s_ease-out] bg-slate-100/60 p-5 md:p-6'
+          }
+        >
+        <section
+          className={
+            singlePageDockNav
+              ? 'rounded-xl border border-stone-200/90 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)] md:p-6'
+              : 'rounded-xl bg-white p-4 shadow-sm'
+          }
+        >
           <h2 className="text-lg font-semibold text-[var(--color-domesta-gray)]">
             Umów spotkanie – podpisanie aktu notarialnego
           </h2>
@@ -2086,7 +2282,8 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
       </section>
 
       {/* Dziennik budowy */}
-      <section id="section-siteLog" className={sectionBlockClass}>
+      <section id="section-siteLog" className={singlePageDockNav ? webDockSectionClass : sectionBlockClass}>
+        {!singlePageDockNav && (
         <button
           type="button"
           className="flex w-full items-stretch border-b border-amber-100 text-left"
@@ -2112,11 +2309,25 @@ export function MainContent({ activeSectionId = null }: MainContentProps) {
             </span>
           </div>
         </button>
-        {expandedSections.siteLog && (
-        <div className="p-5 md:p-6 bg-amber-50/40 animate-[section-expand_0.25s_ease-out]">
+        )}
+        {(singlePageDockNav || expandedSections.siteLog) && (
+        <div
+          className={
+            singlePageDockNav
+              ? `animate-[section-expand_0.25s_ease-out] ${webDockProse}`
+              : 'animate-[section-expand_0.25s_ease-out] bg-amber-50/40 p-5 md:p-6'
+          }
+        >
         <div className="space-y-4">
           {monthsForSiteLog.map((month) => (
-            <section key={month.id} className="rounded-xl bg-white p-4 shadow-sm">
+            <section
+              key={month.id}
+              className={
+                singlePageDockNav
+                  ? 'rounded-xl border border-stone-200/90 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.05)] md:p-6'
+                  : 'rounded-xl bg-white p-4 shadow-sm'
+              }
+            >
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium text-[var(--color-domesta-gray)]">
                   {month.label}
