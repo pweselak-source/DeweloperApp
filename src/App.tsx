@@ -1283,9 +1283,7 @@ function App() {
     if (newsOnly && isWebApp) {
       return (
         <WebAppPrivateLayout activeSectionId={active} onSelectSection={handleSelectSection}>
-          <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
-            <NewsContent key={`news-${variant}`} sidebarCollapsed={false} webAppLayout />
-          </div>
+          <NewsContent key={`news-${variant}`} sidebarCollapsed={collapsed} />
         </WebAppPrivateLayout>
       )
     }
@@ -1295,7 +1293,11 @@ function App() {
     if (isWebApp) {
       return (
         <WebAppPrivateLayout activeSectionId={active} onSelectSection={handleSelectSection}>
-          <MainContent key={`main-${variant}`} activeSectionId={active} singlePageDockNav />
+          <div className="mx-auto flex min-h-0 min-w-0 w-[70%] max-w-full flex-1 flex-col gap-4 pt-4 md:gap-6 md:pt-5 lg:pt-6">
+            <div className="min-h-0 min-w-0 w-full flex-1">
+              <MainContent key={`main-${variant}`} activeSectionId={active} />
+            </div>
+          </div>
         </WebAppPrivateLayout>
       )
     }
