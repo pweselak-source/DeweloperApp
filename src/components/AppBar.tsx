@@ -3,6 +3,15 @@ import type { MenuId } from '../data/menuItems'
 import type { AppTheme } from '../App'
 import domestaLogo from '../assets/domesta-logo.png.svg'
 
+const BACKOFFICE_TOP_STATS = [
+  { label: 'Liczba mieszkań', value: '2,500', trend: '+4% w tym tygodniu' },
+  { label: 'Oddane mieszkania', value: '1,824', trend: '+12% rok do roku' },
+  { label: 'Mieszkania w budowie', value: '676', trend: '-3% vs poprzedni miesiąc' },
+  { label: 'Aktywne inwestycje', value: '12', trend: 'w 4 miastach' },
+  { label: 'Lokale sprzedane', value: '2,110', trend: '+7% kwartał do kwartału' },
+  { label: 'Średni etap realizacji', value: '68%', trend: 'dla wszystkich inwestycji' },
+] as const
+
 interface AppBarProps {
   onNavigateTo: (id: MenuId) => void
   onThemeChange?: (theme: AppTheme) => void
@@ -20,6 +29,9 @@ interface AppBarProps {
     primaryMuted: string
     metaLine: string
   }
+  showLogo?: boolean
+  backOfficeMenuCollapsed?: boolean
+  onToggleBackOfficeMenu?: () => void
 }
 
 export function AppBar({
@@ -32,6 +44,9 @@ export function AppBar({
   variant = 'default',
   hideNewsShortcut = false,
   residentHeading,
+  showLogo = true,
+  backOfficeMenuCollapsed = false,
+  onToggleBackOfficeMenu,
 }: AppBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [tasksOpen, setTasksOpen] = useState(false)
@@ -56,18 +71,60 @@ export function AppBar({
   }, [tasksOpen])
 
   return (
-    <div className="sticky top-0 z-30">
+    <div
+      className={
+        variant === 'backoffice'
+          ? `fixed right-0 top-0 z-30 ${backOfficeMenuCollapsed ? 'left-16' : 'left-[260px]'}`
+          : 'sticky top-0 z-30'
+      }
+    >
       <header
-        className={`flex min-h-[4.667rem] items-center border-b px-4 shadow-sm ${theme === 'allBlack' ? 'border-gray-700 bg-[#252525]' : 'border-gray-200 bg-white'}`}
+        className={`flex min-h-[4.667rem] items-center border-b px-4 shadow-sm ${
+          variant === 'backoffice'
+            ? 'border-slate-300 bg-[#e6e6e6] text-slate-700 shadow-[0_1px_4px_rgba(0,0,0,0.08)]'
+            : theme === 'allBlack'
+              ? 'border-gray-700 bg-[#252525]'
+              : 'border-gray-200 bg-white'
+        }`}
       >
-        <button
-          type="button"
-          onClick={() => onGoHome?.()}
-          className="flex shrink-0 items-center justify-center rounded-lg p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-domesta-coral)]"
-          aria-label="Strona główna"
-        >
-          <img src={domestaLogo} alt="Domesta" className="h-[2.667rem] w-auto shrink-0 object-contain" />
-        </button>
+        {variant === 'backoffice' && (
+          <>
+            <button
+              type="button"
+              onClick={onToggleBackOfficeMenu}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-300/60 hover:text-slate-900"
+              aria-label={backOfficeMenuCollapsed ? 'Rozwiń menu boczne' : 'Zwiń menu boczne'}
+              title={backOfficeMenuCollapsed ? 'Rozwiń menu' : 'Zwiń menu'}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <line x1="4" y1="6" x2="20" y2="6" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="4" y1="18" x2="20" y2="18" />
+              </svg>
+            </button>
+            <div className="ml-3 flex min-w-0 flex-1">
+              {BACKOFFICE_TOP_STATS.map((stat) => (
+                <div key={stat.label} className="min-w-0 flex-1 border-r border-slate-300 px-4 last:border-r-0">
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">{stat.label}</p>
+                  <p className="text-3xl font-semibold leading-none text-[#2a3f54]">{stat.value}</p>
+                  <p className="mt-1 text-[11px] text-slate-500">{stat.trend}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        {showLogo ? (
+          <button
+            type="button"
+            onClick={() => onGoHome?.()}
+            className={`flex shrink-0 items-center justify-center rounded-lg p-0 focus-visible:outline-none focus-visible:ring-2 ${
+              variant === 'backoffice' ? 'focus-visible:ring-[#1abb9c]' : 'focus-visible:ring-[var(--color-domesta-coral)]'
+            }`}
+            aria-label="Strona główna"
+          >
+            <img src={domestaLogo} alt="Domesta" className="h-[2.667rem] w-auto shrink-0 object-contain" />
+          </button>
+        ) : null}
         {residentHeading && variant === 'default' && (
           <>
             <div
@@ -190,7 +247,13 @@ export function AppBar({
         <div className="relative">
           <button
             type="button"
-            className={`flex h-9 w-9 items-center justify-center rounded-full ${theme === 'allBlack' ? 'text-gray-400 hover:bg-[#333333] hover:text-gray-200' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'}`}
+            className={`flex h-9 w-9 items-center justify-center rounded-full ${
+              variant === 'backoffice'
+                ? 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                : theme === 'allBlack'
+                  ? 'text-gray-400 hover:bg-[#333333] hover:text-gray-200'
+                  : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+            }`}
             aria-label="Menu użytkownika"
             onClick={() => setMenuOpen((open) => !open)}
           >
@@ -211,67 +274,159 @@ export function AppBar({
             </svg>
           </button>
           {menuOpen && (
-            <div className={`absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border py-2 text-sm shadow-lg ${theme === 'allBlack' ? 'border-gray-600 bg-[#252525]' : 'border-gray-200 bg-white'}`}>
-              <button className={`flex w-full items-center px-3 py-2 text-left ${theme === 'allBlack' ? 'text-gray-200 hover:bg-[#333333]' : 'text-gray-700 hover:bg-gray-50'}`}>
+            <div
+              className={`absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border py-2 text-sm shadow-lg ${
+                variant === 'backoffice'
+                  ? 'border-slate-200 bg-white text-slate-700 shadow-xl'
+                  : theme === 'allBlack'
+                    ? 'border-gray-600 bg-[#252525]'
+                    : 'border-gray-200 bg-white'
+              }`}
+            >
+              <button
+                className={`flex w-full items-center px-3 py-2 text-left ${
+                  variant === 'backoffice'
+                    ? 'text-slate-700 hover:bg-slate-100'
+                    : theme === 'allBlack'
+                      ? 'text-gray-200 hover:bg-[#333333]'
+                      : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
                 Moje konto
               </button>
-              <button className={`flex w-full items-center px-3 py-2 text-left ${theme === 'allBlack' ? 'text-gray-200 hover:bg-[#333333]' : 'text-gray-700 hover:bg-gray-50'}`}>
+              <button
+                className={`flex w-full items-center px-3 py-2 text-left ${
+                  variant === 'backoffice'
+                    ? 'text-slate-700 hover:bg-slate-100'
+                    : theme === 'allBlack'
+                      ? 'text-gray-200 hover:bg-[#333333]'
+                      : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
                 Ustawienia
               </button>
-              <button className={`flex w-full items-center px-3 py-2 text-left ${theme === 'allBlack' ? 'text-gray-200 hover:bg-[#333333]' : 'text-gray-700 hover:bg-gray-50'}`}>
+              <button
+                className={`flex w-full items-center px-3 py-2 text-left ${
+                  variant === 'backoffice'
+                    ? 'text-slate-700 hover:bg-slate-100'
+                    : theme === 'allBlack'
+                      ? 'text-gray-200 hover:bg-[#333333]'
+                      : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
                 Pomoc
               </button>
-              <div className={`my-1 border-t ${theme === 'allBlack' ? 'border-gray-600' : 'border-gray-100'}`} />
+              <div
+                className={`my-1 border-t ${
+                  variant === 'backoffice' ? 'border-slate-200' : theme === 'allBlack' ? 'border-gray-600' : 'border-gray-100'
+                }`}
+              />
               <button
                 type="button"
                 onClick={() => { onThemeChange?.('halfBlack'); setMenuOpen(false) }}
-                className={`flex w-full items-center px-3 py-2 text-left ${theme === 'allBlack' ? 'text-gray-200 hover:bg-[#333333]' : 'text-gray-700 hover:bg-gray-50'}`}
+                className={`flex w-full items-center px-3 py-2 text-left ${
+                  variant === 'backoffice'
+                    ? 'text-slate-700 hover:bg-slate-100'
+                    : theme === 'allBlack'
+                      ? 'text-gray-200 hover:bg-[#333333]'
+                      : 'text-gray-700 hover:bg-gray-50'
+                }`}
               >
                 Kolor Half black
               </button>
               <button
                 type="button"
                 onClick={() => { onThemeChange?.('allBlack'); setMenuOpen(false) }}
-                className={`flex w-full items-center px-3 py-2 text-left ${theme === 'allBlack' ? 'text-gray-200 hover:bg-[#333333]' : 'text-gray-700 hover:bg-gray-50'}`}
+                className={`flex w-full items-center px-3 py-2 text-left ${
+                  variant === 'backoffice'
+                    ? 'text-slate-700 hover:bg-slate-100'
+                    : theme === 'allBlack'
+                      ? 'text-gray-200 hover:bg-[#333333]'
+                      : 'text-gray-700 hover:bg-gray-50'
+                }`}
               >
                 Kolor All Black
               </button>
               <button
                 type="button"
                 onClick={() => { onThemeChange?.('domestaColors'); setMenuOpen(false) }}
-                className={`flex w-full items-center px-3 py-2 text-left ${theme === 'allBlack' ? 'text-gray-200 hover:bg-[#333333]' : 'text-gray-700 hover:bg-gray-50'}`}
+                className={`flex w-full items-center px-3 py-2 text-left ${
+                  variant === 'backoffice'
+                    ? 'text-slate-700 hover:bg-slate-100'
+                    : theme === 'allBlack'
+                      ? 'text-gray-200 hover:bg-[#333333]'
+                      : 'text-gray-700 hover:bg-gray-50'
+                }`}
               >
                 Kolor DomestaColors
               </button>
               <button
                 type="button"
                 onClick={() => { onThemeChange?.('allWhite'); setMenuOpen(false) }}
-                className={`flex w-full items-center px-3 py-2 text-left ${theme === 'allBlack' ? 'text-gray-200 hover:bg-[#333333]' : 'text-gray-700 hover:bg-gray-50'}`}
+                className={`flex w-full items-center px-3 py-2 text-left ${
+                  variant === 'backoffice'
+                    ? 'text-slate-700 hover:bg-slate-100'
+                    : theme === 'allBlack'
+                      ? 'text-gray-200 hover:bg-[#333333]'
+                      : 'text-gray-700 hover:bg-gray-50'
+                }`}
               >
                 Kolor All White
               </button>
               <button
                 type="button"
                 onClick={() => { onOpenBackOffice?.(); setMenuOpen(false) }}
-                className={`flex w-full items-center px-3 py-2 text-left ${theme === 'allBlack' ? 'text-gray-200 hover:bg-[#333333]' : 'text-gray-700 hover:bg-gray-50'}`}
+                className={`flex w-full items-center px-3 py-2 text-left ${
+                  variant === 'backoffice'
+                    ? 'text-slate-700 hover:bg-slate-100'
+                    : theme === 'allBlack'
+                      ? 'text-gray-200 hover:bg-[#333333]'
+                      : 'text-gray-700 hover:bg-gray-50'
+                }`}
               >
                 BackOffice
               </button>
               <button
                 type="button"
                 onClick={() => { onOpenWebApp?.(); setMenuOpen(false) }}
-                className={`flex w-full items-center px-3 py-2 text-left ${theme === 'allBlack' ? 'text-gray-200 hover:bg-[#333333]' : 'text-gray-700 hover:bg-gray-50'}`}
+                className={`flex w-full items-center px-3 py-2 text-left ${
+                  variant === 'backoffice'
+                    ? 'text-slate-700 hover:bg-slate-100'
+                    : theme === 'allBlack'
+                      ? 'text-gray-200 hover:bg-[#333333]'
+                      : 'text-gray-700 hover:bg-gray-50'
+                }`}
               >
                 WebApp
               </button>
-              <div className={`my-1 border-t ${theme === 'allBlack' ? 'border-gray-600' : 'border-gray-100'}`} />
+              <div
+                className={`my-1 border-t ${
+                  variant === 'backoffice' ? 'border-slate-200' : theme === 'allBlack' ? 'border-gray-600' : 'border-gray-100'
+                }`}
+              />
               <div className="flex items-center gap-2 px-3 py-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-domesta-gray)] text-xs font-medium text-white">
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium text-white ${
+                    variant === 'backoffice' ? 'bg-[#1abb9c]' : 'bg-[var(--color-domesta-gray)]'
+                  }`}
+                >
                   K
                 </div>
                 <div className="flex flex-col">
-                  <span className={`text-xs font-medium ${theme === 'allBlack' ? 'text-gray-200' : 'text-gray-800'}`}>Katarzyna Kowalska</span>
-                  <span className={`text-[11px] ${theme === 'allBlack' ? 'text-gray-500' : 'text-gray-400'}`}>mieszkaniec</span>
+                  <span
+                    className={`text-xs font-medium ${
+                      variant === 'backoffice' ? 'text-slate-800' : theme === 'allBlack' ? 'text-gray-200' : 'text-gray-800'
+                    }`}
+                  >
+                    Katarzyna Kowalska
+                  </span>
+                  <span
+                    className={`text-[11px] ${
+                      variant === 'backoffice' ? 'text-slate-500' : theme === 'allBlack' ? 'text-gray-500' : 'text-gray-400'
+                    }`}
+                  >
+                    mieszkaniec
+                  </span>
                 </div>
               </div>
             </div>

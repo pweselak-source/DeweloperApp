@@ -24,14 +24,23 @@ interface WebAppPrivateLayoutProps {
   activeSectionId: MenuId | null
   onSelectSection: (id: MenuId) => void
   children: ReactNode
+  /** Domyślnie większy odstęp od AppBar; można zmniejszyć np. przy hero pod paskiem. */
+  scrollInnerClassName?: string
 }
 
-export function WebAppPrivateLayout({ activeSectionId, onSelectSection, children }: WebAppPrivateLayoutProps) {
+const defaultScrollInnerClass = 'min-h-full w-full pb-16 pt-8 md:pb-20 md:pt-12'
+
+export function WebAppPrivateLayout({
+  activeSectionId,
+  onSelectSection,
+  children,
+  scrollInnerClassName = defaultScrollInnerClass,
+}: WebAppPrivateLayoutProps) {
   const isNews = activeSectionId === 'news'
   const activeForNav = isNews ? 'news' : activeSectionId ?? 'formalities'
 
   return (
-    <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#f5f4f1] md:block md:overflow-hidden">
+    <div className="webapp-theme relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#edf1f6] [zoom:0.85] md:block md:overflow-hidden">
       <aside
         className="shrink-0 border-b border-[#243647] bg-[#1a2b38] px-3 py-4 text-white md:fixed md:bottom-0 md:left-0 md:z-20 md:w-64 md:border-b-0 md:border-r md:border-[#243647] md:px-3 md:py-4 md:top-[4.667rem] md:overflow-y-auto lg:w-72"
         aria-label="Harmonogram projektu"
@@ -75,8 +84,8 @@ export function WebAppPrivateLayout({ activeSectionId, onSelectSection, children
         </nav>
       </aside>
 
-      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain bg-[#f5f4f1] md:min-h-0 md:pl-64 lg:pl-72">
-        <div className="min-h-full w-full pb-16 pt-8 md:pb-20 md:pt-12">{children}</div>
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain bg-[#edf1f6] md:min-h-0 md:pl-64 lg:pl-72">
+        <div className={scrollInnerClassName}>{children}</div>
       </div>
     </div>
   )

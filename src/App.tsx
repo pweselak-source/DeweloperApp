@@ -22,6 +22,7 @@ import { createSampleBackOfficeDataset } from './data/sampleBackOfficeData'
 import { MainContent } from './components/MainContent'
 import { NewsContent } from './components/NewsContent'
 import { WebAppPrivateLayout } from './components/webapp/WebAppPrivateLayout'
+import { WebAppWelcomeBar } from './components/webapp/WebAppWelcomeBar'
 import { Select2MultiSelect } from './components/Select2MultiSelect'
 import type { Select2Option } from './components/Select2MultiSelect'
 import type { MenuId } from './data/menuItems'
@@ -369,6 +370,7 @@ function App() {
   const [showNewsOnly, setShowNewsOnly] = useState(false)
   const [showBackOffice, setShowBackOffice] = useState(false)
   const [showWebApp, setShowWebApp] = useState(false)
+  const [backOfficeMenuCollapsed, setBackOfficeMenuCollapsed] = useState(false)
   const [backOfficeView, setBackOfficeView] = useState<BackOfficeView>('investments')
   const [availabilityBlocks, setAvailabilityBlocks] = useState<AvailabilityBlock[]>(() =>
     buildSampleAvailabilityBlocks(getUserIdsWithAvailabilityData()),
@@ -1204,15 +1206,17 @@ function App() {
     resetSellDialog()
   }
 
-  const outerBackgroundClass =
-    theme === 'allBlack'
+  const outerBackgroundClass = showBackOffice
+    ? 'bg-gradient-to-br from-slate-950 via-[#0c2744] to-[#042f2e]'
+    : theme === 'allBlack'
       ? 'theme-all-black bg-[#1a1a1a]'
       : theme === 'halfBlack'
         ? 'bg-[radial-gradient(circle_at_top,_#aaaaaa,_#666666,_#333333)]'
         : 'bg-[var(--color-domesta-bg)]'
 
-  const innerBackgroundClass =
-    theme === 'allBlack'
+  const innerBackgroundClass = showBackOffice
+    ? 'bg-gradient-to-br from-slate-950 via-[#0c2744] to-[#042f2e]'
+    : theme === 'allBlack'
       ? 'bg-[#1a1a1a]'
       : theme === 'halfBlack'
         ? 'bg-[radial-gradient(circle_at_top,_#aaaaaa,_#666666,_#333333)]'
@@ -1220,7 +1224,7 @@ function App() {
 
   const renderInvestmentsTabHeader = (title: InvestmentTab, headingOverride?: string) => (
     <div className="flex items-center gap-3">
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-[var(--color-domesta-gray)]">
+      <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#e8f7f4] text-[#1a7f6b] ring-1 ring-[#bfe8df]">
         {title === 'Budynki' ? (
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="4" y="3" width="7" height="18" />
@@ -1242,12 +1246,14 @@ function App() {
           </svg>
         ) : (
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="10" width="7" height="11" />
-            <rect x="14" y="3" width="7" height="18" />
+            <rect x="3" y="3" width="8" height="8" />
+            <rect x="13" y="3" width="8" height="5" />
+            <rect x="13" y="10" width="8" height="11" />
+            <rect x="3" y="13" width="8" height="8" />
           </svg>
         )}
       </span>
-      <h2 className="text-2xl font-bold text-[var(--color-domesta-gray)]">{headingOverride ?? title}</h2>
+      <h2 className="text-2xl font-bold text-slate-800">{headingOverride ?? title}</h2>
     </div>
   )
 
@@ -1259,7 +1265,7 @@ function App() {
       className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-white ${
         opts.disabled
           ? 'cursor-not-allowed bg-gray-300 text-gray-500'
-          : 'bg-[var(--color-domesta-red)] hover:opacity-90'
+          : 'bg-gradient-to-br from-teal-600 to-cyan-600 shadow-sm shadow-teal-900/25 hover:from-teal-500 hover:to-cyan-500'
       }`}
       title={opts.title}
       aria-label={opts.title}
@@ -1283,7 +1289,9 @@ function App() {
     if (newsOnly && isWebApp) {
       return (
         <WebAppPrivateLayout activeSectionId={active} onSelectSection={handleSelectSection}>
-          <NewsContent key={`news-${variant}`} sidebarCollapsed={collapsed} />
+          <div className="ml-0 flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 pt-4 md:gap-6 md:pt-5 lg:pt-6">
+            <NewsContent key={`news-${variant}`} sidebarCollapsed={collapsed} />
+          </div>
         </WebAppPrivateLayout>
       )
     }
@@ -1292,8 +1300,13 @@ function App() {
     }
     if (isWebApp) {
       return (
-        <WebAppPrivateLayout activeSectionId={active} onSelectSection={handleSelectSection}>
-          <div className="mx-auto flex min-h-0 min-w-0 w-[70%] max-w-full flex-1 flex-col gap-4 pt-4 md:gap-6 md:pt-5 lg:pt-6">
+        <WebAppPrivateLayout
+          activeSectionId={active}
+          onSelectSection={handleSelectSection}
+          scrollInnerClassName="min-h-full w-full pb-16 pt-0 md:pb-20 md:pt-1"
+        >
+          <div className="ml-0 flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-3 pt-1 md:gap-5 md:pt-1.5 lg:pt-2">
+            <WebAppWelcomeBar activeSectionId={active} onNavigateTo={handleSelectSection} />
             <div className="min-h-0 min-w-0 w-full flex-1">
               <MainContent key={`main-${variant}`} activeSectionId={active} />
             </div>
@@ -1350,7 +1363,7 @@ function App() {
   )
 
   return (
-    <div className={`min-h-screen ${outerBackgroundClass}`}>
+    <div className={`min-h-screen ${outerBackgroundClass} ${showBackOffice ? 'backoffice-shell' : ''}`}>
       <div className={`flex min-h-screen flex-col ${innerBackgroundClass}`}>
         <AppBar
           onNavigateTo={handleSelectSection}
@@ -1362,15 +1375,25 @@ function App() {
           variant={showBackOffice ? 'backoffice' : 'default'}
           hideNewsShortcut={showWebApp}
           residentHeading={residentAppBarHeading}
+          showLogo={!showBackOffice}
+          backOfficeMenuCollapsed={backOfficeMenuCollapsed}
+          onToggleBackOfficeMenu={() => setBackOfficeMenuCollapsed((prev) => !prev)}
         />
         {showBackOffice ? (
-          <div className="flex flex-1 gap-4 px-4 pt-3 md:px-6">
-            <BackOfficeMenu activeItem={backOfficeView} onSelectItem={setBackOfficeView} />
-            <main className="flex-1 rounded-2xl bg-white p-6" aria-label="BackOffice content area">
+          <div className="min-h-[calc(100vh-4.667rem)] flex-1 bg-[#f7f7f7]">
+            <BackOfficeMenu
+              activeItem={backOfficeView}
+              onSelectItem={setBackOfficeView}
+              collapsed={backOfficeMenuCollapsed}
+            />
+            <main
+              className={`min-h-[calc(100vh-4.667rem)] border-l border-slate-200 bg-[#f7f7f7] p-4 pt-[calc(4.667rem+1rem)] md:p-6 md:pt-[calc(4.667rem+1.5rem)] ${backOfficeMenuCollapsed ? 'ml-16' : 'ml-[260px]'}`}
+              aria-label="BackOffice content area"
+            >
               {backOfficeView === 'investments' ? (
                 <section>
-                  <div className="mb-6 flex items-center gap-3">
-                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gray-100 text-[var(--color-domesta-gray)]">
+                  <div className="mb-5 flex items-center gap-3 rounded-md border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-[#e8f7f4] text-[#1a7f6b] ring-1 ring-[#bfe8df]">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="3" width="8" height="8" />
                         <rect x="13" y="3" width="8" height="5" />
@@ -1378,9 +1401,12 @@ function App() {
                         <rect x="3" y="13" width="8" height="8" />
                       </svg>
                     </span>
-                    <h1 className="text-3xl font-bold text-[var(--color-domesta-gray)]">Panel główny</h1>
+                    <div>
+                      <h1 className="text-2xl font-semibold text-[#2a3f54]">Panel główny</h1>
+                      <p className="text-xs text-slate-500">Widok testowy w stylistyce Gentelella</p>
+                    </div>
                   </div>
-                  <div className="mb-4 flex flex-wrap gap-2 rounded-xl border border-gray-200 bg-gray-50 p-2">
+                  <div className="mb-4 flex flex-wrap gap-2 rounded-md border border-slate-200 bg-white p-2 shadow-sm">
                     {(['Inwestycje', 'Budynki', 'Mieszkania', 'Komorki Lokatorskie', 'Miejsca postojowe'] as InvestmentTab[]).map((tab) => (
                       <button
                         key={tab}
@@ -1388,8 +1414,8 @@ function App() {
                         onClick={() => setInvestmentsTab(tab)}
                         className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                           tab === investmentsTab
-                            ? 'bg-white text-[var(--color-domesta-gray)] shadow-sm'
-                            : 'text-gray-600 hover:bg-white hover:text-[var(--color-domesta-gray)]'
+                            ? 'bg-[#1abb9c] text-white shadow-sm'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-[#2a3f54]'
                         }`}
                       >
                         {tab}
@@ -1774,8 +1800,8 @@ function App() {
                         <div className="flex items-center gap-3">
                           <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-[var(--color-domesta-gray)]">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <rect x="3" y="10" width="7" height="11" />
-                              <rect x="14" y="3" width="7" height="18" />
+                              <path d="M12 3v18" />
+                              <path d="M16.5 7.5a3.5 3.5 0 0 0-3.5-2.5h-2a3 3 0 0 0 0 6h2a3 3 0 0 1 0 6h-2a3.5 3.5 0 0 1-3.5-2.5" />
                             </svg>
                           </span>
                           <h2 className="text-2xl font-bold text-[var(--color-domesta-gray)]">Inwestycje</h2>
@@ -1793,18 +1819,18 @@ function App() {
                           {investmentsTabAddButton({ onClick: openNewInvestmentForm, title: 'Dodaj inwestycję' })}
                         </div>
                       </div>
-                      <div className="overflow-hidden rounded-2xl border border-gray-200">
+                      <div className="overflow-hidden rounded-md border border-[#e6e9ed] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
                         <table className="min-w-full bg-white text-sm">
-                          <thead className="bg-gray-50">
-                            <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
-                              <th className="px-4 py-3 font-semibold">Nazwa</th>
-                              <th className="px-4 py-3 font-semibold">Adres</th>
-                              <th className="px-4 py-3 font-semibold">Budynki</th>
-                              <th className="px-4 py-3 font-semibold">Mieszkania</th>
-                              <th className="px-4 py-3 font-semibold">Akcje</th>
+                          <thead className="bg-[#f5f7fa]">
+                            <tr className="text-left text-[11px] uppercase tracking-[0.08em] text-[#73879c]">
+                              <th className="px-4 py-2.5 font-semibold">Nazwa</th>
+                              <th className="px-4 py-2.5 font-semibold">Adres</th>
+                              <th className="px-4 py-2.5 font-semibold">Budynki</th>
+                              <th className="px-4 py-2.5 font-semibold">Mieszkania</th>
+                              <th className="px-4 py-2.5 font-semibold">Akcje</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-gray-100 text-gray-700">
+                          <tbody className="divide-y divide-[#e6e9ed] text-[13px] text-[#5a738e]">
                             {investmentsVisibleOnList.map((item) => (
                               <tr
                                 key={`investment-${item.id}`}
@@ -1823,26 +1849,36 @@ function App() {
                                     setInvestmentsTab('Budynki')
                                   }
                                 }}
-                                className="cursor-pointer hover:bg-gray-50"
+                                className="cursor-pointer odd:bg-white even:bg-[#fcfcfc] hover:bg-[#f1f5f9]"
                               >
-                                <td className="px-4 py-3 font-medium">{item.name}</td>
-                                <td className="px-4 py-3">{item.address}</td>
-                                <td className="px-4 py-3">{item.buildings}</td>
-                                <td className="px-4 py-3">{item.apartments}</td>
-                                <td className="px-4 py-3">
+                                <td className="px-4 py-2.5 font-semibold text-[#2a3f54]">{item.name}</td>
+                                <td className="px-4 py-2.5">{item.address}</td>
+                                <td className="px-4 py-2.5">{item.buildings}</td>
+                                <td className="px-4 py-2.5">{item.apartments}</td>
+                                <td className="px-4 py-2.5">
                                   <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                                     <button
                                       type="button"
                                       onClick={() => openInvestmentDetails(item)}
-                                      className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
+                                      className="inline-flex items-center gap-1.5 rounded-sm border border-[#d9dee4] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#5a738e] transition-colors hover:bg-[#f5f7fa]"
                                     >
+                                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                      </svg>
                                       Szczegoly
                                     </button>
                                     <button
                                       type="button"
                                       onClick={() => setInvestments((prev) => prev.filter((inv) => inv.id !== item.id))}
-                                      className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                                      className="inline-flex items-center gap-1.5 rounded-sm border border-[#f5c6cb] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#d9534f] transition-colors hover:bg-[#fff5f5]"
                                     >
+                                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                        <path d="M3 6h18" />
+                                        <path d="M8 6V4h8v2" />
+                                        <path d="M19 6l-1 14H6L5 6" />
+                                        <path d="M10 11v6M14 11v6" />
+                                      </svg>
                                       Usun
                                     </button>
                                   </div>
@@ -1887,10 +1923,10 @@ function App() {
                           Zaznacz co najmniej jedną inwestycję i jeden status, aby zobaczyć listę budynków.
                         </div>
                       ) : (
-                      <div className="overflow-hidden rounded-2xl border border-gray-200">
-                        <table className="min-w-full bg-white text-sm table-fixed">
-                        <thead className="bg-gray-50">
-                          <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
+                      <div className="overflow-hidden rounded-md border border-[#e6e9ed] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                        <table className="min-w-full table-fixed bg-white text-sm">
+                        <thead className="bg-[#f5f7fa]">
+                          <tr className="text-left text-[11px] uppercase tracking-[0.08em] text-[#73879c]">
                             {buildingColumnOrder.map((col) => (
                               <th
                                 key={col}
@@ -1908,7 +1944,7 @@ function App() {
                                     return withoutSource
                                   })
                                 }}
-                                className="relative select-none px-4 py-3 font-semibold"
+                                className="relative select-none px-4 py-2.5 font-semibold"
                                 style={{ width: `${buildingColumnWidths[col]}px` }}
                                 title="Przeciagnij, aby zmienic kolejnosc kolumn"
                               >
@@ -1925,14 +1961,14 @@ function App() {
                                     e.preventDefault()
                                     setBuildingResizing({ key: col, startX: e.clientX, startWidth: buildingColumnWidths[col] })
                                   }}
-                                  className="absolute right-0 top-0 h-full w-1 cursor-col-resize bg-transparent hover:bg-gray-300"
+                                  className="absolute right-0 top-0 h-full w-1 cursor-col-resize bg-transparent hover:bg-[#c7cfd8]"
                                   title="Przeciagnij, aby zmienic szerokosc"
                                 />
                               </th>
                             ))}
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 text-gray-700">
+                        <tbody className="divide-y divide-[#e6e9ed] text-[13px] text-[#5a738e]">
                           {buildings
                             .filter((building) => buildingFilterInvestmentIds.has(building.investmentId))
                             .filter((building) => buildingFilterStatusIds.has(buildingStatusToFilterId(building.status)))
@@ -1956,11 +1992,11 @@ function App() {
                                     setInvestmentsTab('Mieszkania')
                                   }
                                 }}
-                                className="cursor-pointer hover:bg-gray-50"
+                                className="cursor-pointer odd:bg-white even:bg-[#fcfcfc] hover:bg-[#f1f5f9]"
                               >
                                 {buildingColumnOrder.map((col) => (
-                                  <td key={`${building.id}-${col}`} className="px-4 py-3 align-middle">
-                                    {col === 'lp' && <span className="font-medium">{index + 1}</span>}
+                                  <td key={`${building.id}-${col}`} className="px-4 py-2.5 align-middle">
+                                    {col === 'lp' && <span className="font-semibold text-[#2a3f54]">{index + 1}</span>}
                                     {col === 'investment' && investmentName}
                                     {col === 'address' && building.address}
                                     {col === 'status' && (
@@ -1974,7 +2010,7 @@ function App() {
                                               ),
                                             )
                                           }
-                                          className="rounded-md border border-gray-300 px-2 py-1 text-xs outline-none focus:border-[var(--color-domesta-red)]"
+                                          className="rounded-sm border border-[#d9dee4] bg-white px-2 py-1 text-xs outline-none focus:border-[#1abb9c]"
                                         >
                                           <option value="W budowie">W budowie</option>
                                           <option value="Na wykonczeniu">Na wykonczeniu</option>
@@ -1988,23 +2024,31 @@ function App() {
                                     {col === 'apartmentsUnassigned' && Math.max(building.apartmentsTotal - building.apartmentsAssigned, 0)}
                                     {col === 'actions' && (
                                       <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                        <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100" title="Edytuj">
-                                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M12 20h9" />
-                                            <path d="m16.5 3.5 4 4L7 21l-4 1 1-4Z" />
+                                        <button
+                                          type="button"
+                                          onClick={() => openBuildingDetailsForm(building)}
+                                          className="inline-flex items-center gap-1.5 rounded-sm border border-[#d9dee4] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#5a738e] transition-colors hover:bg-[#f5f7fa]"
+                                          title="Szczegoly budynku"
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z" />
+                                            <circle cx="12" cy="12" r="3" />
                                           </svg>
+                                          Szczegoly
                                         </button>
                                         <button
                                           type="button"
                                           onClick={() => setBuildings((prev) => prev.filter((item) => item.id !== building.id))}
-                                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-300 text-red-600 hover:bg-red-50"
+                                          className="inline-flex items-center gap-1.5 rounded-sm border border-[#f5c6cb] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#d9534f] transition-colors hover:bg-[#fff5f5]"
                                           title="Usun budynek"
                                         >
-                                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                                             <path d="M3 6h18" />
                                             <path d="M8 6V4h8v2" />
                                             <path d="M19 6l-1 14H6L5 6" />
+                                            <path d="M10 11v6M14 11v6" />
                                           </svg>
+                                          Usun
                                         </button>
                                         <button
                                           type="button"
@@ -2012,13 +2056,15 @@ function App() {
                                             setBuildingApartmentsUploadTargetId(building.id)
                                             setBuildingApartmentsUploadOpen(true)
                                           }}
-                                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                                          className="inline-flex items-center gap-1.5 rounded-sm border border-[#c7d4e2] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#3f6b8f] transition-colors hover:bg-[#f2f7fb]"
                                           title="Wgraj mieszkania (Excel)"
                                         >
-                                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M3 10 12 3l9 7v10a1 1 0 0 1-1 1h-6v-6H10v6H4a1 1 0 0 1-1-1Z" />
-                                            <path d="M19 6v6M16 9h6" />
+                                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                            <path d="M12 3v12" />
+                                            <path d="m7 10 5 5 5-5" />
+                                            <path d="M5 21h14" />
                                           </svg>
+                                          Excel
                                         </button>
                                       </div>
                                     )}
@@ -2741,14 +2787,14 @@ function App() {
                             />
                           </div>
                           {apartmentFilterInvestmentIds.size === 0 || apartmentFilterBuildingIds.size === 0 ? (
-                            <div className="flex min-h-[200px] items-center justify-center rounded-xl border border-dashed border-amber-200 bg-amber-50/50 px-4 text-center text-sm text-amber-900">
+                            <div className="flex min-h-[200px] items-center justify-center rounded-md border border-dashed border-[#d6e3ef] bg-[#f8fbff] px-4 text-center text-sm text-[#5a738e]">
                               Zaznacz co najmniej jedną inwestycję i jeden budynek, aby zobaczyć listę mieszkań.
                             </div>
                           ) : (
-                          <div className="overflow-hidden rounded-2xl border border-gray-200">
+                          <div className="overflow-hidden rounded-md border border-[#e6e9ed] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
                             <table className="min-w-full bg-white text-sm table-fixed">
-                              <thead className="bg-gray-50">
-                                <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
+                              <thead className="bg-[#f5f7fa]">
+                                <tr className="text-left text-[11px] uppercase tracking-[0.08em] text-[#73879c]">
                                   {apartmentColumnOrder.map((col) => (
                                     <th
                                       key={col}
@@ -2766,7 +2812,7 @@ function App() {
                                           return withoutSource
                                         })
                                       }}
-                                      className="relative select-none px-4 py-3 font-semibold"
+                                      className="relative select-none px-4 py-2.5 font-semibold"
                                       style={{ width: `${apartmentColumnWidths[col]}px` }}
                                       title="Przeciagnij, aby zmienic kolejnosc kolumn"
                                     >
@@ -2785,14 +2831,14 @@ function App() {
                                           e.preventDefault()
                                           setApartmentResizing({ key: col, startX: e.clientX, startWidth: apartmentColumnWidths[col] })
                                         }}
-                                        className="absolute right-0 top-0 h-full w-1 cursor-col-resize bg-transparent hover:bg-gray-300"
+                                        className="absolute right-0 top-0 h-full w-1 cursor-col-resize bg-transparent hover:bg-[#c7cfd8]"
                                         title="Przeciagnij, aby zmienic szerokosc"
                                       />
                                     </th>
                                   ))}
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-gray-100 text-gray-700">
+                              <tbody className="divide-y divide-[#e6e9ed] text-[13px] text-[#5a738e]">
                                 {apartments
                                   .filter((apartment) => {
                                     const building = buildings.find((b) => b.id === apartment.buildingId)
@@ -2805,12 +2851,12 @@ function App() {
                                     const building = buildings.find((b) => b.id === apartment.buildingId)
                                     const investmentName = investments.find((inv) => inv.id === building?.investmentId)?.name ?? '-'
                                     return (
-                                      <tr key={apartment.id} className="cursor-pointer hover:bg-gray-50" onClick={() => openApartmentDetailsForm(apartment)}>
+                                      <tr key={apartment.id} className="cursor-pointer odd:bg-white even:bg-[#fcfcfc] hover:bg-[#f1f5f9]" onClick={() => openApartmentDetailsForm(apartment)}>
                                         {apartmentColumnOrder.map((col) => (
-                                          <td key={`${apartment.id}-${col}`} className="px-4 py-3 align-middle">
+                                          <td key={`${apartment.id}-${col}`} className="px-4 py-2.5 align-middle">
                                             {col === 'investment' && investmentName}
                                             {col === 'building' && (building?.address ?? '-')}
-                                            {col === 'nr' && <span className="font-medium">{apartment.unitNumber}</span>}
+                                            {col === 'nr' && <span className="font-semibold text-[#2a3f54]">{apartment.unitNumber}</span>}
                                             {col === 'area' && `${apartment.area.toFixed(1)} m2`}
                                             {col === 'rooms' && apartment.rooms}
                                             {col === 'balcony' && (apartment.hasBalcony ? 'Tak' : 'Nie')}
@@ -2818,10 +2864,10 @@ function App() {
                                             {col === 'floor' && apartment.floor}
                                             {col === 'files' && (
                                               <div className="flex min-w-[220px] flex-col gap-1">
-                                                <span className="text-xs text-gray-600">
+                                                <span className="text-xs text-[#73879c]">
                                                   {apartment.fileName} ({apartment.fileType})
                                                 </span>
-                                                <input type="file" className="text-xs file:mr-2 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-2 file:py-1 file:text-xs file:text-gray-700 hover:file:bg-gray-50" />
+                                                <input type="file" className="text-xs file:mr-2 file:rounded-sm file:border file:border-[#d9dee4] file:bg-white file:px-2 file:py-1 file:text-xs file:text-[#5a738e] hover:file:bg-[#f5f7fa]" />
                                               </div>
                                             )}
                                             {col === 'client' && apartment.assignedClient}
@@ -2846,22 +2892,22 @@ function App() {
                           title: 'Dodawanie komorek lokatorskich — w przygotowaniu',
                         })}
                       </div>
-                      <div className="overflow-hidden rounded-2xl border border-gray-200">
+                      <div className="overflow-hidden rounded-md border border-[#e6e9ed] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
                         <div className="max-h-[min(520px,70vh)] overflow-auto">
                           <table className="min-w-full bg-white text-sm">
-                            <thead className="sticky top-0 z-10 bg-gray-50">
-                              <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
-                                <th className="px-4 py-3 font-semibold">L.p.</th>
-                                <th className="px-4 py-3 font-semibold">Nazwa</th>
-                                <th className="px-4 py-3 font-semibold">Mieszkanie</th>
+                            <thead className="sticky top-0 z-10 bg-[#f5f7fa]">
+                              <tr className="text-left text-[11px] uppercase tracking-[0.08em] text-[#73879c]">
+                                <th className="px-4 py-2.5 font-semibold">L.p.</th>
+                                <th className="px-4 py-2.5 font-semibold">Nazwa</th>
+                                <th className="px-4 py-2.5 font-semibold">Mieszkanie</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100 text-gray-700">
+                            <tbody className="divide-y divide-[#e6e9ed] text-[13px] text-[#5a738e]">
                               {storageUnits.map((u, index) => (
-                                <tr key={u.id} className="hover:bg-gray-50">
-                                  <td className="px-4 py-2.5 font-medium">{index + 1}</td>
+                                <tr key={u.id} className="odd:bg-white even:bg-[#fcfcfc] hover:bg-[#f1f5f9]">
+                                  <td className="px-4 py-2.5 font-semibold text-[#2a3f54]">{index + 1}</td>
                                   <td className="px-4 py-2.5">{u.name}</td>
-                                  <td className="px-4 py-2.5 text-gray-600">
+                                  <td className="px-4 py-2.5 text-[#73879c]">
                                     {u.apartmentId === null
                                       ? '—'
                                       : (() => {
@@ -2885,22 +2931,22 @@ function App() {
                           title: 'Dodawanie miejsc postojowych — w przygotowaniu',
                         })}
                       </div>
-                      <div className="overflow-hidden rounded-2xl border border-gray-200">
+                      <div className="overflow-hidden rounded-md border border-[#e6e9ed] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
                         <div className="max-h-[min(520px,70vh)] overflow-auto">
                           <table className="min-w-full bg-white text-sm">
-                            <thead className="sticky top-0 z-10 bg-gray-50">
-                              <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
-                                <th className="px-4 py-3 font-semibold">L.p.</th>
-                                <th className="px-4 py-3 font-semibold">Nazwa</th>
-                                <th className="px-4 py-3 font-semibold">Mieszkanie</th>
+                            <thead className="sticky top-0 z-10 bg-[#f5f7fa]">
+                              <tr className="text-left text-[11px] uppercase tracking-[0.08em] text-[#73879c]">
+                                <th className="px-4 py-2.5 font-semibold">L.p.</th>
+                                <th className="px-4 py-2.5 font-semibold">Nazwa</th>
+                                <th className="px-4 py-2.5 font-semibold">Mieszkanie</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100 text-gray-700">
+                            <tbody className="divide-y divide-[#e6e9ed] text-[13px] text-[#5a738e]">
                               {parkingSpots.map((p, index) => (
-                                <tr key={p.id} className="hover:bg-gray-50">
-                                  <td className="px-4 py-2.5 font-medium">{index + 1}</td>
+                                <tr key={p.id} className="odd:bg-white even:bg-[#fcfcfc] hover:bg-[#f1f5f9]">
+                                  <td className="px-4 py-2.5 font-semibold text-[#2a3f54]">{index + 1}</td>
                                   <td className="px-4 py-2.5">{p.name}</td>
-                                  <td className="px-4 py-2.5 text-gray-600">
+                                  <td className="px-4 py-2.5 text-[#73879c]">
                                     {p.apartmentId === null
                                       ? '—'
                                       : (() => {
@@ -3249,7 +3295,7 @@ function App() {
           </div>
         ) : showWebApp ? (
           <div
-            className="webapp-shell flex min-h-0 flex-1 flex-col overflow-hidden"
+            className="webapp-shell flex min-h-0 flex-1 flex-col overflow-hidden bg-[#edf1f6]"
             data-resident-variant="webapp"
             aria-label="WebApp — kopia widoku mieszkańca"
           >

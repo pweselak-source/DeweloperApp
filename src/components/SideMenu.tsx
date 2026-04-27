@@ -1,11 +1,8 @@
 import { useState, useRef, useLayoutEffect } from 'react'
+import { ResidentIntroSlideshowPanel } from './ResidentIntroHero'
 import { MENU_ITEMS } from '../data/menuItems'
 import type { MenuId } from '../data/menuItems'
 import type { AppTheme } from '../App'
-import dom1 from '../assets/dom1.jpg'
-import dom2 from '../assets/dom2.jpg'
-import dom3 from '../assets/dom3.jpg'
-
 interface SideMenuProps {
   collapsed: boolean
   activeId: MenuId | null
@@ -42,7 +39,6 @@ export function SideMenu({
       ? 'h-[min(42vh,400px)] min-h-[200px] max-h-[400px]'
       : 'h-[50vh] min-h-[50vh] max-h-[50vh]'
 
-  const slideshowImages = [dom1, dom2, dom3]
   const introHeroRef = useRef<HTMLElement | null>(null)
   const [introHeroBleed, setIntroHeroBleed] = useState<{ marginLeft: number; width: number } | null>(null)
   const parts = investmentName.split(/\s+/)
@@ -402,37 +398,7 @@ export function SideMenu({
                   : 'ml-2 flex-1 rounded-xl rounded-r-none rounded-b-none border-r-0'
               }`}
             >
-              {/* Tło: przyciemnione zdjęcia z Dziennika budowy – wypełnia całą ramkę */}
-              <div className="pointer-events-none absolute inset-0">
-                <div className="absolute inset-0">
-                  {slideshowImages.map((src, idx) => (
-                    <img
-                      key={src}
-                      src={src}
-                      alt="Dziennik budowy"
-                      className={`absolute h-full w-full object-cover ${
-                        idx === 0
-                          ? 'animate-[slideshow1_24s_ease-in-out_infinite]'
-                          : idx === 1
-                            ? 'animate-[slideshow2_24s_ease-in-out_infinite]'
-                            : 'animate-[slideshow3_24s_ease-in-out_infinite]'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Kontener tekstu – Glassmorphism (rozmyte tło, ciemny tekst dla czytelności) */}
-              <div className="relative theme-domesta-colors-intro-text">
-                <div className="menu-intro-glass rounded-2xl border border-white/30 bg-white/10 p-4 backdrop-blur-[12px]">
-                  <p className="text-[0.8125rem] font-semibold leading-tight text-[#1e293b]">
-                    Deweloper Domesta – Twój partner w podróży
-                  </p>
-                  <p className="mt-1 text-[0.6875rem] leading-tight text-slate-800">
-                    Aplikacja poprowadzi Cię krok po kroku – od podpisania umowy deweloperskiej aż po akt notarialny.
-                  </p>
-                </div>
-              </div>
+              <ResidentIntroSlideshowPanel />
             </section>
           </div>
           </div>

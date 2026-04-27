@@ -8,6 +8,12 @@
   --color-domesta-bg: #f7f7f7;
 }
 
+/* Back Office — nowoczesna paleta błękit + szmaragd (nadpisuje akcenty wewnątrz .backoffice-shell) */
+.backoffice-shell {
+  --color-domesta-red: #0d9488;
+  --color-domesta-coral: #06b6d4;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -333,4 +339,35 @@ body:has(.theme-all-black) {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* WebApp — rotujące komunikaty w belce powitalnej */
+@keyframes webapp-welcome-tick-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.65rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes webapp-welcome-tick-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-0.55rem);
+  }
+}
+
+.webapp-welcome-tick-in {
+  animation: webapp-welcome-tick-in 0.48s ease-out both;
+}
+
+.webapp-welcome-tick-out {
+  animation: webapp-welcome-tick-out 0.38s ease-in both;
 }
