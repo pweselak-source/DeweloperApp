@@ -82,10 +82,20 @@ export function AppBar({
         className={`flex min-h-[4.667rem] items-center border-b px-4 shadow-sm ${
           variant === 'backoffice'
             ? 'border-slate-300 bg-[#e6e6e6] text-slate-700 shadow-[0_1px_4px_rgba(0,0,0,0.08)]'
-            : theme === 'allBlack'
-              ? 'border-gray-700 bg-[#252525]'
-              : 'border-gray-200 bg-white'
+            : theme === 'appleFont'
+              ? 'border-[#d2d2d7] bg-white/80 text-[#1d1d1f] shadow-[0_1px_0_rgba(0,0,0,0.04)] backdrop-blur-xl'
+              : theme === 'allBlack'
+                ? 'border-gray-700 bg-[#252525]'
+                : 'border-gray-200 bg-white'
         }`}
+        style={
+          theme === 'appleFont' && variant !== 'backoffice'
+            ? {
+                fontFamily:
+                  '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif',
+              }
+            : undefined
+        }
       >
         {variant === 'backoffice' && (
           <>
@@ -372,6 +382,20 @@ export function AppBar({
                 }`}
               >
                 Kolor All White
+              </button>
+              <button
+                type="button"
+                onClick={() => { onThemeChange?.('appleFont'); setMenuOpen(false) }}
+                className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left ${
+                  variant === 'backoffice'
+                    ? 'text-slate-700 hover:bg-slate-100'
+                    : theme === 'allBlack'
+                      ? 'text-gray-200 hover:bg-[#333333]'
+                      : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span>AppleFont</span>
+                <span className="rounded-full bg-[#1d1d1f] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">Beta</span>
               </button>
               <button
                 type="button"

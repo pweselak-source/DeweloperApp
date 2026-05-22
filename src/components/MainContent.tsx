@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { MENU_ITEMS } from '../data/menuItems'
 import type { MenuId } from '../data/menuItems'
+import { renderAppleSectionIcon } from '../utils/appleSectionIcons'
 import dom1 from '../assets/dom1.jpg'
 import dom2 from '../assets/dom2.jpg'
 import dom3 from '../assets/dom3.jpg'
@@ -159,13 +160,29 @@ function DocumentsTimelineInfoIcon() {
   )
 }
 
+function AppleSectionLead({ sectionId }: { sectionId: SectionId }) {
+  return (
+    <div className="mb-6 flex items-center gap-4">
+      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#1d1d1f] text-white shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+        {renderAppleSectionIcon(sectionId, 30, 'duotone')}
+      </span>
+      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6e6e73]">Sekcja harmonogramu</span>
+    </div>
+  )
+}
+
 interface MainContentProps {
   activeSectionId?: MenuId | null
   /** WebApp: jedna długa strona — wszystkie sekcje widoczne; lewe menu tylko przewija do kotwic */
   singlePageDockNav?: boolean
+  visualStyle?: 'default' | 'appleFont'
 }
 
-export function MainContent({ activeSectionId = null, singlePageDockNav = false }: MainContentProps) {
+export function MainContent({
+  activeSectionId = null,
+  singlePageDockNav = false,
+  visualStyle = 'default',
+}: MainContentProps) {
   const [expandedSections, setExpandedSections] = useState<Record<SectionId, boolean>>({
     formalities: false,
     schedule: false,
@@ -479,18 +496,33 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
     'mt-10 rounded-xl border border-stone-200/90 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.05)] md:p-8 md:p-10'
   const webDockInset = 'rounded-lg border border-stone-100 bg-[#f8f7f5] p-4 md:p-5'
 
+  const useAppleVisual = visualStyle === 'appleFont' && singlePageDockNav
+  const dockSectionClass = useAppleVisual
+    ? 'scroll-mt-[5.75rem] mb-5 rounded-3xl border border-[#d2d2d7] bg-white px-4 py-10 shadow-[0_2px_24px_rgba(0,0,0,0.07)] md:px-8 md:py-12 last:mb-2'
+    : webDockSectionClass
+  const dockProse = useAppleVisual ? 'w-full max-w-none px-2 md:px-4' : webDockProse
+  const dockCard = useAppleVisual
+    ? 'mt-8 rounded-2xl border border-[#e8e8ed] bg-[#f5f5f7] p-6 md:p-8'
+    : webDockCard
+  const dockInset = useAppleVisual
+    ? 'rounded-xl border border-[#e8e8ed] bg-white p-4 md:p-5'
+    : webDockInset
+  const dockTitleClass = useAppleVisual
+    ? 'text-[1.875rem] font-semibold tracking-[-0.02em] text-[#1d1d1f] md:text-[2rem]'
+    : 'text-[1.875rem] font-semibold md:text-[2rem]'
+
   return (
     <main
       className={`flex flex-1 flex-col ${
         singlePageDockNav
           ? 'w-full max-w-none gap-0 p-0'
-          : 'gap-3 px-0 pb-4 pt-3 md:pb-6 md:pt-4 lg:pb-6 lg:pt-0'
+          : 'gap-3 px-0 pb-4 pt-3 md:pb-6 md:pt-4 lg:pb-6 lg:pt-0 max-w-full'
       }`}
     >
       {/* Formalności początkowe */}
       <section
         id="section-formalities"
-        className={singlePageDockNav ? webDockSectionClass : sectionBlockClass}
+        className={singlePageDockNav ? dockSectionClass : sectionBlockClass}
       >
         {!singlePageDockNav && (
           <button
@@ -522,10 +554,11 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
           <div
             className={
               singlePageDockNav
-                ? `animate-[section-expand_0.25s_ease-out] ${webDockProse}`
+                ? `animate-[section-expand_0.25s_ease-out] ${dockProse}`
                 : 'animate-[section-expand_0.25s_ease-out] border-t border-gray-100 bg-[#f4f3ef]/70 p-5 md:p-8'
             }
           >
+            {useAppleVisual && <AppleSectionLead sectionId="formalities" />}
             <div
               className={`flex flex-wrap items-center gap-x-4 gap-y-2 ${singlePageDockNav ? 'mb-8 gap-x-5' : 'mb-5'}`}
             >
@@ -552,12 +585,16 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
             </div>
 
             <h1
-              className={`font-serif leading-tight tracking-tight md:leading-snug ${
-                singlePageDockNav
-                  ? 'text-[1.875rem] font-semibold md:text-[2rem]'
-                  : 'text-3xl font-bold md:text-[2.125rem]'
-              }`}
-              style={{ color: FORMALITIES_NAVY }}
+              className={
+                useAppleVisual
+                  ? dockTitleClass
+                  : `font-serif leading-tight tracking-tight md:leading-snug ${
+                      singlePageDockNav
+                        ? 'text-[1.875rem] font-semibold md:text-[2rem]'
+                        : 'text-3xl font-bold md:text-[2.125rem]'
+                    }`
+              }
+              style={useAppleVisual ? undefined : { color: FORMALITIES_NAVY }}
             >
               Formalności początkowe
             </h1>
@@ -567,12 +604,12 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
               które czekają na finalizację po stronie dewelopera lub biura prawnego.
             </p>
 
-            <div className={singlePageDockNav ? webDockCard : 'mt-8 rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.06)] md:p-7'}>
+            <div className={singlePageDockNav ? dockCard : 'mt-8 rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.06)] md:p-7'}>
               <div className="space-y-4">
                 <div
                   className={
                     singlePageDockNav
-                      ? webDockInset
+                      ? dockInset
                       : 'rounded-xl border border-gray-100 bg-gray-50/70 p-4 shadow-sm md:p-5'
                   }
                 >
@@ -591,7 +628,7 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
                 <div
                   className={
                     singlePageDockNav
-                      ? webDockInset
+                      ? dockInset
                       : 'rounded-xl border border-gray-100 bg-gray-50/70 p-4 shadow-sm md:p-5'
                   }
                 >
@@ -726,7 +763,7 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
       <section
         id="section-schedule"
         className={`${
-          singlePageDockNav ? webDockSectionClass : sectionBlockClass
+          singlePageDockNav ? dockSectionClass : sectionBlockClass
         } ${
           !singlePageDockNav && !expandedSections.schedule ? 'animate-[gold-pulse_2.4s_ease-in-out_infinite]' : ''
         }`}
@@ -776,10 +813,11 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
           <div
             className={
               singlePageDockNav
-                ? `animate-[section-expand_0.25s_ease-out] ${webDockProse}`
+                ? `animate-[section-expand_0.25s_ease-out] ${dockProse}`
                 : 'animate-[section-expand_0.25s_ease-out] border-t border-gray-100 bg-[#f4f3ef]/70 p-5 md:p-8'
             }
           >
+            {useAppleVisual && <AppleSectionLead sectionId="schedule" />}
             <div
               className={`flex flex-wrap items-center gap-x-4 gap-y-2 ${singlePageDockNav ? 'mb-8 gap-x-5' : 'mb-5'}`}
             >
@@ -809,12 +847,16 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
             </div>
 
             <h1
-              className={`font-serif leading-tight tracking-tight md:leading-snug ${
-                singlePageDockNav
-                  ? 'text-[1.875rem] font-semibold md:text-[2rem]'
-                  : 'text-3xl font-bold md:text-[2.125rem]'
-              }`}
-              style={{ color: FORMALITIES_NAVY }}
+              className={
+                useAppleVisual
+                  ? dockTitleClass
+                  : `font-serif leading-tight tracking-tight md:leading-snug ${
+                      singlePageDockNav
+                        ? 'text-[1.875rem] font-semibold md:text-[2rem]'
+                        : 'text-3xl font-bold md:text-[2.125rem]'
+                    }`
+              }
+              style={useAppleVisual ? undefined : { color: FORMALITIES_NAVY }}
             >
               Harmonogram spłaty
             </h1>
@@ -827,7 +869,7 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
             <div
               className={
                 singlePageDockNav
-                  ? webDockCard
+                  ? dockCard
                   : 'mt-8 rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.06)] md:p-7'
               }
             >
@@ -838,7 +880,7 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
                   return (
                     <div
                       key={item.id}
-                      className={`${singlePageDockNav ? webDockInset : 'rounded-xl border border-gray-100 bg-gray-50/70 p-4 shadow-sm md:p-5'} ${
+                      className={`${singlePageDockNav ? dockInset : 'rounded-xl border border-gray-100 bg-gray-50/70 p-4 shadow-sm md:p-5'} ${
                         isPending ? 'animate-[coral-pulse_1.2s_ease-in-out_infinite]' : ''
                       }`}
                     >
@@ -865,7 +907,7 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
       </section>
 
       {/* Dokumenty do odbioru mieszkania */}
-      <section id="section-documents" className={singlePageDockNav ? webDockSectionClass : sectionBlockClass}>
+      <section id="section-documents" className={singlePageDockNav ? dockSectionClass : sectionBlockClass}>
         {!singlePageDockNav && (
         <button
           type="button"
@@ -909,10 +951,11 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
           <div
             className={
               singlePageDockNav
-                ? `animate-[section-expand_0.25s_ease-out] ${webDockProse}`
+                ? `animate-[section-expand_0.25s_ease-out] ${dockProse}`
                 : 'animate-[section-expand_0.25s_ease-out] border-t border-gray-100 bg-[#f4f3ef]/70 p-5 md:p-8'
             }
           >
+            {useAppleVisual && <AppleSectionLead sectionId="documents" />}
             <h2 className="mb-2 text-sm font-semibold text-[var(--color-domesta-gray)]">Lista dokumentów do odbioru</h2>
             <p className="mb-6 max-w-3xl text-[11px] leading-relaxed text-gray-600 md:text-xs">
               Zaznacz przy każdym dokumencie checkbox <span className="font-semibold">„Odebrane”</span>, gdy otrzymasz komplet
@@ -961,7 +1004,7 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
       </section>
 
       {/* Reklamacje */}
-      <section id="section-complaints" className={singlePageDockNav ? webDockSectionClass : sectionBlockClass}>
+      <section id="section-complaints" className={singlePageDockNav ? dockSectionClass : sectionBlockClass}>
         {!singlePageDockNav && (
         <button
           type="button"
@@ -996,10 +1039,11 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
         <div
           className={
             singlePageDockNav
-              ? `animate-[section-expand_0.25s_ease-out] ${webDockProse}`
+              ? `animate-[section-expand_0.25s_ease-out] ${dockProse}`
               : 'animate-[section-expand_0.25s_ease-out] bg-slate-100/60 p-5 md:p-6'
           }
         >
+        {useAppleVisual && <AppleSectionLead sectionId="complaints" />}
         {(() => {
           const complaintTypes = [
             'Krzywizna ścian',
@@ -1723,7 +1767,7 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
       </section>
 
       {/* Odbiór mieszkania */}
-      <section id="section-handover" className={singlePageDockNav ? webDockSectionClass : sectionBlockClass}>
+      <section id="section-handover" className={singlePageDockNav ? dockSectionClass : sectionBlockClass}>
         {!singlePageDockNav && (
         <button
           type="button"
@@ -1758,10 +1802,11 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
         <div
           className={
             singlePageDockNav
-              ? `animate-[section-expand_0.25s_ease-out] ${webDockProse}`
+              ? `animate-[section-expand_0.25s_ease-out] ${dockProse}`
               : 'animate-[section-expand_0.25s_ease-out] bg-slate-100/60 p-5 md:p-6'
           }
         >
+        {useAppleVisual && <AppleSectionLead sectionId="handover" />}
         <section
           className={
             singlePageDockNav
@@ -2010,7 +2055,7 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
       )}
 
       {/* Zgłoszenia licznika do energii */}
-      <section id="section-meter" className={singlePageDockNav ? webDockSectionClass : sectionBlockClass}>
+      <section id="section-meter" className={singlePageDockNav ? dockSectionClass : sectionBlockClass}>
         {!singlePageDockNav && (
         <button
           type="button"
@@ -2047,10 +2092,11 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
         <div
           className={
             singlePageDockNav
-              ? `animate-[section-expand_0.25s_ease-out] ${webDockProse}`
+              ? `animate-[section-expand_0.25s_ease-out] ${dockProse}`
               : 'animate-[section-expand_0.25s_ease-out] bg-slate-100/60 p-5 md:p-6'
           }
         >
+        {useAppleVisual && <AppleSectionLead sectionId="meter" />}
         <section
           className={`transition-shadow ${
             singlePageDockNav
@@ -2163,7 +2209,7 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
       </section>
 
       {/* Podpisanie aktu notarialnego */}
-      <section id="section-notary" className={singlePageDockNav ? webDockSectionClass : sectionBlockClass}>
+      <section id="section-notary" className={singlePageDockNav ? dockSectionClass : sectionBlockClass}>
         {!singlePageDockNav && (
         <button
           type="button"
@@ -2203,10 +2249,11 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
         <div
           className={
             singlePageDockNav
-              ? `animate-[section-expand_0.25s_ease-out] ${webDockProse}`
+              ? `animate-[section-expand_0.25s_ease-out] ${dockProse}`
               : 'animate-[section-expand_0.25s_ease-out] bg-slate-100/60 p-5 md:p-6'
           }
         >
+        {useAppleVisual && <AppleSectionLead sectionId="notary" />}
         <section
           className={
             singlePageDockNav
@@ -2282,7 +2329,7 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
       </section>
 
       {/* Dziennik budowy */}
-      <section id="section-siteLog" className={singlePageDockNav ? webDockSectionClass : sectionBlockClass}>
+      <section id="section-siteLog" className={singlePageDockNav ? dockSectionClass : sectionBlockClass}>
         {!singlePageDockNav && (
         <button
           type="button"
@@ -2314,10 +2361,11 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
         <div
           className={
             singlePageDockNav
-              ? `animate-[section-expand_0.25s_ease-out] ${webDockProse}`
+              ? `animate-[section-expand_0.25s_ease-out] ${dockProse}`
               : 'animate-[section-expand_0.25s_ease-out] bg-amber-50/40 p-5 md:p-6'
           }
         >
+        {useAppleVisual && <AppleSectionLead sectionId="siteLog" />}
         <div className="space-y-4">
           {monthsForSiteLog.map((month) => (
             <section

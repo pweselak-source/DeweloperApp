@@ -22,6 +22,7 @@ import { createSampleBackOfficeDataset } from './data/sampleBackOfficeData'
 import { MainContent } from './components/MainContent'
 import { NewsContent } from './components/NewsContent'
 import { WebAppPrivateLayout } from './components/webapp/WebAppPrivateLayout'
+import { WebAppPrivateLayoutApple } from './components/webapp/WebAppPrivateLayoutApple'
 import { WebAppWelcomeBar } from './components/webapp/WebAppWelcomeBar'
 import { Select2MultiSelect } from './components/Select2MultiSelect'
 import type { Select2Option } from './components/Select2MultiSelect'
@@ -51,7 +52,7 @@ const INVESTMENT_SYNC_STEPS: { ms: number; msg: string; progress: number }[] = [
   { ms: 260, msg: 'Zakończono sukcesem', progress: 100 },
 ]
 
-export type AppTheme = 'halfBlack' | 'allBlack' | 'domestaColors' | 'allWhite'
+export type AppTheme = 'halfBlack' | 'allBlack' | 'domestaColors' | 'allWhite' | 'appleFont'
 type BackOfficeView =
   | 'investments'
   | 'clients'
@@ -359,7 +360,13 @@ function App() {
   const [theme, setTheme] = useState<AppTheme>(() => {
     try {
       const saved = localStorage.getItem(THEME_STORAGE_KEY) as AppTheme | null
-      if (saved === 'allBlack' || saved === 'domestaColors' || saved === 'allWhite') return saved
+      if (
+        saved === 'allBlack' ||
+        saved === 'domestaColors' ||
+        saved === 'allWhite' ||
+        saved === 'appleFont'
+      )
+        return saved
       return 'halfBlack'
     } catch {
       return 'halfBlack'
@@ -724,6 +731,16 @@ function App() {
 
   const handleThemeChange = (newTheme: AppTheme) => {
     setTheme(newTheme)
+    if (newTheme === 'halfBlack') {
+      setShowWebApp(false)
+      setShowBackOffice(false)
+    } else if (newTheme === 'appleFont') {
+      setShowBackOffice(false)
+      setShowWebApp(true)
+      setWebappShowNewsOnly(false)
+      setWebappActiveSection(null)
+      setWebappMenuCollapsed(false)
+    }
   }
 
   const handleSelectSection = (id: MenuId) => {
@@ -1208,19 +1225,23 @@ function App() {
 
   const outerBackgroundClass = showBackOffice
     ? 'bg-gradient-to-br from-slate-950 via-[#0c2744] to-[#042f2e]'
-    : theme === 'allBlack'
-      ? 'theme-all-black bg-[#1a1a1a]'
-      : theme === 'halfBlack'
-        ? 'bg-[radial-gradient(circle_at_top,_#aaaaaa,_#666666,_#333333)]'
-        : 'bg-[var(--color-domesta-bg)]'
+    : theme === 'appleFont'
+      ? 'bg-[#f5f5f7]'
+      : theme === 'allBlack'
+        ? 'theme-all-black bg-[#1a1a1a]'
+        : theme === 'halfBlack'
+          ? 'bg-[radial-gradient(circle_at_top,_#aaaaaa,_#666666,_#333333)]'
+          : 'bg-[var(--color-domesta-bg)]'
 
   const innerBackgroundClass = showBackOffice
     ? 'bg-gradient-to-br from-slate-950 via-[#0c2744] to-[#042f2e]'
-    : theme === 'allBlack'
-      ? 'bg-[#1a1a1a]'
-      : theme === 'halfBlack'
-        ? 'bg-[radial-gradient(circle_at_top,_#aaaaaa,_#666666,_#333333)]'
-        : 'bg-[var(--color-domesta-bg)]'
+    : theme === 'appleFont'
+      ? 'bg-[#f5f5f7]'
+      : theme === 'allBlack'
+        ? 'bg-[#1a1a1a]'
+        : theme === 'halfBlack'
+          ? 'bg-[radial-gradient(circle_at_top,_#aaaaaa,_#666666,_#333333)]'
+          : 'bg-[var(--color-domesta-bg)]'
 
   const renderInvestmentsTabHeader = (title: InvestmentTab, headingOverride?: string) => (
     <div className="flex items-center gap-3">
@@ -1286,19 +1307,46 @@ function App() {
     const setInv = isWebApp ? setWebappSelectedInvestment : setSelectedInvestment
     const setApt = isWebApp ? setWebappSelectedApartment : setSelectedApartment
 
+    const useAppleShell = isWebApp && theme === 'appleFont'
+
     if (newsOnly && isWebApp) {
+      const NewsContainer = useAppleShell ? WebAppPrivateLayoutApple : WebAppPrivateLayout
       return (
-        <WebAppPrivateLayout activeSectionId={active} onSelectSection={handleSelectSection}>
+        <NewsContainer activeSectionId={active} onSelectSection={handleSelectSection}>
           <div className="ml-0 flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 pt-4 md:gap-6 md:pt-5 lg:pt-6">
             <NewsContent key={`news-${variant}`} sidebarCollapsed={collapsed} />
           </div>
-        </WebAppPrivateLayout>
+        </NewsContainer>
       )
     }
     if (newsOnly) {
       return <NewsContent key={`news-${variant}`} sidebarCollapsed={collapsed} />
     }
     if (isWebApp) {
+      if (useAppleShell) {
+        return (
+          <WebAppPrivateLayoutApple
+            activeSectionId={active}
+            onSelectSection={handleSelectSection}
+          >
+            <div className="ml-0 flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-3 pt-1 md:gap-5 md:pt-1.5 lg:pt-2">
+              <WebAppWelcomeBar
+                activeSectionId={active}
+                onNavigateTo={handleSelectSection}
+                variant="apple"
+              />
+              <div className="min-h-0 min-w-0 w-full flex-1">
+                <MainContent
+                  key={`main-${variant}-apple`}
+                  activeSectionId={active}
+                  singlePageDockNav
+                  visualStyle="appleFont"
+                />
+              </div>
+            </div>
+          </WebAppPrivateLayoutApple>
+        )
+      }
       return (
         <WebAppPrivateLayout
           activeSectionId={active}
@@ -1315,7 +1363,7 @@ function App() {
       )
     }
     return (
-      <div className="flex min-h-0 min-w-0 w-full max-w-none flex-1 flex-col gap-4 pt-4 md:gap-6 md:pt-5 lg:pt-6">
+      <div className="flex min-h-0 min-w-0 w-full max-w-none flex-1 flex-col gap-4 px-3 pt-4 md:gap-6 md:px-5 md:pt-5 lg:px-6 lg:pt-6">
         <div className="min-w-0 w-full shrink-0">
           <SideMenu
             key={`side-${variant}`}
@@ -3295,7 +3343,9 @@ function App() {
           </div>
         ) : showWebApp ? (
           <div
-            className="webapp-shell flex min-h-0 flex-1 flex-col overflow-hidden bg-[#edf1f6]"
+            className={`webapp-shell flex min-h-0 flex-1 flex-col overflow-hidden ${
+              theme === 'appleFont' ? 'bg-[#f5f5f7]' : 'bg-[#edf1f6]'
+            }`}
             data-resident-variant="webapp"
             aria-label="WebApp — kopia widoku mieszkańca"
           >

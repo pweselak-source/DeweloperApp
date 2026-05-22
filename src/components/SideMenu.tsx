@@ -1,8 +1,39 @@
-import { useState, useRef, useLayoutEffect } from 'react'
+import { useState, useRef, useLayoutEffect, type ReactNode } from 'react'
 import { ResidentIntroSlideshowPanel } from './ResidentIntroHero'
 import { MENU_ITEMS } from '../data/menuItems'
 import type { MenuId } from '../data/menuItems'
 import type { AppTheme } from '../App'
+
+/** Ikona etapu w stylu iOS — większa glifika na szarym, zaokrąglonym tle */
+function MenuIconTile({
+  children,
+  iconClassName,
+  theme = 'halfBlack',
+}: {
+  children: ReactNode
+  iconClassName: string
+  theme?: AppTheme
+}) {
+  const tileBg =
+    theme === 'allWhite'
+      ? 'bg-[#d8d8dc]'
+      : theme === 'domestaColors'
+        ? 'bg-[#e5e5ea]'
+        : theme === 'allBlack'
+          ? 'bg-[#3a3a3c]'
+          : 'bg-[#52525a]'
+
+  return (
+    <span
+      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[11px] ${tileBg} shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] ring-1 ring-black/10`}
+    >
+      <span className={`[&_svg]:h-[22px] [&_svg]:w-[22px] [&_svg]:stroke-[1.85] ${iconClassName}`}>
+        {children}
+      </span>
+    </span>
+  )
+}
+
 interface SideMenuProps {
   collapsed: boolean
   activeId: MenuId | null
@@ -327,8 +358,8 @@ export function SideMenu({
                 <path d="M3 215 6 232l3-17" />
               </svg>
             </div>
-            <nav className="flex h-full shrink-0 flex-col pl-0 pr-2" aria-label="Menu główne">
-              <ul className="flex flex-1 flex-col items-start justify-between gap-px py-6">
+            <nav className="flex h-full shrink-0 flex-col pl-0 pr-2.5" aria-label="Menu główne">
+              <ul className="flex flex-1 flex-col items-start justify-between gap-1 py-6">
                 {MENU_ITEMS.filter((item) => item.id !== 'siteLog' && item.id !== 'news').map((item) => {
                   const isActive = activeId === item.id
                   const statusIconClass =
@@ -359,10 +390,12 @@ export function SideMenu({
                       <button
                         type="button"
                         onClick={() => onSelect(item.id)}
-                        className={`group relative flex items-center justify-start gap-2 rounded-lg px-2 py-1.5 text-left transition-colors ${isActive ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5'}`}
+                        className={`group relative flex items-center justify-start gap-2 rounded-lg px-1 py-1 text-left transition-colors ${isActive ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5'}`}
                         title={item.label}
                       >
-                        <span className={`shrink-0 [&_svg]:h-[1.125rem] [&_svg]:w-[1.125rem] ${statusIconClass}`}>{item.icon}</span>
+                        <MenuIconTile iconClassName={statusIconClass} theme={theme}>
+                          {item.icon}
+                        </MenuIconTile>
                         <span className="shrink-0">{statusIcon}</span>
                       </button>
                     </li>
@@ -372,14 +405,17 @@ export function SideMenu({
                   <button
                     type="button"
                     onClick={() => onSelect('siteLog')}
-                    className={`flex items-center justify-start rounded-lg px-2 py-1.5 ${activeId === 'siteLog' ? 'bg-white/10' : 'hover:bg-white/5'}`}
+                    className={`flex items-center justify-start rounded-lg px-1 py-1 ${activeId === 'siteLog' ? 'bg-white/10' : 'hover:bg-white/5'}`}
                     title="Dziennik budowy"
                   >
-                    <span className={`[&_svg]:h-[1.125rem] [&_svg]:w-[1.125rem] ${theme === 'allWhite' ? 'theme-all-white-site-log-icon' : 'text-amber-300'}`}>
+                    <MenuIconTile
+                      iconClassName={theme === 'allWhite' ? 'theme-all-white-site-log-icon' : 'text-amber-300'}
+                      theme={theme}
+                    >
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M19 5H9a2 2 0 0 0-2 2v11" /><path d="M13 9H7" /><path d="M15 13H7" /><path d="M17 17H7" /><path d="M5 5v14a2 2 0 0 0 2 2h11" /><path d="M19 21h-2a2 2 0 0 1-2-2V3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2Z" />
                       </svg>
-                    </span>
+                    </MenuIconTile>
                   </button>
                 </li>
               </ul>
@@ -551,9 +587,9 @@ export function SideMenu({
                             <path d="M3 8h8" />
                             <path d="M8 4l4 4-4 4" />
                           </svg>
-                          <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 transition-colors ${statusIconClass}`}>
+                          <MenuIconTile iconClassName={statusIconClass} theme={theme}>
                             {item.icon}
-                          </span>
+                          </MenuIconTile>
                         </span>
 
                         {/* Tekst etapu – zajmuje resztę miejsca, żeby ikony po prawej były w jednej linii */}
@@ -563,11 +599,11 @@ export function SideMenu({
                       </>
                     )}
                     {effectiveCollapsed && (
-                      <span className="relative flex h-8 w-8 items-center justify-center">
-                        <span className={`[&_svg]:h-5 [&_svg]:w-5 transition-colors ${statusIconClass}`}>
+                      <span className="relative flex items-center justify-center">
+                        <MenuIconTile iconClassName={statusIconClass} theme={theme}>
                           {item.icon}
-                        </span>
-                        <span className="absolute -bottom-0.5 -right-0.5">
+                        </MenuIconTile>
+                        <span className="absolute -bottom-0.5 -right-1">
                           {statusIcon}
                         </span>
                       </span>
@@ -599,7 +635,10 @@ export function SideMenu({
                 )}
                 {!effectiveCollapsed ? (
                   <>
-                    <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${theme === 'allWhite' ? 'theme-all-white-site-log-icon' : 'text-amber-300'}`}>
+                    <MenuIconTile
+                      iconClassName={theme === 'allWhite' ? 'theme-all-white-site-log-icon' : 'text-amber-300'}
+                      theme={theme}
+                    >
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M19 5H9a2 2 0 0 0-2 2v11" />
                         <path d="M13 9H7" />
@@ -608,13 +647,16 @@ export function SideMenu({
                         <path d="M5 5v14a2 2 0 0 0 2 2h11" />
                         <path d="M19 21h-2a2 2 0 0 1-2-2V3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2Z" />
                       </svg>
-                    </span>
+                    </MenuIconTile>
                     <span className="truncate text-xs font-semibold uppercase tracking-wide text-white">
                       Dziennik budowy
                     </span>
                   </>
                 ) : (
-                  <span className={`[&_svg]:h-5 [&_svg]:w-5 ${theme === 'allWhite' ? 'theme-all-white-site-log-icon' : 'text-amber-300'}`}>
+                  <MenuIconTile
+                    iconClassName={theme === 'allWhite' ? 'theme-all-white-site-log-icon' : 'text-amber-300'}
+                    theme={theme}
+                  >
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M19 5H9a2 2 0 0 0-2 2v11" />
                       <path d="M13 9H7" />
@@ -623,7 +665,7 @@ export function SideMenu({
                       <path d="M5 5v14a2 2 0 0 0 2 2h11" />
                       <path d="M19 21h-2a2 2 0 0 1-2-2V3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2Z" />
                     </svg>
-                  </span>
+                  </MenuIconTile>
                 )}
               </button>
             </li>

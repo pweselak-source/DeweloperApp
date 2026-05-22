@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { Phone, EnvelopeSimple } from '@phosphor-icons/react'
 import { MENU_ITEMS } from '../../data/menuItems'
 import type { MenuId, MenuStatus } from '../../data/menuItems'
 
@@ -24,6 +25,7 @@ const TICKER_SHELL =
 interface WebAppWelcomeBarProps {
   activeSectionId: MenuId | null
   onNavigateTo: (id: MenuId) => void
+  variant?: 'default' | 'apple'
 }
 
 function NavChip({ id, onNavigateTo, children }: { id: MenuId; onNavigateTo: (id: MenuId) => void; children: ReactNode }) {
@@ -154,7 +156,12 @@ function TickerMessages({
   )
 }
 
-export function WebAppWelcomeBar({ activeSectionId, onNavigateTo }: WebAppWelcomeBarProps) {
+export function WebAppWelcomeBar({
+  activeSectionId,
+  onNavigateTo,
+  variant = 'default',
+}: WebAppWelcomeBarProps) {
+  const isApple = variant === 'apple'
   const spot = spotlightForSection(activeSectionId)
   const [msgIndex, setMsgIndex] = useState(0)
   const [leaving, setLeaving] = useState(false)
@@ -176,11 +183,29 @@ export function WebAppWelcomeBar({ activeSectionId, onNavigateTo }: WebAppWelcom
 
   return (
     <section
-      className="relative w-full shrink-0 overflow-hidden rounded-2xl border border-[#1a2b38]/10 bg-white/95 shadow-[0_10px_32px_rgba(26,43,56,0.07)]"
+      className={
+        isApple
+          ? 'relative w-full shrink-0 overflow-hidden rounded-3xl border border-[#d2d2d7] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.08)]'
+          : 'relative w-full shrink-0 overflow-hidden rounded-2xl border border-[#1a2b38]/10 bg-white/95 shadow-[0_10px_32px_rgba(26,43,56,0.07)]'
+      }
       aria-label="Skrót i kontakt"
     >
-      <div className="absolute -right-12 -top-16 h-40 w-40 rounded-full bg-[#1a2b38]/[0.04]" aria-hidden />
-      <div className="absolute -bottom-6 right-1/4 h-20 w-20 rounded-full bg-[#243647]/[0.07]" aria-hidden />
+      <div
+        className={
+          isApple
+            ? 'absolute -right-12 -top-16 h-40 w-40 rounded-full bg-[#1d1d1f]/[0.03]'
+            : 'absolute -right-12 -top-16 h-40 w-40 rounded-full bg-[#1a2b38]/[0.04]'
+        }
+        aria-hidden
+      />
+      <div
+        className={
+          isApple
+            ? 'absolute -bottom-6 right-1/4 h-20 w-20 rounded-full bg-[#86868b]/[0.08]'
+            : 'absolute -bottom-6 right-1/4 h-20 w-20 rounded-full bg-[#243647]/[0.07]'
+        }
+        aria-hidden
+      />
 
       <div className="relative z-[1] flex flex-col gap-5 p-4 md:flex-row md:items-stretch md:justify-between md:gap-6 md:p-5 lg:gap-8">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -190,9 +215,25 @@ export function WebAppWelcomeBar({ activeSectionId, onNavigateTo }: WebAppWelcom
         </div>
 
         <div className="flex w-full shrink-0 flex-col gap-2.5 md:mt-0 md:w-[min(100%,17.5rem)] lg:w-[18.5rem]">
-          <div className="rounded-xl border border-[#1a2b38]/10 bg-[#f4f7fb] px-3.5 py-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1a2b38]/45">Teraz w harmonogramie</p>
-            <p className="mt-1.5 text-[0.8125rem] font-semibold leading-snug text-[#2d4154]">{spot.label}</p>
+          <div
+            className={
+              isApple
+                ? 'rounded-2xl border border-[#d2d2d7] bg-[#f5f5f7] px-3.5 py-3'
+                : 'rounded-xl border border-[#1a2b38]/10 bg-[#f4f7fb] px-3.5 py-3'
+            }
+          >
+            <p
+              className={
+                isApple
+                  ? 'text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6e6e73]'
+                  : 'text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1a2b38]/45'
+              }
+            >
+              Teraz w harmonogramie
+            </p>
+            <p className={`mt-1.5 text-[0.8125rem] font-semibold leading-snug ${isApple ? 'text-[#1d1d1f]' : 'text-[#2d4154]'}`}>
+              {spot.label}
+            </p>
             <span
               className={`mt-2 inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ring-inset ${statusBadgeClasses(spot.status)}`}
             >
@@ -200,20 +241,46 @@ export function WebAppWelcomeBar({ activeSectionId, onNavigateTo }: WebAppWelcom
             </span>
           </div>
 
-          <div className="rounded-xl border border-[#1a2b38]/10 bg-[#f4f7fb] px-3.5 py-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1a2b38]/45">Kontakt do opiekunki</p>
-            <div className="mt-2 flex flex-col gap-2.5 text-[0.75rem] text-[#4a6074]">
+          <div
+            className={
+              isApple
+                ? 'rounded-2xl border border-[#d2d2d7] bg-[#f5f5f7] px-3.5 py-3'
+                : 'rounded-xl border border-[#1a2b38]/10 bg-[#f4f7fb] px-3.5 py-3'
+            }
+          >
+            <p
+              className={
+                isApple
+                  ? 'text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6e6e73]'
+                  : 'text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1a2b38]/45'
+              }
+            >
+              Kontakt do opiekunki
+            </p>
+            <div className={`mt-2 flex flex-col gap-2.5 text-[0.75rem] ${isApple ? 'text-[#6e6e73]' : 'text-[#4a6074]'}`}>
               <a
                 href={CARETAKER.phoneHref}
-                className="group inline-flex items-center gap-2.5 rounded-lg border border-[#1a2b38]/12 bg-white px-2 py-1.5 font-semibold text-[#2d4154] shadow-sm ring-1 ring-[#1a2b38]/6 transition hover:border-[#243647]/28 hover:bg-[#f8fafc] hover:text-[#1a2b38] hover:shadow-md"
+                className={
+                  isApple
+                    ? 'group inline-flex items-center gap-2.5 rounded-xl border border-[#d2d2d7] bg-white px-2 py-1.5 font-semibold text-[#1d1d1f] shadow-sm transition hover:bg-[#f5f5f7] hover:shadow-md'
+                    : 'group inline-flex items-center gap-2.5 rounded-lg border border-[#1a2b38]/12 bg-white px-2 py-1.5 font-semibold text-[#2d4154] shadow-sm ring-1 ring-[#1a2b38]/6 transition hover:border-[#243647]/28 hover:bg-[#f8fafc] hover:text-[#1a2b38] hover:shadow-md'
+                }
               >
                 <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#1a2b38] to-[#2d4a63] text-white shadow-inner"
+                  className={
+                    isApple
+                      ? 'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1d1d1f] text-white'
+                      : 'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#1a2b38] to-[#2d4a63] text-white shadow-inner'
+                  }
                   aria-hidden
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 10.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                  </svg>
+                  {isApple ? (
+                    <Phone size={18} weight="duotone" />
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 10.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                  )}
                 </span>
                 <span className="min-w-0 flex-1 truncate">{CARETAKER.phone}</span>
                 <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-[var(--color-domesta-coral)] opacity-0 transition group-hover:opacity-100">
@@ -222,16 +289,28 @@ export function WebAppWelcomeBar({ activeSectionId, onNavigateTo }: WebAppWelcom
               </a>
               <a
                 href={`mailto:${CARETAKER.email}`}
-                className="group inline-flex items-center gap-2.5 rounded-lg border border-[#1a2b38]/12 bg-white px-2 py-1.5 font-semibold text-[#2d4154] shadow-sm ring-1 ring-[#1a2b38]/6 transition hover:border-[#243647]/28 hover:bg-[#f8fafc] hover:text-[#1a2b38] hover:shadow-md"
+                className={
+                  isApple
+                    ? 'group inline-flex items-center gap-2.5 rounded-xl border border-[#d2d2d7] bg-white px-2 py-1.5 font-semibold text-[#1d1d1f] shadow-sm transition hover:bg-[#f5f5f7] hover:shadow-md'
+                    : 'group inline-flex items-center gap-2.5 rounded-lg border border-[#1a2b38]/12 bg-white px-2 py-1.5 font-semibold text-[#2d4154] shadow-sm ring-1 ring-[#1a2b38]/6 transition hover:border-[#243647]/28 hover:bg-[#f8fafc] hover:text-[#1a2b38] hover:shadow-md'
+                }
               >
                 <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#2a3f52] to-[#1a2b38] text-white shadow-inner"
+                  className={
+                    isApple
+                      ? 'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1d1d1f] text-white'
+                      : 'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#2a3f52] to-[#1a2b38] text-white shadow-inner'
+                  }
                   aria-hidden
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="2" y="4" width="20" height="16" rx="2" />
-                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                  </svg>
+                  {isApple ? (
+                    <EnvelopeSimple size={18} weight="duotone" />
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                    </svg>
+                  )}
                 </span>
                 <span className="min-w-0 flex-1 truncate">{CARETAKER.email}</span>
                 <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-[var(--color-domesta-coral)] opacity-0 transition group-hover:opacity-100">
