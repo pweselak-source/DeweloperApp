@@ -474,7 +474,7 @@ export function MainContent({ activeSectionId = null, singlePageDockNav = false 
   /** WebApp — jedna strona: układ jak serwis www (kolumna treści, delikatne separatory) */
   const webDockSectionClass =
     'scroll-mt-[5.75rem] border-b border-stone-200/80 bg-transparent pb-14 pt-10 last:border-b-0 md:pb-20 md:pt-14'
-  const webDockProse = 'mx-auto w-full max-w-5xl px-4 md:px-6'
+  const webDockProse = 'w-full max-w-none px-4 md:px-6 lg:px-8'
   const webDockCard =
     'mt-10 rounded-xl border border-stone-200/90 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.05)] md:p-8 md:p-10'
   const webDockInset = 'rounded-lg border border-stone-100 bg-[#f8f7f5] p-4 md:p-5'

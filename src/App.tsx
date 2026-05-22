@@ -1308,14 +1308,14 @@ function App() {
           <div className="ml-0 flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-3 pt-1 md:gap-5 md:pt-1.5 lg:pt-2">
             <WebAppWelcomeBar activeSectionId={active} onNavigateTo={handleSelectSection} />
             <div className="min-h-0 min-w-0 w-full flex-1">
-              <MainContent key={`main-${variant}`} activeSectionId={active} />
+              <MainContent key={`main-${variant}`} activeSectionId={active} singlePageDockNav />
             </div>
           </div>
         </WebAppPrivateLayout>
       )
     }
     return (
-      <div className="mx-auto flex min-h-0 min-w-0 w-[70%] max-w-full flex-1 flex-col gap-4 pt-4 md:gap-6 md:pt-5 lg:pt-6">
+      <div className="flex min-h-0 min-w-0 w-full max-w-none flex-1 flex-col gap-4 pt-4 md:gap-6 md:pt-5 lg:pt-6">
         <div className="min-w-0 w-full shrink-0">
           <SideMenu
             key={`side-${variant}`}
