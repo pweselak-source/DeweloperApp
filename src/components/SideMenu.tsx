@@ -4,7 +4,7 @@ import { MENU_ITEMS } from '../data/menuItems'
 import type { MenuId } from '../data/menuItems'
 import type { AppTheme } from '../App'
 
-/** Ikona etapu w stylu iOS — większa glifika na szarym, zaokrąglonym tle */
+/** Ikona etapu na szarym, zaokrąglonym tle (rozmiar glifiki jak wcześniej) */
 function MenuIconTile({
   children,
   iconClassName,
@@ -25,9 +25,9 @@ function MenuIconTile({
 
   return (
     <span
-      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[11px] ${tileBg} shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] ring-1 ring-black/10`}
+      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] ${tileBg} shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] ring-1 ring-black/10`}
     >
-      <span className={`[&_svg]:h-[22px] [&_svg]:w-[22px] [&_svg]:stroke-[1.85] ${iconClassName}`}>
+      <span className={`[&_svg]:h-[1.125rem] [&_svg]:w-[1.125rem] ${iconClassName}`}>
         {children}
       </span>
     </span>
