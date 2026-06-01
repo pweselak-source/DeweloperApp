@@ -474,7 +474,7 @@ export function SideMenu({
           >
         {/* Title above menu */}
         <div className="px-3 pt-3 animate-[menu-content-in_0.4s_ease-out_0.06s_both]">
-          <div className="text-left text-sm font-semibold uppercase tracking-wide text-white">
+          <div className={`text-left text-sm font-semibold uppercase tracking-wide ${theme === 'gold' || theme === 'allWhite' || theme === 'domestaColors' ? 'text-[#2a2a2a]' : 'text-white'}`}>
             Twoja droga do M4
           </div>
         </div>
