@@ -21,7 +21,9 @@ function MenuIconTile({
         ? 'bg-[#e5e5ea]'
         : theme === 'allBlack'
           ? 'bg-[#3a3a3c]'
-          : 'bg-[#52525a]'
+          : theme === 'gold'
+            ? 'bg-[#e8e0d0]'
+            : 'bg-[#52525a]'
 
   return (
     <span
@@ -84,7 +86,9 @@ export function SideMenu({
       ? 'bg-white'
       : theme === 'allWhite'
         ? 'bg-[#F0F0F0]'
-        : 'bg-[var(--color-domesta-gray)]'
+        : theme === 'gold'
+          ? 'bg-[#f0ebe0]'
+          : 'bg-[var(--color-domesta-gray)]'
 
   useLayoutEffect(() => {
     if (!monitorIntroFullBleed || !effectiveCollapsed) {
@@ -126,12 +130,14 @@ export function SideMenu({
         } ${
           theme === 'domestaColors' ? 'bg-white theme-domesta-colors-menu' :
           theme === 'allWhite' ? 'bg-[#F0F0F0] theme-all-white-menu' :
+          theme === 'gold' ? 'bg-[#f0ebe0]' :
           'bg-[var(--color-domesta-gray)] text-white'
         }`}>
         {/* Header: nazwa inwestycji + collapse/expand control – wysokość jak górny pasek AppBar */}
         <div className={`flex min-h-[4.667rem] h-[4.667rem] items-center border-b px-3 ${
           theme === 'allBlack' ? 'border-gray-600 bg-[#252525]' :
           theme === 'allWhite' ? 'border-gray-300 bg-[#F0F0F0]' :
+          theme === 'gold' ? 'border-[#c9974a]/25 bg-[#faf8f3]' :
           'border-gray-200 bg-white'
         }`}>
           {effectiveCollapsed ? (
@@ -145,11 +151,12 @@ export function SideMenu({
                   <span className={
                     theme === 'allBlack' ? 'font-bold text-white' :
                     theme === 'allWhite' ? 'font-semibold text-[var(--color-domesta-red)]' :
+                    theme === 'gold' ? 'font-semibold text-[#a97c35]' :
                     'text-[var(--color-domesta-red)]'
                   }>{firstWord}</span>
-                  {restWords ? <>{' '}<span className={theme === 'allBlack' ? 'text-white' : theme === 'allWhite' ? 'text-gray-700' : 'text-[var(--color-domesta-gray)]'}>{restWords}</span></> : null}
+                  {restWords ? <>{' '}<span className={theme === 'allBlack' ? 'text-white' : theme === 'allWhite' ? 'text-gray-700' : theme === 'gold' ? 'text-[#2a2a2a]' : 'text-[var(--color-domesta-gray)]'}>{restWords}</span></> : null}
                 </span>
-                <span className={`min-w-0 truncate text-[0.583rem] ${theme === 'allBlack' ? 'text-white' : 'text-gray-600'}`}>Mieszkanie: {apartmentLabel}</span>
+                <span className={`min-w-0 truncate text-[0.583rem] ${theme === 'allBlack' ? 'text-white' : theme === 'gold' ? 'text-[#6b7280]' : 'text-gray-600'}`}>Mieszkanie: {apartmentLabel}</span>
               </button>
               {!hideSlideshowExpandBtn && (
                 <button
@@ -158,6 +165,7 @@ export function SideMenu({
                   className={`ml-auto mr-3 flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px] shadow-sm ${
                     theme === 'allBlack' ? 'border-gray-500 bg-[#333333] text-gray-200 hover:bg-[#404040]' :
                     theme === 'allWhite' ? 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100' :
+                    theme === 'gold' ? 'border-[#c9974a]/30 bg-white text-[#a97c35] hover:bg-[#faf8f3]' :
                     'border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-100'
                   }`}
                   aria-label="Szczegóły podróży"
@@ -165,7 +173,7 @@ export function SideMenu({
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
-                    className={`h-4 w-4 ${theme === 'allBlack' ? 'text-gray-400' : theme === 'allWhite' ? 'text-gray-600' : 'text-gray-500'}`}
+                    className={`h-4 w-4 ${theme === 'allBlack' ? 'text-gray-400' : theme === 'allWhite' ? 'text-gray-600' : theme === 'gold' ? 'text-[#c9974a]' : 'text-gray-500'}`}
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
@@ -189,11 +197,12 @@ export function SideMenu({
                   <span className={
                     theme === 'allBlack' ? 'font-bold text-white' :
                     theme === 'allWhite' ? 'font-semibold text-[var(--color-domesta-red)]' :
+                    theme === 'gold' ? 'font-semibold text-[#a97c35]' :
                     'text-[var(--color-domesta-red)]'
                   }>{firstWord}</span>
-                  {restWords ? <>{' '}<span className={theme === 'allBlack' ? 'text-white' : theme === 'allWhite' ? 'text-gray-700' : 'text-[var(--color-domesta-gray)]'}>{restWords}</span></> : null}
+                  {restWords ? <>{' '}<span className={theme === 'allBlack' ? 'text-white' : theme === 'allWhite' ? 'text-gray-700' : theme === 'gold' ? 'text-[#2a2a2a]' : 'text-[var(--color-domesta-gray)]'}>{restWords}</span></> : null}
                 </span>
-                <span className={`min-w-0 truncate text-[0.583rem] ${theme === 'allBlack' ? 'text-white' : 'text-gray-600'}`}>Mieszkanie: {apartmentLabel}</span>
+                <span className={`min-w-0 truncate text-[0.583rem] ${theme === 'allBlack' ? 'text-white' : theme === 'gold' ? 'text-[#6b7280]' : 'text-gray-600'}`}>Mieszkanie: {apartmentLabel}</span>
               </button>
               {!hideExpandedCollapseBtn && (
                 <button
@@ -202,6 +211,7 @@ export function SideMenu({
                   className={`ml-auto flex h-8 w-8 items-center justify-center rounded-lg ${
                     theme === 'allBlack' ? 'text-gray-300 hover:bg-[#404040]' :
                     theme === 'allWhite' ? 'text-gray-600 hover:bg-gray-200' :
+                    theme === 'gold' ? 'text-[#a97c35] hover:bg-[#c9974a]/10' :
                     'text-[var(--color-domesta-gray)] hover:bg-gray-200'
                   }`}
                   aria-label="Zwiń menu"
@@ -363,24 +373,30 @@ export function SideMenu({
                 {MENU_ITEMS.filter((item) => item.id !== 'siteLog' && item.id !== 'news').map((item) => {
                   const isActive = activeId === item.id
                   const statusIconClass =
-                    item.status === 'done'
-                      ? 'text-emerald-300'
-                      : item.status === 'current'
-                        ? 'text-amber-300'
-                        : 'text-gray-400'
+                    theme === 'gold'
+                      ? item.status === 'done'
+                        ? 'text-[#c9974a]'
+                        : item.status === 'current'
+                          ? 'text-[#d4956a]'
+                          : 'text-[#6b7280]'
+                      : item.status === 'done'
+                        ? 'text-emerald-300'
+                        : item.status === 'current'
+                          ? 'text-amber-300'
+                          : 'text-gray-400'
                   const statusIcon =
                     item.status === 'done' ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-[0.9rem] w-[0.9rem] text-emerald-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`h-[0.9rem] w-[0.9rem] ${theme === 'gold' ? 'text-[#c9974a]' : 'text-emerald-300'}`}>
                         <polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     ) : item.status === 'current' ? (
                       <span className="inline-flex items-center justify-center rounded-full animate-[coral-pulse_1.2s_ease-in-out_infinite]">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-[0.9rem] w-[0.9rem] text-amber-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`h-[0.9rem] w-[0.9rem] ${theme === 'gold' ? 'text-[#d4956a]' : 'text-amber-300'}`}>
                           <polyline points="15 18 9 12 15 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </span>
                     ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-[0.9rem] w-[0.9rem] text-gray-400 animate-pulse">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`h-[0.9rem] w-[0.9rem] animate-pulse ${theme === 'gold' ? 'text-[#6b7280]' : 'text-gray-400'}`}>
                         <path d="M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9Z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         <path d="M12 7v5l3 2" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
@@ -390,7 +406,11 @@ export function SideMenu({
                       <button
                         type="button"
                         onClick={() => onSelect(item.id)}
-                        className={`group relative flex items-center justify-start gap-2 rounded-lg px-1 py-1 text-left transition-colors ${isActive ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5'}`}
+                        className={`group relative flex items-center justify-start gap-2 rounded-lg px-1 py-1 text-left transition-colors ${
+                          theme === 'gold'
+                            ? isActive ? 'bg-[#c9974a]/15 ring-1 ring-[#c9974a]/25' : 'hover:bg-[#c9974a]/8'
+                            : isActive ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5'
+                        }`}
                         title={item.label}
                       >
                         <MenuIconTile iconClassName={statusIconClass} theme={theme}>
@@ -401,15 +421,19 @@ export function SideMenu({
                     </li>
                   )
                 })}
-                <li className="mt-2 pt-2 border-t border-white/20">
+                <li className={`mt-2 pt-2 border-t ${theme === 'gold' ? 'border-[#c9974a]/20' : 'border-white/20'}`}>
                   <button
                     type="button"
                     onClick={() => onSelect('siteLog')}
-                    className={`flex items-center justify-start rounded-lg px-1 py-1 ${activeId === 'siteLog' ? 'bg-white/10' : 'hover:bg-white/5'}`}
+                    className={`flex items-center justify-start rounded-lg px-1 py-1 ${
+                      theme === 'gold'
+                        ? activeId === 'siteLog' ? 'bg-[#c9974a]/15 ring-1 ring-[#c9974a]/25' : 'hover:bg-[#c9974a]/8'
+                        : activeId === 'siteLog' ? 'bg-white/10' : 'hover:bg-white/5'
+                    }`}
                     title="Dziennik budowy"
                   >
                     <MenuIconTile
-                      iconClassName={theme === 'allWhite' ? 'theme-all-white-site-log-icon' : 'text-amber-300'}
+                      iconClassName={theme === 'allWhite' ? 'theme-all-white-site-log-icon' : theme === 'gold' ? 'text-[#d4956a]' : 'text-amber-300'}
                       theme={theme}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -481,70 +505,42 @@ export function SideMenu({
             {MENU_ITEMS.filter((item) => item.id !== 'siteLog' && item.id !== 'news').map((item, index) => {
               const isActive = activeId === item.id
               const statusIconClass =
-                item.status === 'done'
-                  ? 'text-emerald-300'
-                  : item.status === 'current'
-                    ? 'text-amber-300'
-                    : 'text-gray-400'
+                theme === 'gold'
+                  ? item.status === 'done'
+                    ? 'text-[#c9974a]'
+                    : item.status === 'current'
+                      ? 'text-[#d4956a]'
+                      : 'text-[#6b7280]'
+                  : item.status === 'done'
+                    ? 'text-emerald-300'
+                    : item.status === 'current'
+                      ? 'text-amber-300'
+                      : 'text-gray-400'
               const statusTextClass =
-                item.status === 'current'
-                  ? 'text-white font-semibold'
-                  : 'text-white/60'
+                theme === 'gold'
+                  ? item.status === 'current'
+                    ? 'text-[#2a2a2a] font-semibold'
+                    : item.status === 'done'
+                      ? 'text-[#6b7280]'
+                      : 'text-[#6b7280]/70'
+                  : item.status === 'current'
+                    ? 'text-white font-semibold'
+                    : 'text-white/60'
               const statusIcon =
                 item.status === 'done' ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    className="h-4 w-4 text-emerald-300"
-                  >
-                    <polyline
-                      points="20 6 9 17 4 12"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`h-4 w-4 ${theme === 'gold' ? 'text-[#c9974a]' : 'text-emerald-300'}`}>
+                    <polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 ) : item.status === 'current' ? (
                   <span className="inline-flex items-center justify-center rounded-full animate-[coral-pulse_1.2s_ease-in-out_infinite]">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      className="h-4 w-4 text-amber-300"
-                    >
-                      <polyline
-                        points="15 18 9 12 15 6"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`h-4 w-4 ${theme === 'gold' ? 'text-[#d4956a]' : 'text-amber-300'}`}>
+                      <polyline points="15 18 9 12 15 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </span>
                 ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    className="h-4 w-4 text-gray-400 animate-pulse"
-                  >
-                    <path
-                      d="M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9Z"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M12 7v5l3 2"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={`h-4 w-4 animate-pulse ${theme === 'gold' ? 'text-[#6b7280]' : 'text-gray-400'}`}>
+                    <path d="M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9Z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M12 7v5l3 2" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 )
               return (
@@ -557,27 +553,34 @@ export function SideMenu({
                     type="button"
                     onClick={() => onSelect(item.id)}
                     className={`
-                      group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs transition-colors
-                      ${isActive
-                        ? 'bg-white/10 text-white'
-                        : 'text-white/70 hover:bg-white/5'
+                      group relative flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs transition-colors
+                      ${theme === 'gold'
+                        ? isActive
+                          ? 'bg-gradient-to-r from-[#e0b96e]/20 to-[#c9974a]/10 ring-1 ring-[#c9974a]/30'
+                          : 'hover:bg-[#c9974a]/8'
+                        : isActive
+                          ? 'bg-white/10 text-white'
+                          : 'text-white/70 hover:bg-white/5'
                       }
                       ${effectiveCollapsed ? 'justify-center px-0' : ''}
                     `}
                     title={effectiveCollapsed ? item.label : undefined}
                   >
                     {isActive && !effectiveCollapsed && (
-                      <span className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r bg-[var(--color-domesta-red)]" aria-hidden />
+                      <span
+                        className={`absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r ${theme === 'gold' ? 'bg-gradient-to-b from-[#e0b96e] to-[#a97c35]' : 'bg-[var(--color-domesta-red)]'}`}
+                        aria-hidden
+                      />
                     )}
                     {!effectiveCollapsed && (
                       <>
                         {/* Pozioma przerywana kreska zakończona strzałką prowadząca do ikony etapu */}
                         <span className="flex items-center gap-1">
-                          <span className="h-px w-6 border-t border-dashed border-white/40" />
+                          <span className={`h-px w-6 border-t border-dashed ${theme === 'gold' ? 'border-[#c9974a]/30' : 'border-white/40'}`} />
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             viewBox="0 0 16 16"
-                            className="h-3 w-3 text-white/70"
+                            className={`h-3 w-3 ${theme === 'gold' ? 'text-[#c9974a]/50' : 'text-white/70'}`}
                             fill="none"
                             stroke="currentColor"
                             strokeWidth="2"
@@ -614,29 +617,36 @@ export function SideMenu({
             })}
             {/* Dziennik budowy – na końcu menu, niżej, wielkie litery */}
             <li
-              className="mt-4 pt-3 border-t border-gray-800 animate-[menu-content-in_0.35s_ease-out_both]"
+              className={`mt-4 pt-3 border-t animate-[menu-content-in_0.35s_ease-out_both] ${theme === 'gold' ? 'border-[#c9974a]/20' : 'border-gray-800'}`}
               style={{ animationDelay: '0.45s' }}
             >
               <button
                 type="button"
                 onClick={() => onSelect('siteLog')}
                 className={`
-                  group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors
-                  ${activeId === 'siteLog'
-                    ? 'bg-white/10 text-white'
-                    : 'text-white/70 hover:bg-white/5'
+                  group relative flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors
+                  ${theme === 'gold'
+                    ? activeId === 'siteLog'
+                      ? 'bg-gradient-to-r from-[#e0b96e]/20 to-[#c9974a]/10 ring-1 ring-[#c9974a]/30'
+                      : 'hover:bg-[#c9974a]/8'
+                    : activeId === 'siteLog'
+                      ? 'bg-white/10 text-white'
+                      : 'text-white/70 hover:bg-white/5'
                   }
                   ${effectiveCollapsed ? 'justify-center px-0' : ''}
                 `}
                 title={effectiveCollapsed ? 'Dziennik budowy' : undefined}
               >
                 {activeId === 'siteLog' && !effectiveCollapsed && (
-                  <span className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r bg-[var(--color-domesta-red)]" aria-hidden />
+                  <span
+                    className={`absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r ${theme === 'gold' ? 'bg-gradient-to-b from-[#e0b96e] to-[#a97c35]' : 'bg-[var(--color-domesta-red)]'}`}
+                    aria-hidden
+                  />
                 )}
                 {!effectiveCollapsed ? (
                   <>
                     <MenuIconTile
-                      iconClassName={theme === 'allWhite' ? 'theme-all-white-site-log-icon' : 'text-amber-300'}
+                      iconClassName={theme === 'allWhite' ? 'theme-all-white-site-log-icon' : theme === 'gold' ? 'text-[#d4956a]' : 'text-amber-300'}
                       theme={theme}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -648,13 +658,13 @@ export function SideMenu({
                         <path d="M19 21h-2a2 2 0 0 1-2-2V3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2Z" />
                       </svg>
                     </MenuIconTile>
-                    <span className="truncate text-xs font-semibold uppercase tracking-wide text-white">
+                    <span className={`truncate text-xs font-semibold uppercase tracking-wide ${theme === 'gold' ? 'text-[#a97c35]' : 'text-white'}`}>
                       Dziennik budowy
                     </span>
                   </>
                 ) : (
                   <MenuIconTile
-                    iconClassName={theme === 'allWhite' ? 'theme-all-white-site-log-icon' : 'text-amber-300'}
+                    iconClassName={theme === 'allWhite' ? 'theme-all-white-site-log-icon' : theme === 'gold' ? 'text-[#d4956a]' : 'text-amber-300'}
                     theme={theme}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

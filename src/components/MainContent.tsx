@@ -176,12 +176,14 @@ interface MainContentProps {
   /** WebApp: jedna długa strona — wszystkie sekcje widoczne; lewe menu tylko przewija do kotwic */
   singlePageDockNav?: boolean
   visualStyle?: 'default' | 'appleFont'
+  theme?: import('../App').AppTheme
 }
 
 export function MainContent({
   activeSectionId = null,
   singlePageDockNav = false,
   visualStyle = 'default',
+  theme = 'halfBlack',
 }: MainContentProps) {
   const [expandedSections, setExpandedSections] = useState<Record<SectionId, boolean>>({
     formalities: false,
@@ -485,8 +487,11 @@ export function MainContent({
   const notaryMonthLabel = () =>
     `${MONTH_NAMES[notaryMonthView.getMonth()]} ${notaryMonthView.getFullYear()}`
 
-  const sectionBlockClass =
-    'scroll-mt-[5.75rem] rounded-2xl border border-gray-200 bg-white shadow-md overflow-hidden'
+  const isGold = theme === 'gold'
+
+  const sectionBlockClass = isGold
+    ? 'scroll-mt-[5.75rem] rounded-2xl border border-[#e0d5c0] bg-white shadow-[0_2px_16px_rgba(201,151,74,0.08)] overflow-hidden'
+    : 'scroll-mt-[5.75rem] rounded-2xl border border-gray-200 bg-white shadow-md overflow-hidden'
 
   /** WebApp — jedna strona: układ jak serwis www (kolumna treści, delikatne separatory) */
   const webDockSectionClass =
@@ -530,23 +535,23 @@ export function MainContent({
             className="flex w-full items-stretch border-b border-gray-100 text-left transition-colors hover:bg-gray-50/80"
             onClick={() => toggleSection('formalities')}
           >
-            <div className="flex items-center gap-3 bg-gray-100 px-5 py-3">
-              <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30">
-                <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${getSectionIcon('formalities').colorClass}`}>
+            <div className={`flex items-center gap-3 px-5 py-3 ${isGold ? 'bg-[#f7f4ee]' : 'bg-gray-100'}`}>
+              <span className={`relative flex h-12 w-12 items-center justify-center rounded-2xl ${isGold ? 'bg-gradient-to-br from-[#e0b96e]/30 to-[#c9974a]/10 ring-1 ring-[#c9974a]/20' : 'bg-gradient-to-br from-white/40 via-white/10 to-transparent shadow-[0_0_16px_rgba(15,23,42,0.3)] ring-1 ring-white/30'}`}>
+                <span className={`shrink-0 [&_svg]:h-5 [&_svg]:w-5 ${isGold ? 'text-[#c9974a]' : getSectionIcon('formalities').colorClass}`}>
                   {getSectionIcon('formalities').icon}
                 </span>
                 <span className="absolute -bottom-1 -right-1">{getSectionStatusIcon('formalities')}</span>
               </span>
-              <span className="h-8 w-px rounded-full bg-gray-200" />
+              <span className={`h-8 w-px rounded-full ${isGold ? 'bg-[#c9974a]/20' : 'bg-gray-200'}`} />
             </div>
-            <div className="flex flex-1 items-center gap-3 bg-emerald-50/70 px-5 py-3">
+            <div className={`flex flex-1 items-center gap-3 px-5 py-3 ${isGold ? 'bg-[#faf8f3]' : 'bg-emerald-50/70'}`}>
               <div className="flex-1">
-                <h2 className="text-[13px] font-semibold text-[var(--color-domesta-gray)]">Formalności początkowe</h2>
-                <p className="mt-1 text-[11px] text-emerald-600">
+                <h2 className={`text-[13px] font-semibold ${isGold ? 'text-[#2a2a2a]' : 'text-[var(--color-domesta-gray)]'}`}>Formalności początkowe</h2>
+                <p className={`mt-1 text-[11px] ${isGold ? 'text-[#c9974a]' : 'text-emerald-600'}`}>
                   Status: <span className="font-medium">zakończone</span>
                 </p>
               </div>
-              <span className="ml-3 text-xs text-gray-500">{expandedSections.formalities ? 'Zwiń' : 'Rozwiń'}</span>
+              <span className={`ml-3 text-xs ${isGold ? 'text-[#6b7280]' : 'text-gray-500'}`}>{expandedSections.formalities ? 'Zwiń' : 'Rozwiń'}</span>
             </div>
           </button>
         )}
@@ -555,7 +560,7 @@ export function MainContent({
             className={
               singlePageDockNav
                 ? `animate-[section-expand_0.25s_ease-out] ${dockProse}`
-                : 'animate-[section-expand_0.25s_ease-out] border-t border-gray-100 bg-[#f4f3ef]/70 p-5 md:p-8'
+                : `animate-[section-expand_0.25s_ease-out] border-t p-5 md:p-8 ${isGold ? 'border-[#e0d5c0] bg-[#faf8f3]' : 'border-gray-100 bg-[#f4f3ef]/70'}`
             }
           >
             {useAppleVisual && <AppleSectionLead sectionId="formalities" />}
@@ -589,28 +594,30 @@ export function MainContent({
                 useAppleVisual
                   ? dockTitleClass
                   : `font-serif leading-tight tracking-tight md:leading-snug ${
+                      isGold ? 'text-[#2a2a2a]' : ''
+                    } ${
                       singlePageDockNav
                         ? 'text-[1.875rem] font-semibold md:text-[2rem]'
                         : 'text-3xl font-bold md:text-[2.125rem]'
                     }`
               }
-              style={useAppleVisual ? undefined : { color: FORMALITIES_NAVY }}
+              style={useAppleVisual || isGold ? undefined : { color: FORMALITIES_NAVY }}
             >
               Formalności początkowe
             </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-gray-600 md:text-[15px]">
+            <p className={`mt-3 max-w-3xl text-sm leading-relaxed md:text-[15px] ${isGold ? 'text-[#6b7280]' : 'text-gray-600'}`}>
               Na tym etapie dopracowujemy dokumenty od momentu rezerwacji po umowę przedwstępną: potwierdzamy dane
               kupujących, warunki finansowe oraz terminy. Statusy poniżej pokazują, które kroki są już zamknięte, a
               które czekają na finalizację po stronie dewelopera lub biura prawnego.
             </p>
 
-            <div className={singlePageDockNav ? dockCard : 'mt-8 rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.06)] md:p-7'}>
+            <div className={singlePageDockNav ? dockCard : `mt-8 rounded-2xl border p-5 shadow-[0_8px_30px_rgba(15,23,42,0.06)] md:p-7 ${isGold ? 'border-[#e0d5c0] bg-white' : 'border-gray-100 bg-white'}`}>
               <div className="space-y-4">
                 <div
                   className={
                     singlePageDockNav
                       ? dockInset
-                      : 'rounded-xl border border-gray-100 bg-gray-50/70 p-4 shadow-sm md:p-5'
+                      : `rounded-xl border p-4 shadow-sm md:p-5 ${isGold ? 'border-[#e0d5c0] bg-[#faf8f3]' : 'border-gray-100 bg-gray-50/70'}`
                   }
                 >
                   <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
@@ -814,7 +821,7 @@ export function MainContent({
             className={
               singlePageDockNav
                 ? `animate-[section-expand_0.25s_ease-out] ${dockProse}`
-                : 'animate-[section-expand_0.25s_ease-out] border-t border-gray-100 bg-[#f4f3ef]/70 p-5 md:p-8'
+                : `animate-[section-expand_0.25s_ease-out] border-t p-5 md:p-8 ${isGold ? 'border-[#e0d5c0] bg-[#faf8f3]' : 'border-gray-100 bg-[#f4f3ef]/70'}`
             }
           >
             {useAppleVisual && <AppleSectionLead sectionId="schedule" />}
@@ -952,7 +959,7 @@ export function MainContent({
             className={
               singlePageDockNav
                 ? `animate-[section-expand_0.25s_ease-out] ${dockProse}`
-                : 'animate-[section-expand_0.25s_ease-out] border-t border-gray-100 bg-[#f4f3ef]/70 p-5 md:p-8'
+                : `animate-[section-expand_0.25s_ease-out] border-t p-5 md:p-8 ${isGold ? 'border-[#e0d5c0] bg-[#faf8f3]' : 'border-gray-100 bg-[#f4f3ef]/70'}`
             }
           >
             {useAppleVisual && <AppleSectionLead sectionId="documents" />}

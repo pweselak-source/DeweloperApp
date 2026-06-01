@@ -52,7 +52,7 @@ const INVESTMENT_SYNC_STEPS: { ms: number; msg: string; progress: number }[] = [
   { ms: 260, msg: 'Zakończono sukcesem', progress: 100 },
 ]
 
-export type AppTheme = 'halfBlack' | 'allBlack' | 'domestaColors' | 'allWhite' | 'appleFont'
+export type AppTheme = 'halfBlack' | 'allBlack' | 'domestaColors' | 'allWhite' | 'appleFont' | 'gold'
 type BackOfficeView =
   | 'investments'
   | 'clients'
@@ -364,7 +364,8 @@ function App() {
         saved === 'allBlack' ||
         saved === 'domestaColors' ||
         saved === 'allWhite' ||
-        saved === 'appleFont'
+        saved === 'appleFont' ||
+        saved === 'gold'
       )
         return saved
       return 'halfBlack'
@@ -1227,21 +1228,25 @@ function App() {
     ? 'bg-gradient-to-br from-slate-950 via-[#0c2744] to-[#042f2e]'
     : theme === 'appleFont'
       ? 'bg-[#f5f5f7]'
-      : theme === 'allBlack'
-        ? 'theme-all-black bg-[#1a1a1a]'
-        : theme === 'halfBlack'
-          ? 'bg-[radial-gradient(circle_at_top,_#aaaaaa,_#666666,_#333333)]'
-          : 'bg-[var(--color-domesta-bg)]'
+      : theme === 'gold'
+        ? 'bg-[#f7f4ee]'
+        : theme === 'allBlack'
+          ? 'theme-all-black bg-[#1a1a1a]'
+          : theme === 'halfBlack'
+            ? 'bg-[radial-gradient(circle_at_top,_#aaaaaa,_#666666,_#333333)]'
+            : 'bg-[var(--color-domesta-bg)]'
 
   const innerBackgroundClass = showBackOffice
     ? 'bg-gradient-to-br from-slate-950 via-[#0c2744] to-[#042f2e]'
     : theme === 'appleFont'
       ? 'bg-[#f5f5f7]'
-      : theme === 'allBlack'
-        ? 'bg-[#1a1a1a]'
-        : theme === 'halfBlack'
-          ? 'bg-[radial-gradient(circle_at_top,_#aaaaaa,_#666666,_#333333)]'
-          : 'bg-[var(--color-domesta-bg)]'
+      : theme === 'gold'
+        ? 'bg-[#f7f4ee]'
+        : theme === 'allBlack'
+          ? 'bg-[#1a1a1a]'
+          : theme === 'halfBlack'
+            ? 'bg-[radial-gradient(circle_at_top,_#aaaaaa,_#666666,_#333333)]'
+            : 'bg-[var(--color-domesta-bg)]'
 
   const renderInvestmentsTabHeader = (title: InvestmentTab, headingOverride?: string) => (
     <div className="flex items-center gap-3">
@@ -1380,7 +1385,7 @@ function App() {
           />
         </div>
         <div className="min-h-0 min-w-0 w-full flex-1">
-          <MainContent key={`main-${variant}`} activeSectionId={active} />
+          <MainContent key={`main-${variant}`} activeSectionId={active} theme={theme} />
         </div>
       </div>
     )
