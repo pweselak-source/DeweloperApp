@@ -52,7 +52,14 @@ const INVESTMENT_SYNC_STEPS: { ms: number; msg: string; progress: number }[] = [
   { ms: 260, msg: 'Zakończono sukcesem', progress: 100 },
 ]
 
-export type AppTheme = 'halfBlack' | 'allBlack' | 'domestaColors' | 'allWhite' | 'appleFont' | 'gold'
+export type AppTheme =
+  | 'halfBlack'
+  | 'allBlack'
+  | 'domestaColors'
+  | 'allWhite'
+  | 'appleFont'
+  | 'gold'
+  | 'batoryProject'
 type BackOfficeView =
   | 'investments'
   | 'clients'
@@ -365,7 +372,8 @@ function App() {
         saved === 'domestaColors' ||
         saved === 'allWhite' ||
         saved === 'appleFont' ||
-        saved === 'gold'
+        saved === 'gold' ||
+        saved === 'batoryProject'
       )
         return saved
       return 'halfBlack'
@@ -1228,6 +1236,8 @@ function App() {
     ? 'bg-gradient-to-br from-slate-950 via-[#0c2744] to-[#042f2e]'
     : theme === 'appleFont'
       ? 'bg-[#f5f5f7]'
+      : theme === 'batoryProject'
+        ? 'theme-batory bg-[#eef2f6]'
       : theme === 'gold'
         ? 'bg-[#f7f4ee]'
         : theme === 'allBlack'
@@ -1240,6 +1250,8 @@ function App() {
     ? 'bg-gradient-to-br from-slate-950 via-[#0c2744] to-[#042f2e]'
     : theme === 'appleFont'
       ? 'bg-[#f5f5f7]'
+      : theme === 'batoryProject'
+        ? 'bg-[#eef2f6]'
       : theme === 'gold'
         ? 'bg-[#f7f4ee]'
         : theme === 'allBlack'

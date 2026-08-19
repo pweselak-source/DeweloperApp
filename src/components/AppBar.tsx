@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import type { MenuId } from '../data/menuItems'
 import type { AppTheme } from '../App'
 import domestaLogo from '../assets/domesta-logo.png.svg'
+import batoryLogo from '../assets/batory-logo.png'
 
 const BACKOFFICE_TOP_STATS = [
   { label: 'Liczba mieszkań', value: '2,500', trend: '+4% w tym tygodniu' },
@@ -51,6 +52,7 @@ export function AppBar({
   const [menuOpen, setMenuOpen] = useState(false)
   const [tasksOpen, setTasksOpen] = useState(false)
   const tasksRef = useRef<HTMLDivElement | null>(null)
+  const isBatoryTheme = theme === 'batoryProject'
 
   // Zamykaj panel "Bieżące zadania" po kliknięciu poza nim
   useEffect(() => {
@@ -86,6 +88,8 @@ export function AppBar({
               ? 'border-[#d2d2d7] bg-white/80 text-[#1d1d1f] shadow-[0_1px_0_rgba(0,0,0,0.04)] backdrop-blur-xl'
               : theme === 'gold'
                 ? 'border-[#c9974a]/30 bg-[#f7f4ee] text-[#2a2a2a] shadow-[0_1px_0_rgba(201,151,74,0.15)]'
+                : theme === 'batoryProject'
+                  ? 'border-[#d7dee9] bg-[#f7f9fc] text-[#10284b] shadow-[0_1px_0_rgba(16,40,75,0.08)]'
                 : theme === 'allBlack'
                   ? 'border-gray-700 bg-[#252525]'
                   : 'border-gray-200 bg-white'
@@ -130,32 +134,32 @@ export function AppBar({
             type="button"
             onClick={() => onGoHome?.()}
             className={`flex shrink-0 items-center justify-center rounded-lg p-0 focus-visible:outline-none focus-visible:ring-2 ${
-              variant === 'backoffice' ? 'focus-visible:ring-[#1abb9c]' : 'focus-visible:ring-[var(--color-domesta-coral)]'
+              variant === 'backoffice' ? 'focus-visible:ring-[#1abb9c]' : isBatoryTheme ? 'focus-visible:ring-[#1f3f6b]' : 'focus-visible:ring-[var(--color-domesta-coral)]'
             }`}
             aria-label="Strona główna"
           >
-            <img src={domestaLogo} alt="Domesta" className="h-[2.667rem] w-auto shrink-0 object-contain" />
+            <img src={isBatoryTheme ? batoryLogo : domestaLogo} alt={isBatoryTheme ? 'Batory Projekt' : 'Domesta'} className="h-[2.667rem] w-auto shrink-0 object-contain" />
           </button>
         ) : null}
         {residentHeading && variant === 'default' && (
           <>
               <div
-                className={`ml-4 h-[2.667rem] w-px shrink-0 ${theme === 'allBlack' ? 'bg-gray-600' : theme === 'gold' ? 'bg-[#c9974a]/30' : 'bg-gray-200'}`}
+                className={`ml-4 h-[2.667rem] w-px shrink-0 ${theme === 'allBlack' ? 'bg-gray-600' : theme === 'gold' ? 'bg-[#c9974a]/30' : theme === 'batoryProject' ? 'bg-[#cfd8e5]' : 'bg-gray-200'}`}
                 aria-hidden
               />
               <div className="ml-4 min-w-0 flex-1 pr-2">
                 <p className="truncate text-[0.9375rem] leading-snug md:text-base">
-                  <span className={`font-semibold tracking-tight ${theme === 'allBlack' ? 'text-gray-100' : theme === 'gold' ? 'text-[#2a2a2a]' : 'text-gray-900'}`}>
+                  <span className={`font-semibold tracking-tight ${theme === 'allBlack' ? 'text-gray-100' : theme === 'gold' ? 'text-[#2a2a2a]' : theme === 'batoryProject' ? 'text-[#10284b]' : 'text-gray-900'}`}>
                     {residentHeading.primaryBold}
                   </span>
-                  <span className={`mx-1.5 font-light ${theme === 'allBlack' ? 'text-gray-500' : theme === 'gold' ? 'text-[#c9974a]/60' : 'text-gray-400'}`}>—</span>
-                  <span className={`font-normal ${theme === 'allBlack' ? 'text-slate-400' : theme === 'gold' ? 'text-[#6b7280]' : 'text-slate-500'}`}>
+                  <span className={`mx-1.5 font-light ${theme === 'allBlack' ? 'text-gray-500' : theme === 'gold' ? 'text-[#c9974a]/60' : theme === 'batoryProject' ? 'text-[#7f8ba0]' : 'text-gray-400'}`}>—</span>
+                  <span className={`font-normal ${theme === 'allBlack' ? 'text-slate-400' : theme === 'gold' ? 'text-[#6b7280]' : theme === 'batoryProject' ? 'text-[#6d7a91]' : 'text-slate-500'}`}>
                     {residentHeading.primaryMuted}
                   </span>
                 </p>
                 {residentHeading.metaLine ? (
                   <p
-                    className={`mt-0.5 truncate text-[11px] leading-snug ${theme === 'allBlack' ? 'text-slate-500' : theme === 'gold' ? 'text-[#c9974a]/70' : 'text-slate-500'}`}
+                    className={`mt-0.5 truncate text-[11px] leading-snug ${theme === 'allBlack' ? 'text-slate-500' : theme === 'gold' ? 'text-[#c9974a]/70' : theme === 'batoryProject' ? 'text-[#7f8ba0]' : 'text-slate-500'}`}
                   >
                     {residentHeading.metaLine}
                   </p>
@@ -171,7 +175,7 @@ export function AppBar({
               <button
                 type="button"
                 onClick={() => onNavigateTo('news')}
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${!residentHeading ? 'ml-7' : ''} ${theme === 'allBlack' ? 'text-gray-400 hover:bg-[#333333] hover:text-gray-200' : theme === 'gold' ? 'text-[#c9974a] hover:bg-[#c9974a]/10' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-600'}`}
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${!residentHeading ? 'ml-7' : ''} ${theme === 'allBlack' ? 'text-gray-400 hover:bg-[#333333] hover:text-gray-200' : theme === 'gold' ? 'text-[#c9974a] hover:bg-[#c9974a]/10' : theme === 'batoryProject' ? 'text-[#1f3f6b] hover:bg-[#1f3f6b]/10' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-600'}`}
                 aria-label="Aktualności"
                 title="Aktualności"
               >
@@ -264,6 +268,8 @@ export function AppBar({
                 ? 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 : theme === 'allBlack'
                   ? 'text-gray-400 hover:bg-[#333333] hover:text-gray-200'
+                  : theme === 'batoryProject'
+                    ? 'text-[#6d7a91] hover:bg-[#dfe6f0] hover:text-[#10284b]'
                   : theme === 'gold'
                     ? 'text-[#6b7280] hover:bg-[#c9974a]/10 hover:text-[#a97c35]'
                     : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
@@ -294,6 +300,8 @@ export function AppBar({
                   ? 'border-slate-200 bg-white text-slate-700 shadow-xl'
                   : theme === 'allBlack'
                     ? 'border-gray-600 bg-[#252525]'
+                    : theme === 'batoryProject'
+                      ? 'border-[#d7dee9] bg-[#f7f9fc] shadow-[0_8px_32px_rgba(16,40,75,0.12)]'
                     : theme === 'gold'
                       ? 'border-[#c9974a]/25 bg-[#faf8f3] shadow-[0_8px_32px_rgba(201,151,74,0.12)]'
                       : 'border-gray-200 bg-white'
@@ -426,6 +434,22 @@ export function AppBar({
               >
                 <span>Gold</span>
                 <span className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ background: 'linear-gradient(135deg,#e0b96e,#a97c35)', color: '#fff' }}>Nowy</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { onThemeChange?.('batoryProject'); setMenuOpen(false) }}
+                className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left ${
+                  variant === 'backoffice'
+                    ? 'text-slate-700 hover:bg-slate-100'
+                    : theme === 'allBlack'
+                      ? 'text-gray-200 hover:bg-[#333333]'
+                      : theme === 'batoryProject'
+                        ? 'bg-[#1f3f6b]/10 text-[#1f3f6b] font-semibold'
+                        : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span>Batory Project</span>
+                <span className="rounded-full bg-[#10284b] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">Nowy</span>
               </button>
               <button
                 type="button"

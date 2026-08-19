@@ -19,6 +19,8 @@ function MenuIconTile({
       ? 'bg-[#d8d8dc]'
       : theme === 'domestaColors'
         ? 'bg-[#e5e5ea]'
+        : theme === 'batoryProject'
+          ? 'bg-[#2a446a]'
         : theme === 'allBlack'
           ? 'bg-[#3a3a3c]'
           : theme === 'gold'
@@ -86,6 +88,8 @@ export function SideMenu({
       ? 'bg-white'
       : theme === 'allWhite'
         ? 'bg-[#F0F0F0]'
+        : theme === 'batoryProject'
+          ? 'bg-[#10284b]'
         : theme === 'gold'
           ? 'bg-[#f0ebe0]'
           : 'bg-[var(--color-domesta-gray)]'
@@ -129,6 +133,7 @@ export function SideMenu({
           monitorIntroFullBleed ? 'overflow-hidden lg:overflow-x-visible lg:overflow-y-auto' : 'overflow-hidden lg:overflow-x-hidden'
         } ${
           theme === 'domestaColors' ? 'bg-white theme-domesta-colors-menu' :
+          theme === 'batoryProject' ? 'bg-[#10284b] text-white theme-batory-menu' :
           theme === 'allWhite' ? 'bg-[#F0F0F0] theme-all-white-menu' :
           theme === 'gold' ? 'bg-[#f0ebe0]' :
           'bg-[var(--color-domesta-gray)] text-white'
@@ -458,7 +463,7 @@ export function SideMenu({
                   : 'ml-2 flex-1 rounded-xl rounded-r-none rounded-b-none border-r-0'
               }`}
             >
-              <ResidentIntroSlideshowPanel />
+              <ResidentIntroSlideshowPanel theme={theme} />
             </section>
           </div>
           </div>
