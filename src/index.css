@@ -27,6 +27,58 @@ body:has(.theme-batory) {
   color: #10284b;
 }
 
+/* Batory 2 — czarny + złoto (wzorzec księgi znaku) */
+.theme-batory-2 {
+  --color-domesta-red: #c4a052;
+  --color-domesta-coral: #c4a052;
+  --color-domesta-gray: #f5f5f5;
+  --color-domesta-gray-light: #9a9a9a;
+  --color-domesta-bg: #121212;
+}
+body:has(.theme-batory-2) {
+  background-color: #121212;
+  color: #f5f5f5;
+}
+
+/* Batory 3 — oliwkowe złoto + srebro (CMYK 23/39/79/10) */
+.theme-batory-3 {
+  --color-domesta-red: #e8ecef;
+  --color-domesta-coral: #f0f2f4;
+  --color-domesta-gray: #f8f6f2;
+  --color-domesta-gray-light: #d8dce0;
+  --color-domesta-bg: #9a7838;
+}
+body:has(.theme-batory-3) {
+  background-color: #9a7838;
+  color: #f8f6f2;
+}
+
+/* Batory 4 — grafit + złoto (CMYK 74/64/59/77) */
+.theme-batory-4 {
+  --color-domesta-red: #c4a052;
+  --color-domesta-coral: #c4a052;
+  --color-domesta-gray: #f5f5f5;
+  --color-domesta-gray-light: #8a959c;
+  --color-domesta-bg: #141a1d;
+}
+body:has(.theme-batory-4) {
+  background-color: #141a1d;
+  color: #f5f5f5;
+}
+
+/* Batory 5 — srebrny + czerń (CMYK 18/12/15/0) */
+.theme-batory-5 {
+  --color-domesta-red: #0a0a0a;
+  --color-domesta-coral: #0a0a0a;
+  --color-domesta-gray: #0a0a0a;
+  --color-domesta-gray-light: #5c6569;
+  --color-domesta-bg: #d1d9db;
+}
+body:has(.theme-batory-5) {
+  background-color: #d1d9db;
+  color: #0a0a0a;
+}
+
 body {
   margin: 0;
   min-height: 100vh;

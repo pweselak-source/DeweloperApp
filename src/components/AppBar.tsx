@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import type { MenuId } from '../data/menuItems'
 import type { AppTheme } from '../App'
+import { BATORY_THEMES, BATORY_THEME_CONFIG, getBatoryThemeConfig, isBatoryTheme } from '../data/batoryThemes'
 import domestaLogo from '../assets/domesta-logo.png.svg'
 import batoryLogo from '../assets/batory-logo.png'
 
@@ -50,27 +51,8 @@ export function AppBar({
   onToggleBackOfficeMenu,
 }: AppBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [tasksOpen, setTasksOpen] = useState(false)
-  const tasksRef = useRef<HTMLDivElement | null>(null)
-  const isBatoryTheme = theme === 'batoryProject'
-
-  // Zamykaj panel "Bieżące zadania" po kliknięciu poza nim
-  useEffect(() => {
-    if (!tasksOpen) return
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!tasksRef.current) return
-      const target = event.target as Node | null
-      if (target && !tasksRef.current.contains(target)) {
-        setTasksOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [tasksOpen])
+  const batoryCfg = getBatoryThemeConfig(theme)
+  const isBatoryThemeActive = isBatoryTheme(theme)
 
   return (
     <div
@@ -88,8 +70,8 @@ export function AppBar({
               ? 'border-[#d2d2d7] bg-white/80 text-[#1d1d1f] shadow-[0_1px_0_rgba(0,0,0,0.04)] backdrop-blur-xl'
               : theme === 'gold'
                 ? 'border-[#c9974a]/30 bg-[#f7f4ee] text-[#2a2a2a] shadow-[0_1px_0_rgba(201,151,74,0.15)]'
-                : theme === 'batoryProject'
-                  ? 'border-[#d7dee9] bg-[#f7f9fc] text-[#10284b] shadow-[0_1px_0_rgba(16,40,75,0.08)]'
+                : batoryCfg
+                  ? ''
                 : theme === 'allBlack'
                   ? 'border-gray-700 bg-[#252525]'
                   : 'border-gray-200 bg-white'
@@ -100,7 +82,14 @@ export function AppBar({
                 fontFamily:
                   '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif',
               }
-            : undefined
+            : batoryCfg
+              ? {
+                  backgroundColor: batoryCfg.headerBg,
+                  borderColor: batoryCfg.headerBorder,
+                  color: batoryCfg.headerText,
+                  boxShadow: '0 1px 0 rgba(0,0,0,0.06)',
+                }
+              : undefined
         }
       >
         {variant === 'backoffice' && (
@@ -134,11 +123,11 @@ export function AppBar({
             type="button"
             onClick={() => onGoHome?.()}
             className={`flex shrink-0 items-center justify-center rounded-lg p-0 focus-visible:outline-none focus-visible:ring-2 ${
-              variant === 'backoffice' ? 'focus-visible:ring-[#1abb9c]' : isBatoryTheme ? 'focus-visible:ring-[#1f3f6b]' : 'focus-visible:ring-[var(--color-domesta-coral)]'
+              variant === 'backoffice' ? 'focus-visible:ring-[#1abb9c]' : isBatoryThemeActive ? 'focus-visible:ring-[var(--color-domesta-coral)]' : 'focus-visible:ring-[var(--color-domesta-coral)]'
             }`}
             aria-label="Strona główna"
           >
-            <img src={isBatoryTheme ? batoryLogo : domestaLogo} alt={isBatoryTheme ? 'Batory Projekt' : 'Domesta'} className="h-[2.667rem] w-auto shrink-0 object-contain" />
+            <img src={isBatoryThemeActive ? batoryLogo : domestaLogo} alt={isBatoryThemeActive ? 'Batory Projekt' : 'Domesta'} className="h-[2.667rem] w-auto shrink-0 object-contain" />
           </button>
         ) : null}
         {residentHeading && variant === 'default' && (
@@ -167,99 +156,45 @@ export function AppBar({
               </div>
           </>
         )}
-        {variant === 'default' && (
-          <div
-            className={`flex shrink-0 items-center gap-2 ${residentHeading ? 'ml-1' : ''} ${!residentHeading && hideNewsShortcut ? 'ml-7' : ''}`}
-          >
-            {!hideNewsShortcut && (
-              <button
-                type="button"
-                onClick={() => onNavigateTo('news')}
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${!residentHeading ? 'ml-7' : ''} ${theme === 'allBlack' ? 'text-gray-400 hover:bg-[#333333] hover:text-gray-200' : theme === 'gold' ? 'text-[#c9974a] hover:bg-[#c9974a]/10' : theme === 'batoryProject' ? 'text-[#1f3f6b] hover:bg-[#1f3f6b]/10' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-600'}`}
-                aria-label="Aktualności"
-                title="Aktualności"
-              >
-                <span className="relative flex h-5 w-5 items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 8v6M12 16h.01" />
-                  </svg>
-                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-domesta-coral)] px-1 text-[10px] font-semibold text-white animate-[coral-pulse_1.2s_ease-in-out_infinite]">2</span>
-                </span>
-              </button>
-            )}
-            {/* Bieżące zadania – ukryte (ikona + dropdown) */}
-            <div className={`relative hidden ${hideNewsShortcut ? 'ml-0' : 'ml-0'}`} ref={tasksRef}>
-              <button
-                type="button"
-                onClick={() => setTasksOpen((open) => !open)}
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${theme === 'allBlack' ? 'text-gray-400 hover:bg-[#333333] hover:text-gray-200' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-600'}`}
-                aria-label="Bieżące zadania"
-                title="Bieżące zadania"
-              >
-                <span className="relative flex h-5 w-5 items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                  </svg>
-                  <span className="absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-domesta-coral)] px-1 text-[10px] font-semibold text-white">3</span>
-                </span>
-              </button>
-              {tasksOpen && (
-                <div className={`absolute left-0 top-full z-50 mt-2 w-72 rounded-xl border p-3 text-xs shadow-xl ${theme === 'allBlack' ? 'border-gray-600 bg-[#252525]' : 'border-gray-200 bg-white'}`}>
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className={`text-[11px] font-medium ${theme === 'allBlack' ? 'text-gray-300' : 'text-[var(--color-domesta-gray)]'}`}>Bieżące zadania</span>
-                  </div>
-                  <div className="space-y-2">
-                    <button
-                      className="flex w-full items-start gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2 text-left text-gray-700 hover:border-[var(--color-domesta-coral)]/40 hover:bg-white"
-                      onClick={() => { onNavigateTo('schedule'); setTasksOpen(false) }}
-                    >
-                      <span className="mt-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-domesta-coral)] text-[10px] font-bold text-white animate-[coral-pulse_1.2s_ease-in-out_infinite]">!</span>
-                      <div className="flex flex-col">
-                        <span className="text-[11px] font-medium text-[var(--color-domesta-gray)]">Zbliżająca się 6 rata</span>
-                        <span className="text-[10px] text-gray-500">Sprawdź harmonogram spłaty i termin płatności kolejnej raty.</span>
-                      </div>
-                    </button>
-                    <button
-                      className="flex w-full items-start gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2 text-left text-gray-700 hover:border-[var(--color-domesta-coral)]/40 hover:bg-white"
-                      onClick={() => { onNavigateTo('meter'); setTasksOpen(false) }}
-                    >
-                      <span className="mt-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-domesta-coral)] text-[10px] font-bold text-white animate-[coral-pulse_1.2s_ease-in-out_infinite]">!</span>
-                      <div className="flex flex-col">
-                        <span className="text-[11px] font-medium text-[var(--color-domesta-gray)]">Uzupełnij liczniki</span>
-                        <span className="text-[10px] text-gray-500">Podaj aktualny stan liczników za bieżący okres rozliczeniowy.</span>
-                      </div>
-                    </button>
-                    <button
-                      className="flex w-full items-start gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2 text-left text-gray-700 hover:border-[var(--color-domesta-coral)]/40 hover:bg-white"
-                      onClick={() => { onNavigateTo('handover'); setTasksOpen(false) }}
-                    >
-                      <span className="mt-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-domesta-coral)] text-[10px] font-bold text-white animate-[coral-pulse_1.2s_ease-in-out_infinite]">!</span>
-                      <div className="flex flex-col">
-                        <span className="text-[11px] font-medium text-[var(--color-domesta-gray)]">Umów się na odbiór</span>
-                        <span className="text-[10px] text-gray-500">Wybierz dogodny termin odbioru mieszkania w kalendarzu.</span>
-                      </div>
-                    </button>
-                    <button
-                      className="flex w-full items-start gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2 text-left text-gray-700 hover:border-[var(--color-domesta-coral)]/40 hover:bg-white"
-                      onClick={() => { onNavigateTo('complaints'); setTasksOpen(false) }}
-                    >
-                      <span className="mt-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-domesta-coral)] text-[10px] font-bold text-white animate-[coral-pulse_1.2s_ease-in-out_infinite]">!</span>
-                      <div className="flex flex-col">
-                        <span className="text-[11px] font-medium text-[var(--color-domesta-gray)]">Zgłoś reklamację</span>
-                        <span className="text-[10px] text-gray-500">Dodaj usterki do listy reklamacyjnej wraz z opisem i zdjęciem.</span>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
-      {/* Menu użytkownika – prawa strona paska */}
+      {/* Aktualności + menu użytkownika – prawa strona paska */}
       <div className="ml-auto flex min-w-0 shrink-0 items-center gap-2 md:gap-3">
+        {variant === 'default' && !hideNewsShortcut && (
+          <button
+            type="button"
+            onClick={() => onNavigateTo('news')}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+              theme === 'allBlack'
+                ? 'text-gray-400 hover:bg-[#333333] hover:text-gray-200'
+                : theme === 'gold'
+                  ? 'text-[#c9974a] hover:bg-[#c9974a]/10'
+                  : batoryCfg
+                    ? 'hover:opacity-90'
+                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-600'
+            }`}
+            style={
+              batoryCfg
+                ? { color: batoryCfg.newsIcon, backgroundColor: 'transparent' }
+                : undefined
+            }
+            onMouseEnter={(e) => {
+              if (batoryCfg) e.currentTarget.style.backgroundColor = batoryCfg.newsHoverBg
+            }}
+            onMouseLeave={(e) => {
+              if (batoryCfg) e.currentTarget.style.backgroundColor = 'transparent'
+            }}
+            aria-label="Aktualności"
+            title="Aktualności"
+          >
+            <span className="relative flex h-5 w-5 items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 8v6M12 16h.01" />
+              </svg>
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-domesta-coral)] px-1 text-[10px] font-semibold text-white animate-[coral-pulse_1.2s_ease-in-out_infinite]">2</span>
+            </span>
+          </button>
+        )}
         <div className="relative">
           <button
             type="button"
@@ -268,12 +203,13 @@ export function AppBar({
                 ? 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 : theme === 'allBlack'
                   ? 'text-gray-400 hover:bg-[#333333] hover:text-gray-200'
-                  : theme === 'batoryProject'
-                    ? 'text-[#6d7a91] hover:bg-[#dfe6f0] hover:text-[#10284b]'
-                  : theme === 'gold'
-                    ? 'text-[#6b7280] hover:bg-[#c9974a]/10 hover:text-[#a97c35]'
-                    : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+                  : batoryCfg
+                    ? 'hover:opacity-90'
+                    : theme === 'gold'
+                      ? 'text-[#6b7280] hover:bg-[#c9974a]/10 hover:text-[#a97c35]'
+                      : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
             }`}
+            style={batoryCfg ? { color: batoryCfg.accentMuted } : undefined}
             aria-label="Menu użytkownika"
             onClick={() => setMenuOpen((open) => !open)}
           >
@@ -300,12 +236,21 @@ export function AppBar({
                   ? 'border-slate-200 bg-white text-slate-700 shadow-xl'
                   : theme === 'allBlack'
                     ? 'border-gray-600 bg-[#252525]'
-                    : theme === 'batoryProject'
-                      ? 'border-[#d7dee9] bg-[#f7f9fc] shadow-[0_8px_32px_rgba(16,40,75,0.12)]'
-                    : theme === 'gold'
-                      ? 'border-[#c9974a]/25 bg-[#faf8f3] shadow-[0_8px_32px_rgba(201,151,74,0.12)]'
-                      : 'border-gray-200 bg-white'
+                    : batoryCfg
+                      ? ''
+                      : theme === 'gold'
+                        ? 'border-[#c9974a]/25 bg-[#faf8f3] shadow-[0_8px_32px_rgba(201,151,74,0.12)]'
+                        : 'border-gray-200 bg-white'
               }`}
+              style={
+                batoryCfg
+                  ? {
+                      backgroundColor: batoryCfg.menuDropdownBg,
+                      borderColor: batoryCfg.menuDropdownBorder,
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                    }
+                  : undefined
+              }
             >
               <button
                 className={`flex w-full items-center px-3 py-2 text-left ${
@@ -435,22 +380,40 @@ export function AppBar({
                 <span>Gold</span>
                 <span className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ background: 'linear-gradient(135deg,#e0b96e,#a97c35)', color: '#fff' }}>Nowy</span>
               </button>
-              <button
-                type="button"
-                onClick={() => { onThemeChange?.('batoryProject'); setMenuOpen(false) }}
-                className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left ${
-                  variant === 'backoffice'
-                    ? 'text-slate-700 hover:bg-slate-100'
-                    : theme === 'allBlack'
-                      ? 'text-gray-200 hover:bg-[#333333]'
-                      : theme === 'batoryProject'
-                        ? 'bg-[#1f3f6b]/10 text-[#1f3f6b] font-semibold'
-                        : 'text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <span>Batory Project</span>
-                <span className="rounded-full bg-[#10284b] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">Nowy</span>
-              </button>
+              {BATORY_THEMES.map((batoryId) => {
+                const cfg = BATORY_THEME_CONFIG[batoryId]
+                const isActive = theme === batoryId
+                return (
+                  <button
+                    key={batoryId}
+                    type="button"
+                    onClick={() => { onThemeChange?.(batoryId); setMenuOpen(false) }}
+                    className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left ${
+                      variant === 'backoffice'
+                        ? 'text-slate-700 hover:bg-slate-100'
+                        : theme === 'allBlack'
+                          ? 'text-gray-200 hover:bg-[#333333]'
+                          : isActive
+                            ? 'font-semibold'
+                            : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                    style={
+                      isActive && batoryCfg
+                        ? { backgroundColor: `${cfg.accent}18`, color: cfg.accent }
+                        : isActive
+                          ? { backgroundColor: `${cfg.accent}18`, color: cfg.accent }
+                          : undefined
+                    }
+                  >
+                    <span>{cfg.menuLabel}</span>
+                    {batoryId === 'batoryProject' ? (
+                      <span className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white" style={{ backgroundColor: cfg.menuBg }}>
+                        Nowy
+                      </span>
+                    ) : null}
+                  </button>
+                )
+              })}
               <button
                 type="button"
                 onClick={() => { onOpenBackOffice?.(); setMenuOpen(false) }}

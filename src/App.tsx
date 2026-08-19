@@ -27,6 +27,7 @@ import { WebAppWelcomeBar } from './components/webapp/WebAppWelcomeBar'
 import { Select2MultiSelect } from './components/Select2MultiSelect'
 import type { Select2Option } from './components/Select2MultiSelect'
 import type { MenuId } from './data/menuItems'
+import { getBatoryThemeConfig, isBatoryTheme } from './data/batoryThemes'
 
 const THEME_STORAGE_KEY = 'app-theme'
 
@@ -60,6 +61,10 @@ export type AppTheme =
   | 'appleFont'
   | 'gold'
   | 'batoryProject'
+  | 'batory2'
+  | 'batory3'
+  | 'batory4'
+  | 'batory5'
 type BackOfficeView =
   | 'investments'
   | 'clients'
@@ -373,7 +378,11 @@ function App() {
         saved === 'allWhite' ||
         saved === 'appleFont' ||
         saved === 'gold' ||
-        saved === 'batoryProject'
+        saved === 'batoryProject' ||
+        saved === 'batory2' ||
+        saved === 'batory3' ||
+        saved === 'batory4' ||
+        saved === 'batory5'
       )
         return saved
       return 'halfBlack'
@@ -1232,12 +1241,14 @@ function App() {
     resetSellDialog()
   }
 
+  const batoryThemeConfig = getBatoryThemeConfig(theme)
+
   const outerBackgroundClass = showBackOffice
     ? 'bg-gradient-to-br from-slate-950 via-[#0c2744] to-[#042f2e]'
     : theme === 'appleFont'
       ? 'bg-[#f5f5f7]'
-      : theme === 'batoryProject'
-        ? 'theme-batory bg-[#eef2f6]'
+      : batoryThemeConfig
+        ? `${batoryThemeConfig.themeClass}`
       : theme === 'gold'
         ? 'bg-[#f7f4ee]'
         : theme === 'allBlack'
@@ -1250,8 +1261,8 @@ function App() {
     ? 'bg-gradient-to-br from-slate-950 via-[#0c2744] to-[#042f2e]'
     : theme === 'appleFont'
       ? 'bg-[#f5f5f7]'
-      : theme === 'batoryProject'
-        ? 'bg-[#eef2f6]'
+      : batoryThemeConfig
+        ? ''
       : theme === 'gold'
         ? 'bg-[#f7f4ee]'
         : theme === 'allBlack'
@@ -1439,7 +1450,7 @@ function App() {
           onOpenWebApp={handleOpenWebApp}
           variant={showBackOffice ? 'backoffice' : 'default'}
           hideNewsShortcut={showWebApp}
-          residentHeading={theme === 'batoryProject' ? undefined : residentAppBarHeading}
+          residentHeading={isBatoryTheme(theme) ? undefined : residentAppBarHeading}
           showLogo={!showBackOffice}
           backOfficeMenuCollapsed={backOfficeMenuCollapsed}
           onToggleBackOfficeMenu={() => setBackOfficeMenuCollapsed((prev) => !prev)}

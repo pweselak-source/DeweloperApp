@@ -3,33 +3,36 @@ import { ResidentIntroSlideshowPanel } from './ResidentIntroHero'
 import { MENU_ITEMS } from '../data/menuItems'
 import type { MenuId } from '../data/menuItems'
 import type { AppTheme } from '../App'
+import { getBatoryThemeConfig, isBatoryTheme } from '../data/batoryThemes'
 
 /** Ikona etapu na szarym, zaokrąglonym tle (rozmiar glifiki jak wcześniej) */
 function MenuIconTile({
   children,
   iconClassName,
   theme = 'halfBlack',
+  tileBgOverride,
 }: {
   children: ReactNode
   iconClassName: string
   theme?: AppTheme
+  tileBgOverride?: string
 }) {
   const tileBg =
-    theme === 'allWhite'
+    tileBgOverride ??
+    (theme === 'allWhite'
       ? 'bg-[#d8d8dc]'
       : theme === 'domestaColors'
         ? 'bg-[#e5e5ea]'
-        : theme === 'batoryProject'
-          ? 'bg-[#2a446a]'
         : theme === 'allBlack'
           ? 'bg-[#3a3a3c]'
           : theme === 'gold'
             ? 'bg-[#e8e0d0]'
-            : 'bg-[#52525a]'
+            : 'bg-[#52525a]')
 
   return (
     <span
-      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] ${tileBg} shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] ring-1 ring-black/10`}
+      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] ring-1 ring-black/10 ${tileBgOverride ? '' : tileBg}`}
+      style={tileBgOverride ? { backgroundColor: tileBgOverride } : undefined}
     >
       <span className={`[&_svg]:h-[1.125rem] [&_svg]:w-[1.125rem] ${iconClassName}`}>
         {children}
@@ -46,16 +49,24 @@ function InvestmentBarTitle({
   theme: AppTheme
   investmentName: string
 }) {
+  const batoryCfg = getBatoryThemeConfig(theme)
   const showOrlowoSquare =
-    theme === 'batoryProject' ||
+    isBatoryTheme(theme) ||
     investmentName === 'Orłowo Square' ||
     investmentName === 'Polana Kampinowska'
 
   if (showOrlowoSquare) {
+    const orlowoColor = batoryCfg?.orlowoColor ?? '#000000'
+    const squareColor = batoryCfg?.squareColor ?? '#c9a227'
     return (
       <span className="flex flex-col items-start leading-none">
-        <span className="text-[1.0625rem] font-semibold tracking-wide text-black">Orłowo</span>
-        <span className="mt-1 text-[0.5625rem] font-medium uppercase tracking-[0.14em] text-[#c9a227]">
+        <span className="text-[1.0625rem] font-semibold tracking-wide" style={{ color: orlowoColor }}>
+          Orłowo
+        </span>
+        <span
+          className="mt-1 text-[0.5625rem] font-medium uppercase tracking-[0.14em]"
+          style={{ color: squareColor }}
+        >
           square
         </span>
       </span>
@@ -120,14 +131,15 @@ export function SideMenu({
   const [unitPopupOpen, setUnitPopupOpen] = useState(false)
   const [popupStep, setPopupStep] = useState<'investment' | 'apartment'>('investment')
   const [pendingInvestment, setPendingInvestment] = useState(investmentName)
+  const batoryCfg = getBatoryThemeConfig(theme)
 
   const introRailSolidBg =
-    theme === 'domestaColors'
+    batoryCfg
+      ? ''
+      : theme === 'domestaColors'
       ? 'bg-white'
-      : theme === 'allWhite'
+        : theme === 'allWhite'
         ? 'bg-[#F0F0F0]'
-        : theme === 'batoryProject'
-          ? 'bg-[#10284b]'
         : theme === 'gold'
           ? 'bg-[#f0ebe0]'
           : 'bg-[var(--color-domesta-gray)]'
@@ -171,24 +183,34 @@ export function SideMenu({
           monitorIntroFullBleed ? 'overflow-hidden lg:overflow-x-visible lg:overflow-y-auto' : 'overflow-hidden lg:overflow-x-hidden'
         } ${
           theme === 'domestaColors' ? 'bg-white theme-domesta-colors-menu' :
-          theme === 'batoryProject' ? 'bg-[#10284b] text-white theme-batory-menu' :
+          batoryCfg ? 'text-white theme-batory-menu' :
           theme === 'allWhite' ? 'bg-[#F0F0F0] theme-all-white-menu' :
           theme === 'gold' ? 'bg-[#f0ebe0]' :
           'bg-[var(--color-domesta-gray)] text-white'
-        }`}>
+        }`}
+        style={batoryCfg ? { backgroundColor: batoryCfg.menuBg } : undefined}
+      >
         {/* Header: nazwa inwestycji + collapse/expand control – wysokość jak górny pasek AppBar */}
-        <div className={`flex min-h-[4.667rem] h-[4.667rem] items-center border-b px-3 ${
+        <div
+          className={`flex min-h-[4.667rem] h-[4.667rem] items-center border-b px-3 ${
           theme === 'allBlack' ? 'border-gray-600 bg-[#252525]' :
           theme === 'allWhite' ? 'border-gray-300 bg-[#F0F0F0]' :
           theme === 'gold' ? 'border-[#c9974a]/25 bg-[#faf8f3]' :
+          batoryCfg ? '' :
           'border-gray-200 bg-white'
-        }`}>
+        }`}
+          style={
+            batoryCfg
+              ? { backgroundColor: batoryCfg.headerBg, borderColor: batoryCfg.headerBorder, color: batoryCfg.headerText }
+              : undefined
+          }
+        >
           {effectiveCollapsed ? (
             <div className="flex w-full items-center gap-3">
               <button
                 type="button"
                 onClick={() => setUnitPopupOpen(true)}
-                className={`flex min-w-0 flex-col text-left ${theme === 'batoryProject' ? 'gap-2' : ''}`}
+                className={`flex min-w-0 flex-col text-left ${isBatoryTheme(theme) ? 'gap-2' : ''}`}
               >
                 <InvestmentBarTitle theme={theme} investmentName={investmentName} />
                 <span className={`min-w-0 truncate text-[0.583rem] ${theme === 'allBlack' ? 'text-white' : theme === 'gold' ? 'text-[#6b7280]' : 'text-gray-600'}`}>Mieszkanie: {apartmentLabel}</span>
@@ -226,7 +248,7 @@ export function SideMenu({
               <button
                 type="button"
                 onClick={() => setUnitPopupOpen(true)}
-                className={`flex min-w-0 flex-col text-left ${theme === 'batoryProject' ? 'gap-2' : ''}`}
+                className={`flex min-w-0 flex-col text-left ${isBatoryTheme(theme) ? 'gap-2' : ''}`}
               >
                 <InvestmentBarTitle theme={theme} investmentName={investmentName} />
                 <span className={`min-w-0 truncate text-[0.583rem] ${theme === 'allBlack' ? 'text-white' : theme === 'gold' ? 'text-[#6b7280]' : 'text-gray-600'}`}>Mieszkanie: {apartmentLabel}</span>
@@ -296,7 +318,7 @@ export function SideMenu({
                     Wybierz inwestycję, a następnie mieszkanie w tej lokalizacji.
                   </p>
                   <div className="space-y-2 text-xs">
-                    {(theme === 'batoryProject'
+                    {(isBatoryTheme(theme)
                       ? ['Orłowo Square', 'Zielone Ogrody', 'Nowa Morena']
                       : ['Polana Kampinowska', 'Zielone Ogrody', 'Nowa Morena']
                     ).map((name) => (
@@ -381,6 +403,7 @@ export function SideMenu({
               className={`flex shrink-0 items-stretch gap-1 ${
                 monitorIntroFullBleed && effectiveCollapsed ? `relative z-30 lg:rounded-l-xl lg:pr-1 ${introRailSolidBg}` : ''
               }`}
+              style={batoryCfg && monitorIntroFullBleed && effectiveCollapsed ? { backgroundColor: batoryCfg.menuBg } : batoryCfg ? { backgroundColor: batoryCfg.menuBg } : undefined}
             >
             {/* Pionowa, grubsza strzałka po lewej stronie ikon (jeden spójny kształt) */}
             <div className="relative flex w-4 justify-center">
@@ -445,7 +468,7 @@ export function SideMenu({
                         }`}
                         title={item.label}
                       >
-                        <MenuIconTile iconClassName={statusIconClass} theme={theme}>
+                        <MenuIconTile iconClassName={statusIconClass} theme={theme} tileBgOverride={batoryCfg?.menuIconTile}>
                           {item.icon}
                         </MenuIconTile>
                         <span className="shrink-0">{statusIcon}</span>
@@ -467,6 +490,7 @@ export function SideMenu({
                     <MenuIconTile
                       iconClassName={theme === 'allWhite' ? 'theme-all-white-site-log-icon' : theme === 'gold' ? 'text-[#d4956a]' : 'text-amber-300'}
                       theme={theme}
+                      tileBgOverride={batoryCfg?.menuIconTile}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M19 5H9a2 2 0 0 0-2 2v11" /><path d="M13 9H7" /><path d="M15 13H7" /><path d="M17 17H7" /><path d="M5 5v14a2 2 0 0 0 2 2h11" /><path d="M19 21h-2a2 2 0 0 1-2-2V3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2Z" />
@@ -622,7 +646,7 @@ export function SideMenu({
                             <path d="M3 8h8" />
                             <path d="M8 4l4 4-4 4" />
                           </svg>
-                          <MenuIconTile iconClassName={statusIconClass} theme={theme}>
+                          <MenuIconTile iconClassName={statusIconClass} theme={theme} tileBgOverride={batoryCfg?.menuIconTile}>
                             {item.icon}
                           </MenuIconTile>
                         </span>
@@ -635,7 +659,7 @@ export function SideMenu({
                     )}
                     {effectiveCollapsed && (
                       <span className="relative flex items-center justify-center">
-                        <MenuIconTile iconClassName={statusIconClass} theme={theme}>
+                        <MenuIconTile iconClassName={statusIconClass} theme={theme} tileBgOverride={batoryCfg?.menuIconTile}>
                           {item.icon}
                         </MenuIconTile>
                         <span className="absolute -bottom-0.5 -right-1">
@@ -680,6 +704,7 @@ export function SideMenu({
                     <MenuIconTile
                       iconClassName={theme === 'allWhite' ? 'theme-all-white-site-log-icon' : theme === 'gold' ? 'text-[#d4956a]' : 'text-amber-300'}
                       theme={theme}
+                      tileBgOverride={batoryCfg?.menuIconTile}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M19 5H9a2 2 0 0 0-2 2v11" />
@@ -698,6 +723,7 @@ export function SideMenu({
                   <MenuIconTile
                     iconClassName={theme === 'allWhite' ? 'theme-all-white-site-log-icon' : theme === 'gold' ? 'text-[#d4956a]' : 'text-amber-300'}
                     theme={theme}
+                    tileBgOverride={batoryCfg?.menuIconTile}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M19 5H9a2 2 0 0 0-2 2v11" />
