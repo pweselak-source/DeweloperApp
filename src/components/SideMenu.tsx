@@ -38,6 +38,47 @@ function MenuIconTile({
   )
 }
 
+/** Nagłówek inwestycji na poziomym pasku (obok „Szczegóły podróży”) */
+function InvestmentBarTitle({
+  theme,
+  investmentName,
+}: {
+  theme: AppTheme
+  investmentName: string
+}) {
+  const showOrlowoSquare =
+    theme === 'batoryProject' ||
+    investmentName === 'Orłowo Square' ||
+    investmentName === 'Polana Kampinowska'
+
+  if (showOrlowoSquare) {
+    return (
+      <span className="flex flex-col items-start leading-none">
+        <span className="text-[1.0625rem] font-semibold tracking-wide text-black">Orłowo</span>
+        <span className="mt-1 text-[0.5625rem] font-medium uppercase tracking-[0.14em] text-[#c9a227]">
+          square
+        </span>
+      </span>
+    )
+  }
+
+  const parts = investmentName.split(/\s+/)
+  const firstWord = parts[0] ?? ''
+  const restWords = parts.slice(1).join(' ')
+
+  return (
+    <span className={`text-[0.8125rem] tracking-wide ${theme === 'allBlack' ? 'text-white' : ''} ${theme === 'allWhite' ? 'text-gray-800' : ''}`}>
+      <span className={
+        theme === 'allBlack' ? 'font-bold text-white' :
+        theme === 'allWhite' ? 'font-semibold text-[var(--color-domesta-red)]' :
+        theme === 'gold' ? 'font-semibold text-[#a97c35]' :
+        'text-[var(--color-domesta-red)]'
+      }>{firstWord}</span>
+      {restWords ? <>{' '}<span className={theme === 'allBlack' ? 'text-white' : theme === 'allWhite' ? 'text-gray-700' : theme === 'gold' ? 'text-[#2a2a2a]' : 'text-[var(--color-domesta-gray)]'}>{restWords}</span></> : null}
+    </span>
+  )
+}
+
 interface SideMenuProps {
   collapsed: boolean
   activeId: MenuId | null
@@ -71,14 +112,11 @@ export function SideMenu({
   const hideExpandedCollapseBtn = webappFixedBand === 'expanded'
   const slideshowBandHeightClass =
     webappFixedBand === 'slideshow'
-      ? 'h-[min(42vh,400px)] min-h-[200px] max-h-[400px]'
-      : 'h-[50vh] min-h-[50vh] max-h-[50vh]'
+      ? 'min-h-[200px] max-h-[400px]'
+      : 'h-auto min-h-[26rem]'
 
   const introHeroRef = useRef<HTMLElement | null>(null)
   const [introHeroBleed, setIntroHeroBleed] = useState<{ marginLeft: number; width: number } | null>(null)
-  const parts = investmentName.split(/\s+/)
-  const firstWord = parts[0] ?? ''
-  const restWords = parts.slice(1).join(' ')
   const [unitPopupOpen, setUnitPopupOpen] = useState(false)
   const [popupStep, setPopupStep] = useState<'investment' | 'apartment'>('investment')
   const [pendingInvestment, setPendingInvestment] = useState(investmentName)
@@ -150,17 +188,9 @@ export function SideMenu({
               <button
                 type="button"
                 onClick={() => setUnitPopupOpen(true)}
-                className="flex min-w-0 flex-col text-left"
+                className={`flex min-w-0 flex-col text-left ${theme === 'batoryProject' ? 'gap-2' : ''}`}
               >
-                <span className={`text-[0.8125rem] tracking-wide ${theme === 'allBlack' ? 'text-white' : ''} ${theme === 'allWhite' ? 'text-gray-800' : ''}`}>
-                  <span className={
-                    theme === 'allBlack' ? 'font-bold text-white' :
-                    theme === 'allWhite' ? 'font-semibold text-[var(--color-domesta-red)]' :
-                    theme === 'gold' ? 'font-semibold text-[#a97c35]' :
-                    'text-[var(--color-domesta-red)]'
-                  }>{firstWord}</span>
-                  {restWords ? <>{' '}<span className={theme === 'allBlack' ? 'text-white' : theme === 'allWhite' ? 'text-gray-700' : theme === 'gold' ? 'text-[#2a2a2a]' : 'text-[var(--color-domesta-gray)]'}>{restWords}</span></> : null}
-                </span>
+                <InvestmentBarTitle theme={theme} investmentName={investmentName} />
                 <span className={`min-w-0 truncate text-[0.583rem] ${theme === 'allBlack' ? 'text-white' : theme === 'gold' ? 'text-[#6b7280]' : 'text-gray-600'}`}>Mieszkanie: {apartmentLabel}</span>
               </button>
               {!hideSlideshowExpandBtn && (
@@ -196,17 +226,9 @@ export function SideMenu({
               <button
                 type="button"
                 onClick={() => setUnitPopupOpen(true)}
-                className="flex min-w-0 flex-col text-left"
+                className={`flex min-w-0 flex-col text-left ${theme === 'batoryProject' ? 'gap-2' : ''}`}
               >
-                <span className={`text-[0.8125rem] tracking-wide ${theme === 'allBlack' ? 'text-white' : ''} ${theme === 'allWhite' ? 'text-gray-800' : ''}`}>
-                  <span className={
-                    theme === 'allBlack' ? 'font-bold text-white' :
-                    theme === 'allWhite' ? 'font-semibold text-[var(--color-domesta-red)]' :
-                    theme === 'gold' ? 'font-semibold text-[#a97c35]' :
-                    'text-[var(--color-domesta-red)]'
-                  }>{firstWord}</span>
-                  {restWords ? <>{' '}<span className={theme === 'allBlack' ? 'text-white' : theme === 'allWhite' ? 'text-gray-700' : theme === 'gold' ? 'text-[#2a2a2a]' : 'text-[var(--color-domesta-gray)]'}>{restWords}</span></> : null}
-                </span>
+                <InvestmentBarTitle theme={theme} investmentName={investmentName} />
                 <span className={`min-w-0 truncate text-[0.583rem] ${theme === 'allBlack' ? 'text-white' : theme === 'gold' ? 'text-[#6b7280]' : 'text-gray-600'}`}>Mieszkanie: {apartmentLabel}</span>
               </button>
               {!hideExpandedCollapseBtn && (
@@ -274,7 +296,10 @@ export function SideMenu({
                     Wybierz inwestycję, a następnie mieszkanie w tej lokalizacji.
                   </p>
                   <div className="space-y-2 text-xs">
-                    {['Polana Kampinowska', 'Zielone Ogrody', 'Nowa Morena'].map((name) => (
+                    {(theme === 'batoryProject'
+                      ? ['Orłowo Square', 'Zielone Ogrody', 'Nowa Morena']
+                      : ['Polana Kampinowska', 'Zielone Ogrody', 'Nowa Morena']
+                    ).map((name) => (
                       <button
                         key={name}
                         type="button"
@@ -309,7 +334,9 @@ export function SideMenu({
                         ? ['Lipowa 3/7', 'Lipowa 5/2', 'Kasztanowa 12/4', 'Klonowa 8/1'] // 4 mieszkania
                         : pendingInvestment === 'Nowa Morena'
                           ? ['Morena 10/1'] // 1 mieszkanie
-                          : ['Uranowa 21A/3', 'Uranowa 21A/5'] // 2 mieszkania
+                          : pendingInvestment === 'Orłowo Square'
+                            ? ['Uranowa 21A/3', 'Uranowa 21A/5']
+                            : ['Uranowa 21A/3', 'Uranowa 21A/5'] // 2 mieszkania
                     ).map((address) => (
                       <button
                         key={address}
@@ -337,15 +364,15 @@ export function SideMenu({
           {/* Zwinięty: animowane pojawianie/znikanie */}
           <div
             className={`flex flex-col transition-[max-height,opacity,transform] duration-300 ease-out ${
-              monitorIntroFullBleed ? 'overflow-hidden lg:overflow-x-visible' : 'overflow-hidden'
+              monitorIntroFullBleed ? 'overflow-visible lg:overflow-x-visible' : 'overflow-visible'
             } ${
               effectiveCollapsed
                 ? `${slideshowBandHeightClass} opacity-100 translate-y-0`
-                : 'max-h-0 min-h-0 opacity-0 translate-y-[-6px] pointer-events-none'
+                : 'max-h-0 min-h-0 opacity-0 translate-y-[-6px] pointer-events-none overflow-hidden'
             }`}
           >
           <div
-            className={`flex min-h-0 flex-1 items-stretch gap-1 py-0 animate-[menu-content-in_0.3s_ease-out_0.08s_both] ${
+            className={`flex min-h-[26rem] flex-1 flex-nowrap items-stretch gap-1 py-0 animate-[menu-content-in_0.3s_ease-out_0.08s_both] ${
               monitorIntroFullBleed && effectiveCollapsed ? 'overflow-visible' : ''
             }`}
           >
@@ -373,8 +400,8 @@ export function SideMenu({
                 <path d="M3 215 6 232l3-17" />
               </svg>
             </div>
-            <nav className="flex h-full shrink-0 flex-col pl-0 pr-2.5" aria-label="Menu główne">
-              <ul className="flex flex-1 flex-col items-start justify-between gap-1 py-6">
+            <nav className="flex shrink-0 flex-col self-stretch pl-0 pr-2.5" aria-label="Menu główne">
+              <ul className="flex flex-col items-start gap-1.5 py-4">
                 {MENU_ITEMS.filter((item) => item.id !== 'siteLog' && item.id !== 'news').map((item) => {
                   const isActive = activeId === item.id
                   const statusIconClass =
@@ -457,10 +484,10 @@ export function SideMenu({
                   ? { marginLeft: introHeroBleed.marginLeft, width: introHeroBleed.width, maxWidth: introHeroBleed.width }
                   : undefined
               }
-              className={`relative mr-0 flex min-h-0 flex-col justify-end overflow-hidden self-stretch border border-white/40 border-b-0 px-4 pt-3 pb-4 text-left ${
+              className={`relative mr-0 flex min-h-[26rem] min-w-0 flex-1 flex-col justify-end self-stretch overflow-hidden border border-white/40 border-b-0 px-4 pt-3 pb-4 text-left ${
                 introHeroBleed
-                  ? 'z-0 ml-0 flex-shrink-0 rounded-none border-r-0 lg:rounded-r-xl'
-                  : 'ml-2 flex-1 rounded-xl rounded-r-none rounded-b-none border-r-0'
+                  ? 'z-0 ml-0 rounded-none border-r-0 lg:rounded-r-xl'
+                  : 'ml-2 rounded-xl rounded-r-none rounded-b-none border-r-0'
               }`}
             >
               <ResidentIntroSlideshowPanel theme={theme} />

@@ -1439,7 +1439,7 @@ function App() {
           onOpenWebApp={handleOpenWebApp}
           variant={showBackOffice ? 'backoffice' : 'default'}
           hideNewsShortcut={showWebApp}
-          residentHeading={residentAppBarHeading}
+          residentHeading={theme === 'batoryProject' ? undefined : residentAppBarHeading}
           showLogo={!showBackOffice}
           backOfficeMenuCollapsed={backOfficeMenuCollapsed}
           onToggleBackOfficeMenu={() => setBackOfficeMenuCollapsed((prev) => !prev)}

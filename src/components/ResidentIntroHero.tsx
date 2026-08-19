@@ -1,9 +1,9 @@
-import dom1 from '../assets/dom1.jpg'
-import dom2 from '../assets/dom2.jpg'
-import dom3 from '../assets/dom3.jpg'
+import batorySlide1 from '../assets/batory-slide-1.png'
+import batorySlide2 from '../assets/batory-slide-2.png'
+import batorySlide3 from '../assets/batory-slide-3.png'
 import type { AppTheme } from '../App'
 
-const slideshowImages = [dom1, dom2, dom3]
+const slideshowImages = [batorySlide1, batorySlide2, batorySlide3]
 
 /** Wspólne tło (slideshow) + blok tekstu jak w zwiniętym lewym menu na stronie głównej. */
 export function ResidentIntroSlideshowPanel({ theme = 'halfBlack' }: { theme?: AppTheme }) {
@@ -16,7 +16,7 @@ export function ResidentIntroSlideshowPanel({ theme = 'halfBlack' }: { theme?: A
             <img
               key={src}
               src={src}
-              alt="Dziennik budowy"
+              alt="Wizualizacja inwestycji Batory Projekt"
               className={`absolute h-full w-full object-cover ${
                 idx === 0
                   ? 'animate-[slideshow1_24s_ease-in-out_infinite]'
