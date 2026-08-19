@@ -79,16 +79,17 @@ body:has(.theme-batory-5) {
   color: #0a0a0a;
 }
 
-/* Batory 6 — grafit + burgund + złoto (promocja raty 0%) */
+/* Batory 6 — jednolite czarnomagentowe tło */
 .theme-batory-6 {
   --color-domesta-red: #a60050;
-  --color-domesta-coral: #a60050;
+  --color-domesta-coral: #c49e4e;
   --color-domesta-gray: #ffffff;
-  --color-domesta-gray-light: #e0e0e0;
-  --color-domesta-bg: #1a1a1a;
+  --color-domesta-gray-light: #d4c4a8;
+  --color-domesta-bg: #1a0810;
+  background-color: #1a0810;
 }
 body:has(.theme-batory-6) {
-  background-color: #1a1a1a;
+  background-color: #1a0810;
   color: #ffffff;
 }
 

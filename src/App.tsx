@@ -1250,7 +1250,9 @@ function App() {
     : theme === 'appleFont'
       ? 'bg-[#f5f5f7]'
       : batoryThemeConfig
-        ? `${batoryThemeConfig.themeClass}`
+        ? theme === 'batory6'
+          ? `${batoryThemeConfig.themeClass} min-h-screen`
+          : `${batoryThemeConfig.themeClass}`
       : theme === 'gold'
         ? 'bg-[#f7f4ee]'
         : theme === 'allBlack'

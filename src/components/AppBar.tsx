@@ -11,6 +11,25 @@ import {
 import domestaLogo from '../assets/domesta-logo.png.svg'
 import batoryLogo from '../assets/batory-logo.png'
 
+function BatoryLogoOnDarkBar({
+  primary = '#ffffff',
+  secondary = '#e0e0e0',
+}: {
+  primary?: string
+  secondary?: string
+}) {
+  return (
+    <span className="inline-flex h-[2.667rem] flex-col items-center justify-center leading-none">
+      <span className="text-[1.2rem] font-bold tracking-[0.07em]" style={{ color: primary }}>
+        BATORY
+      </span>
+      <span className="mt-0.5 text-[0.5rem] tracking-[0.2em]" style={{ color: secondary }}>
+        PROJEKT
+      </span>
+    </span>
+  )
+}
+
 const BACKOFFICE_TOP_STATS = [
   { label: 'Liczba mieszkań', value: '2,500', trend: '+4% w tym tygodniu' },
   { label: 'Oddane mieszkania', value: '1,824', trend: '+12% rok do roku' },
@@ -134,7 +153,15 @@ export function AppBar({
             }`}
             aria-label="Strona główna"
           >
-            <img src={showBatoryLogo ? batoryLogo : domestaLogo} alt={showBatoryLogo ? 'Batory Projekt' : 'Domesta'} className="h-[2.667rem] w-auto shrink-0 object-contain" />
+            {theme === 'batory6' ? (
+              <BatoryLogoOnDarkBar primary={batoryCfg?.headerText} secondary={batoryCfg?.accentMuted} />
+            ) : (
+              <img
+                src={showBatoryLogo ? batoryLogo : domestaLogo}
+                alt={showBatoryLogo ? 'Batory Projekt' : 'Domesta'}
+                className="h-[2.667rem] w-auto shrink-0 object-contain"
+              />
+            )}
           </button>
         ) : null}
         {residentHeading && variant === 'default' && (

@@ -220,7 +220,9 @@ export function SideMenu({
                   type="button"
                   onClick={onToggleCollapse}
                   className={`ml-auto mr-3 flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px] shadow-sm ${
-                    theme === 'allBlack' ? 'border-gray-500 bg-[#333333] text-gray-200 hover:bg-[#404040]' :
+                    theme === 'batory6'
+                      ? 'border-[#c49e4e]/40 bg-[#c49e4e]/10 text-white hover:bg-[#c49e4e]/18'
+                      : theme === 'allBlack' ? 'border-gray-500 bg-[#333333] text-gray-200 hover:bg-[#404040]' :
                     theme === 'allWhite' ? 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100' :
                     theme === 'gold' ? 'border-[#c9974a]/30 bg-white text-[#a97c35] hover:bg-[#faf8f3]' :
                     'border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-100'
@@ -230,7 +232,7 @@ export function SideMenu({
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
-                    className={`h-4 w-4 ${theme === 'allBlack' ? 'text-gray-400' : theme === 'allWhite' ? 'text-gray-600' : theme === 'gold' ? 'text-[#c9974a]' : 'text-gray-500'}`}
+                    className={`h-4 w-4 ${theme === 'batory6' ? 'text-[#c49e4e]' : theme === 'allBlack' ? 'text-gray-400' : theme === 'allWhite' ? 'text-gray-600' : theme === 'gold' ? 'text-[#c9974a]' : 'text-gray-500'}`}
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
@@ -428,7 +430,13 @@ export function SideMenu({
                 {MENU_ITEMS.filter((item) => item.id !== 'siteLog' && item.id !== 'news').map((item) => {
                   const isActive = activeId === item.id
                   const statusIconClass =
-                    theme === 'gold'
+                    theme === 'batory6'
+                      ? item.status === 'done'
+                        ? 'text-[#c49e4e]'
+                        : item.status === 'current'
+                          ? 'text-[#e0b96e]'
+                          : 'text-[#a08850]'
+                      : theme === 'gold'
                       ? item.status === 'done'
                         ? 'text-[#c9974a]'
                         : item.status === 'current'
@@ -462,7 +470,9 @@ export function SideMenu({
                         type="button"
                         onClick={() => onSelect(item.id)}
                         className={`group relative flex items-center justify-start gap-2 rounded-lg px-1 py-1 text-left transition-colors ${
-                          theme === 'gold'
+                          theme === 'batory6'
+                            ? isActive ? 'bg-[#c49e4e]/12 ring-1 ring-[#c49e4e]/30 text-white' : 'text-white/80 hover:bg-[#c49e4e]/8'
+                            : theme === 'gold'
                             ? isActive ? 'bg-[#c9974a]/15 ring-1 ring-[#c9974a]/25' : 'hover:bg-[#c9974a]/8'
                             : isActive ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5'
                         }`}
@@ -561,7 +571,13 @@ export function SideMenu({
             {MENU_ITEMS.filter((item) => item.id !== 'siteLog' && item.id !== 'news').map((item, index) => {
               const isActive = activeId === item.id
               const statusIconClass =
-                theme === 'gold'
+                theme === 'batory6'
+                  ? item.status === 'done'
+                    ? 'text-[#c49e4e]'
+                    : item.status === 'current'
+                      ? 'text-[#e0b96e]'
+                      : 'text-[#a08850]'
+                  : theme === 'gold'
                   ? item.status === 'done'
                     ? 'text-[#c9974a]'
                     : item.status === 'current'
@@ -610,7 +626,11 @@ export function SideMenu({
                     onClick={() => onSelect(item.id)}
                     className={`
                       group relative flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs transition-colors
-                      ${theme === 'gold'
+                      ${theme === 'batory6'
+                        ? isActive
+                          ? 'bg-[#c49e4e]/12 ring-1 ring-[#c49e4e]/30 text-white'
+                          : 'text-white/80 hover:bg-[#c49e4e]/8'
+                        : theme === 'gold'
                         ? isActive
                           ? 'bg-gradient-to-r from-[#e0b96e]/20 to-[#c9974a]/10 ring-1 ring-[#c9974a]/30'
                           : 'hover:bg-[#c9974a]/8'
@@ -624,7 +644,7 @@ export function SideMenu({
                   >
                     {isActive && !effectiveCollapsed && (
                       <span
-                        className={`absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r ${theme === 'gold' ? 'bg-gradient-to-b from-[#e0b96e] to-[#a97c35]' : 'bg-[var(--color-domesta-red)]'}`}
+                        className={`absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r ${theme === 'batory6' ? 'bg-gradient-to-b from-[#c49e4e] to-[#a60050]' : theme === 'gold' ? 'bg-gradient-to-b from-[#e0b96e] to-[#a97c35]' : 'bg-[var(--color-domesta-red)]'}`}
                         aria-hidden
                       />
                     )}
@@ -632,11 +652,11 @@ export function SideMenu({
                       <>
                         {/* Pozioma przerywana kreska zakończona strzałką prowadząca do ikony etapu */}
                         <span className="flex items-center gap-1">
-                          <span className={`h-px w-6 border-t border-dashed ${theme === 'gold' ? 'border-[#c9974a]/30' : 'border-white/40'}`} />
+                          <span className={`h-px w-6 border-t border-dashed ${theme === 'batory6' ? 'border-[#c49e4e]/35' : theme === 'gold' ? 'border-[#c9974a]/30' : 'border-white/40'}`} />
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             viewBox="0 0 16 16"
-                            className={`h-3 w-3 ${theme === 'gold' ? 'text-[#c9974a]/50' : 'text-white/70'}`}
+                            className={`h-3 w-3 ${theme === 'batory6' ? 'text-[#c49e4e]/70' : theme === 'gold' ? 'text-[#c9974a]/50' : 'text-white/70'}`}
                             fill="none"
                             stroke="currentColor"
                             strokeWidth="2"
