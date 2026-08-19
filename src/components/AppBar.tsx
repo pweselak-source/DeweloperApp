@@ -331,19 +331,6 @@ export function AppBar({
               </button>
               <button
                 type="button"
-                onClick={() => { onThemeChange?.('domestaColors'); setMenuOpen(false) }}
-                className={`flex w-full items-center px-3 py-2 text-left ${
-                  variant === 'backoffice'
-                    ? 'text-slate-700 hover:bg-slate-100'
-                    : theme === 'allBlack'
-                      ? 'text-gray-200 hover:bg-[#333333]'
-                      : 'text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                Kolor DomestaColors
-              </button>
-              <button
-                type="button"
                 onClick={() => { onThemeChange?.('allWhite'); setMenuOpen(false) }}
                 className={`flex w-full items-center px-3 py-2 text-left ${
                   variant === 'backoffice'
@@ -399,6 +386,10 @@ export function AppBar({
                     <span>{cfg.menuLabel}</span>
                     {batoryId === 'batoryProject' ? (
                       <span className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white" style={{ backgroundColor: cfg.menuBg }}>
+                        Nowy
+                      </span>
+                    ) : batoryId === 'batory6' ? (
+                      <span className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white" style={{ backgroundColor: cfg.accent }}>
                         Nowy
                       </span>
                     ) : null}

@@ -1,6 +1,6 @@
 import type { AppTheme } from '../App'
 
-export const BATORY_THEMES = ['batoryProject', 'batory2', 'batory3', 'batory4', 'batory5'] as const
+export const BATORY_THEMES = ['batoryProject', 'batory2', 'batory3', 'batory4', 'batory5', 'batory6'] as const
 export type BatoryTheme = (typeof BATORY_THEMES)[number]
 
 export type BatoryThemeConfig = {
@@ -126,6 +126,26 @@ export const BATORY_THEME_CONFIG: Record<BatoryTheme, BatoryThemeConfig> = {
     orlowoColor: '#0a0a0a',
     squareColor: '#8a7030',
   },
+  batory6: {
+    id: 'batory6',
+    menuLabel: 'Batory 6',
+    themeClass: 'theme-batory-6',
+    pageBg: '#1a1a1a',
+    headerBg: '#1a1a1a',
+    headerBorder: '#333333',
+    headerText: '#ffffff',
+    menuBg: '#1a1a1a',
+    menuIconTile: '#2d1520',
+    accent: '#a60050',
+    accentGold: '#c49e4e',
+    accentMuted: '#e0e0e0',
+    newsIcon: '#a60050',
+    newsHoverBg: 'rgba(166,0,80,0.15)',
+    menuDropdownBg: '#222222',
+    menuDropdownBorder: '#3a3a3a',
+    orlowoColor: '#ffffff',
+    squareColor: '#c49e4e',
+  },
 }
 
 /** Motywy kolorów Domesta z logo Batory i bez nagłówka inwestycji w AppBar. */
@@ -138,7 +158,7 @@ export const DOMESTA_COLOR_THEMES_WITH_BATORY_BRANDING = [
 ] as const satisfies readonly AppTheme[]
 
 /** Warianty Batory widoczne w menu (bez Batory 3 i Batory 5). */
-export const BATORY_MENU_THEMES = ['batoryProject', 'batory2', 'batory4'] as const
+export const BATORY_MENU_THEMES = ['batoryProject', 'batory2', 'batory4', 'batory6'] as const
 
 export function isBatoryTheme(theme: AppTheme): theme is BatoryTheme {
   return (BATORY_THEMES as readonly string[]).includes(theme)

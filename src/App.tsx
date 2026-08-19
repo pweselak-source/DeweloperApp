@@ -65,6 +65,7 @@ export type AppTheme =
   | 'batory3'
   | 'batory4'
   | 'batory5'
+  | 'batory6'
 type BackOfficeView =
   | 'investments'
   | 'clients'
@@ -382,7 +383,8 @@ function App() {
         saved === 'batory2' ||
         saved === 'batory3' ||
         saved === 'batory4' ||
-        saved === 'batory5'
+        saved === 'batory5' ||
+        saved === 'batory6'
       )
         return saved
       return 'halfBlack'

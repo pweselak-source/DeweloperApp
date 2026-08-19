@@ -514,7 +514,7 @@ export function SideMenu({
                   : 'ml-2 rounded-xl rounded-r-none rounded-b-none border-r-0'
               }`}
             >
-              <ResidentIntroSlideshowPanel theme={theme} />
+              <ResidentIntroSlideshowPanel />
             </section>
           </div>
           </div>
