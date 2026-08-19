@@ -27,7 +27,7 @@ import { WebAppWelcomeBar } from './components/webapp/WebAppWelcomeBar'
 import { Select2MultiSelect } from './components/Select2MultiSelect'
 import type { Select2Option } from './components/Select2MultiSelect'
 import type { MenuId } from './data/menuItems'
-import { getBatoryThemeConfig, isBatoryTheme } from './data/batoryThemes'
+import { getBatoryThemeConfig, hideTopBarResidentHeading } from './data/batoryThemes'
 
 const THEME_STORAGE_KEY = 'app-theme'
 
@@ -1450,7 +1450,7 @@ function App() {
           onOpenWebApp={handleOpenWebApp}
           variant={showBackOffice ? 'backoffice' : 'default'}
           hideNewsShortcut={showWebApp}
-          residentHeading={isBatoryTheme(theme) ? undefined : residentAppBarHeading}
+          residentHeading={hideTopBarResidentHeading(theme) ? undefined : residentAppBarHeading}
           showLogo={!showBackOffice}
           backOfficeMenuCollapsed={backOfficeMenuCollapsed}
           onToggleBackOfficeMenu={() => setBackOfficeMenuCollapsed((prev) => !prev)}

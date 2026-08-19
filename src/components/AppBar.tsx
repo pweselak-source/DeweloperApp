@@ -1,7 +1,13 @@
 import { useState } from 'react'
 import type { MenuId } from '../data/menuItems'
 import type { AppTheme } from '../App'
-import { BATORY_THEMES, BATORY_THEME_CONFIG, getBatoryThemeConfig, isBatoryTheme } from '../data/batoryThemes'
+import {
+  BATORY_MENU_THEMES,
+  BATORY_THEME_CONFIG,
+  getBatoryThemeConfig,
+  isBatoryTheme,
+  usesBatoryLogo,
+} from '../data/batoryThemes'
 import domestaLogo from '../assets/domesta-logo.png.svg'
 import batoryLogo from '../assets/batory-logo.png'
 
@@ -53,6 +59,7 @@ export function AppBar({
   const [menuOpen, setMenuOpen] = useState(false)
   const batoryCfg = getBatoryThemeConfig(theme)
   const isBatoryThemeActive = isBatoryTheme(theme)
+  const showBatoryLogo = usesBatoryLogo(theme)
 
   return (
     <div
@@ -127,7 +134,7 @@ export function AppBar({
             }`}
             aria-label="Strona główna"
           >
-            <img src={isBatoryThemeActive ? batoryLogo : domestaLogo} alt={isBatoryThemeActive ? 'Batory Projekt' : 'Domesta'} className="h-[2.667rem] w-auto shrink-0 object-contain" />
+            <img src={showBatoryLogo ? batoryLogo : domestaLogo} alt={showBatoryLogo ? 'Batory Projekt' : 'Domesta'} className="h-[2.667rem] w-auto shrink-0 object-contain" />
           </button>
         ) : null}
         {residentHeading && variant === 'default' && (
@@ -350,22 +357,6 @@ export function AppBar({
               </button>
               <button
                 type="button"
-                onClick={() => { onThemeChange?.('appleFont'); setMenuOpen(false) }}
-                className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left ${
-                  variant === 'backoffice'
-                    ? 'text-slate-700 hover:bg-slate-100'
-                    : theme === 'allBlack'
-                      ? 'text-gray-200 hover:bg-[#333333]'
-                      : theme === 'gold'
-                        ? 'text-[#2a2a2a] hover:bg-[#c9974a]/10'
-                        : 'text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <span>AppleFont</span>
-                <span className="rounded-full bg-[#1d1d1f] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">Beta</span>
-              </button>
-              <button
-                type="button"
                 onClick={() => { onThemeChange?.('gold'); setMenuOpen(false) }}
                 className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left ${
                   variant === 'backoffice'
@@ -380,7 +371,7 @@ export function AppBar({
                 <span>Gold</span>
                 <span className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ background: 'linear-gradient(135deg,#e0b96e,#a97c35)', color: '#fff' }}>Nowy</span>
               </button>
-              {BATORY_THEMES.map((batoryId) => {
+              {BATORY_MENU_THEMES.map((batoryId) => {
                 const cfg = BATORY_THEME_CONFIG[batoryId]
                 const isActive = theme === batoryId
                 return (

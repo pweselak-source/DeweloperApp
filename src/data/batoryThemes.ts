@@ -128,8 +128,31 @@ export const BATORY_THEME_CONFIG: Record<BatoryTheme, BatoryThemeConfig> = {
   },
 }
 
+/** Motywy kolorów Domesta z logo Batory i bez nagłówka inwestycji w AppBar. */
+export const DOMESTA_COLOR_THEMES_WITH_BATORY_BRANDING = [
+  'halfBlack',
+  'allBlack',
+  'domestaColors',
+  'allWhite',
+  'gold',
+] as const satisfies readonly AppTheme[]
+
+/** Warianty Batory widoczne w menu (bez Batory 3 i Batory 5). */
+export const BATORY_MENU_THEMES = ['batoryProject', 'batory2', 'batory4'] as const
+
 export function isBatoryTheme(theme: AppTheme): theme is BatoryTheme {
   return (BATORY_THEMES as readonly string[]).includes(theme)
+}
+
+export function usesBatoryLogo(theme: AppTheme): boolean {
+  return (
+    isBatoryTheme(theme) ||
+    (DOMESTA_COLOR_THEMES_WITH_BATORY_BRANDING as readonly string[]).includes(theme)
+  )
+}
+
+export function hideTopBarResidentHeading(theme: AppTheme): boolean {
+  return usesBatoryLogo(theme)
 }
 
 export function getBatoryThemeConfig(theme: AppTheme): BatoryThemeConfig | null {
